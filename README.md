@@ -22,7 +22,7 @@ If you have reads then you will also need to know the repeat sequence(s) of the 
 ### Dependencies
 [CRISPRCasFinder](https://crisprcas.i2bc.paris-saclay.fr/Home/Download)
 
-perl
+[perl](https://www.perl.org/)
 
 ## reps2spacers.py
 ### Dependencies
