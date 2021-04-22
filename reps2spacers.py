@@ -218,7 +218,7 @@ parser = argparse.ArgumentParser(
     formatter_class=LineWrapRawTextHelpFormatter)
 parser.add_argument(
     "-r", dest="repeats_file", required = True,
-    help=""
+    help="FASTA format file containing the CRISPR repeats you want to look for."
     )
 parser.add_argument(
     "-d", dest="blast_db_path", required = True,
