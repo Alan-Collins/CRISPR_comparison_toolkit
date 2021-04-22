@@ -2,9 +2,13 @@
 
 
 # AUTHOR        :    ALAN COLLINS
-# VERSION       :    v1
+# VERSION       :    v1.1
 # DATE          :    2021-3-17
 # DESCRIPTION   :    Given fasta CRISPR repeats and a blast db of genomes, pulls out spacer arrays of >= 2 spacers
+# CHANGELOG
+# V1.1 
+#   Added contig information to array location column in .csv output file. 
+#   Contig information is taken from the sseqid of the blast result.
 
 import sys
 import os
@@ -70,6 +74,7 @@ class blast_entry():
 class array_class():
     def __init__(self):
         self.genome = ''
+        self.contig = ''
         self.start = 0
         self.stop = 0
         self.repeats = []
@@ -142,6 +147,7 @@ def blastn_to_arrays(query, db, pattern):
             array.genome = re.match(pattern, a[0].sseqid)[0]
             n_reps = len(a)
             array.repeat_id = a[0].qseqid
+            array.contig = a[0].sseqid
             if a[0].strand == 'plus':
                 array.start = a[-1].send
                 array.stop = a[0].sstart
@@ -277,7 +283,7 @@ for genome, arrays in genome_arrays.items():
     spacers_list = "\t".join(["{}: {}".format(i+1, " ".join(array.spacers)) for i, array in enumerate(arrays)])
     spacer_id_list = "\t".join(["{}: {}".format(i+1, " ".join(array.spacer_ids)) for i, array in enumerate(arrays)])
     array_id_list = "\t".join(["{}: {}".format(i+1, array.array_id) for i, array in enumerate(arrays)])
-    array_locs = "\t".join(["{}: {} {}".format(i+1, array.start, array.stop) for i, array in enumerate(arrays)])
+    array_locs = "\t".join(["{}: {} {} {}".format(i+1, array.contig, array.start, array.stop) for i, array in enumerate(arrays)])
     genome_CRISPR_dict[genome] = ['True', n_arrays, spacers_list, spacer_id_list, array_id_list, array_locs]
 
 outcontents = ["Genome,Has_CRISPR,Array_count,Spacers,Spacer_IDs,Array_IDs,Array_locations"]
