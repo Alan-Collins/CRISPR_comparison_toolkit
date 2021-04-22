@@ -61,6 +61,10 @@ def find_array_order(twelvebp, edge_list): #ends[i], links)
 				ordered_dodecs.append(chunk_of_interest)
 				if dodecamer_counts_dict[chunk_of_interest] == 1:
 					edge_found = True
+			else:
+				if edge == edge_list[-1]:
+					print("Could not figure out the array starting with 12bp: %s" % twelvebp)
+					edge_found = True
 	return ordered_dodecs
 
 
@@ -230,4 +234,4 @@ for repname in repeats:
 		ordered_dodecs = find_array_order(ends[i], links)
 		ordered_spacers_dict = find_ordered_spacers(ordered_dodecs, "%s%s.spacers.final.fasta" %(narbl_out, repname))
 		with open(final_out + "_".join([args.id, repname, "array", str(i+1), "spacers.fna"]), 'w+') as spacer_outf:
-			spacer_outf.write("\n".join([str(">" + k + "_array_" + str(i+1) + "\n" + v) for k,v in ordered_spacers_dict.items()]))
+			spacer_outf.write("\n".join([str(">" + k + "\n" + v) for k,v in ordered_spacers_dict.items()]) + '\n')
