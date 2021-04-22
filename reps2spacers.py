@@ -147,7 +147,7 @@ def blastn_to_arrays(query, db, pattern):
     arrays = []
 
     if len(array_entries) > 0:
-        for a in array_entries:
+        for a in array_entries: # a[0] is the first repeat in the array. a[-1] is the last
             array = array_class()
             array.genome = re.match(pattern, a[0].sseqid)[0]
             n_reps = len(a)
@@ -218,7 +218,7 @@ parser = argparse.ArgumentParser(
     formatter_class=LineWrapRawTextHelpFormatter)
 parser.add_argument(
     "-r", dest="repeats_file", required = True,
-    help="FASTA format file containing the CRISPR repeats you want to look for."
+    help="FASTA format file containing the CRISPR repeats you want to look for"
     )
 parser.add_argument(
     "-d", dest="blast_db_path", required = True,
@@ -230,7 +230,7 @@ parser.add_argument(
     )
 parser.add_argument(
     "-p", dest="regex_pattern", required = True,
-    help="In order to identify which genome a spacer was found in, put the genome id in your genome files fasta headers before making the blast db and then provide a regex pattern that can extract that id from the fasta header here. e.g. for the fasta header: >animaloris_GCA_900637855.1_LR134440.1 the genome id (animaloris_GCA_900637855.1) can be extracted with [A-Za-z]+_GCA_[0-9]+\.[0-9]"
+    help="In order to identify which genome a spacer was found in, put the genome id in your genome files fasta headers before making the blast db and then provide a regex pattern that can extract that id from the fasta header here. e.g. for the fasta header: >animaloris_GCA_900637855.1_LR134440.1 the genome id (animaloris_GCA_900637855.1) can be extracted with '[A-Za-z]+_GCA_[0-9]+\.[0-9]' or '\w+\.\w+\.\w'. N.B. your regex must be in quotes like the examples here. You can test your regex to make sure it gets the right string by inserting it in place of the word 'REGEX' into the following command and grepping the .nhr file of your target blast database: grep -aoE 'REGEX' blast_db.nhr"
     )
 
 
@@ -243,7 +243,7 @@ outdir = args.outdir + '/' if args.outdir[-1] != '/' else args.outdir
 #pattern = "[A-Za-z]+_GCA_[0-9]+\.[0-9]"
 # all_arrays += blastn_to_arrays("REPEATS/animaloris_high_confidence_repeats.fasta", "BLAST_DBS/animaloris", pattern)
 
-genome_CRISPR_dict = { k : ['False'] for k in subprocess.run("grep -aoE {} {}.nhr".format(args.regex_pattern, args.blast_db_path), shell=True, universal_newlines = True, capture_output=True).stdout.split('\n') if len(k) > 0} 
+genome_CRISPR_dict = { k : ['False'] for k in subprocess.run("grep -aoE '{}' {}.nhr".format(args.regex_pattern, args.blast_db_path), shell=True, universal_newlines = True, capture_output=True).stdout.split('\n') if len(k) > 0} 
 
 all_arrays = []
 
