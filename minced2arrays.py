@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 
 # AUTHOR		:	ALAN COLLINS
-# VERSION		:	v1.1
+# VERSION		:	v1.2
 # DATE			:	2021/2/16
 # DESCRIPTION	:	Process minced output and produce csv and txt summaries of the information
-# CHANGELOG		:	Added contig information to array locations.
+# CHANGELOG
+# v1.1
+#	Added contig information to array locations.
+# v1.2
+#	Added option to provide repeats file
 
 
 import argparse
@@ -26,7 +30,7 @@ class LineWrapRawTextHelpFormatter(argparse.RawDescriptionHelpFormatter):
 
 class MincedObj():
 	"""Class for reading and storing contents of minced output"""
-	def __init__(self, Minced_File):
+	def __init__(self, CRISPR_types_dict, Minced_File):
 		self.accession = Minced_File.split("/")[-1].split("_minced")[0]
 		if os.stat(Minced_File).st_size == 0:
 			self.has_CRISPR = False		
@@ -62,7 +66,7 @@ class MincedObj():
 						spacers.append(re.match(r'\d+\s+\w+\s+(\w+)\s+', line)[1])
 					if "Repeats" in line:
 						repeat = most_common(repeats)
-						self.repeat_types[array_num], self.repeat_scores[array_num], self.array_orientations[array_num] = get_repeat_info(repeat)
+						self.repeat_types[array_num], self.repeat_scores[array_num], self.array_orientations[array_num] = get_repeat_info(CRISPR_types_dict, repeat)
 						if self.array_orientations[array_num]:
 							self.repeat[array_num] = rev_comp.rev_comp(repeat)
 							self.arrays[array_num] = [rev_comp.rev_comp(spacer) for spacer in reversed(spacers)]
@@ -72,6 +76,26 @@ class MincedObj():
 					
 
 			f.close()
+
+def fasta_to_dict(FASTA_file):
+	fasta_dict = {}
+	with open(FASTA_file, 'r') as f:
+		multifasta = f.read()
+	f.close()
+	fastas = multifasta.split(">")
+	trimmed_fastas = []
+	for i in fastas:
+		if len(i) != 0:
+			trimmed_fastas.append(i)
+
+	fastas = trimmed_fastas
+
+	for i in fastas:
+		header = i.split("\n")[0]
+		seq = "".join(i.split("\n")[1:])
+		fasta_dict[header] = seq
+
+	return fasta_dict
 
 def mince_it(GenomesDir, OutDir):
 	MincedDir = "/mnt/f/SynologyDrive/WORK/PROGRAMS/minced-master/minced"
@@ -96,12 +120,7 @@ def mince_it(GenomesDir, OutDir):
 def most_common(lst):
     return max(set(lst), key=lst.count)
 
-def get_repeat_info(repeat):
-	CRISPR_types_dict = { #Specify the desired orientation and type of all repeats you are interested in here
-		'1E':'GTGTTCCCCACGGGTGTGGGGATGAACCG',
-		'1F':'GTTCACTGCCGTGTAGGCAGCTAAGAAA',
-		'1C':'GTCGCGCCCCGCACGGGCGCGTGGATTGAAAC'
-		}
+def get_repeat_info(CRISPR_types_dict, repeat):
 
 	best_score = 1000
 	best_match = ''
@@ -123,7 +142,7 @@ def get_repeat_info(repeat):
 	return best_match, best_score, reverse
 
 
-def process_minced_out(Outdir):
+def process_minced_out(CRISPR_types_dict, Outdir):
 
 	MincedOutDir = Outdir + "MINCED_OUT/" 
 	ProcessedOut = Outdir + "PROCESSED/"
@@ -135,7 +154,7 @@ def process_minced_out(Outdir):
 
 	for file in os.listdir(MincedOutDir):
 		infile = str(MincedOutDir+file)
-		allfiles.append(MincedObj(infile))
+		allfiles.append(MincedObj(CRISPR_types_dict, infile))
 	all_spacers = []
 	all_arrays = []
 	for strain in allfiles:
@@ -284,6 +303,10 @@ if __name__ == '__main__':
 		help="Specify directory for minced output and processed minced files. If just running minced processing steps then this is the directory above the directory where your minced output is stored. e.g. for dir1/dir2/minced_output_files, use -o dir1."
 		)
 	parser.add_argument(
+    "-r", dest="repeats_file", required = False,
+    help="FASTA format file containing the CRISPR repeats you want to look for. If you don't provide one, this script will look for type 1F, 1E, and 1C repeats. These are used to classify arrays and orient them consistently with one another."
+    )
+	parser.add_argument(
 		"-m", action='store_true',
 			help="Indicate that you want minced to be run"
 		)
@@ -302,8 +325,16 @@ if __name__ == '__main__':
 	if outdir[-1] != "/":
 		outdir+= "/"
 
+	if args.repeats_file:
+		CRISPR_types_dict = fasta_to_dict(args.repeats_file)
+	else:
+		CRISPR_types_dict = { #Specify the desired orientation and type of all repeats you are interested in here
+		'1E':'GTGTTCCCCACGGGTGTGGGGATGAACCG',
+		'1F':'GTTCACTGCCGTGTAGGCAGCTAAGAAA',
+		'1C':'GTCGCGCCCCGCACGGGCGCGTGGATTGAAAC'
+		}
+
 	if args.m:
 		mince_it(indir, outdir)
 	if args.p:
-		process_minced_out(outdir)
-
+		process_minced_out(CRISPR_types_dict, outdir)
