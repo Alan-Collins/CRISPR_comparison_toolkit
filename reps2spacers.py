@@ -11,6 +11,9 @@
 #   Contig information is taken from the sseqid of the blast result.
 # V1.1
 #   Removed print commands that I had forgotten to get rid of.
+# v1.2
+#   Fixed mistake where the wrong array_class attribute was being used for storing array ends points for 3'-5' arrays.
+#   added trailing newlines to the end of output files.
 
 import sys
 import os
@@ -163,7 +166,7 @@ def blastn_to_arrays(query, db, pattern):
             
             else:
                 array.start = a[0].send
-                array.end = a[-1].sstart
+                array.stop = a[-1].sstart
                 for i, entry in enumerate(reversed(a)):
                     rep = run_blastcmd(db, entry.sseqid, entry.sstart, entry.send, entry.strand)
                     array.repeats.append(rep)
@@ -292,7 +295,7 @@ for k,v in genome_CRISPR_dict.items():
     outcontents.append(",".join([k]+v))
 
 with open(outdir + "CRISPR_summary_table.csv", 'w') as fout:
-    fout.write('\n'.join(outcontents))
+    fout.write('\n'.join(outcontents)+ '\n')
 
 outcontents = ["Array_ID\tgenomes_with_array"]
 
@@ -300,7 +303,7 @@ for k,v in array_genomes.items():
     outcontents.append('{}\t{}'.format(k, ' '.join(v)))
 
 with open(outdir + "Array_representatives.txt", 'w') as fout:
-    fout.write('\n'.join(outcontents))
+    fout.write('\n'.join(outcontents) + '\n')
 
 outcontents = []
 
@@ -308,7 +311,7 @@ for k,v in spacer_dict.items():
     outcontents.append(">{}\n{}".format(v,k))
 
 with open(outdir + "CRISPR_spacers.fna", 'w') as fout:
-    fout.write('\n'.join(outcontents))
+    fout.write('\n'.join(outcontents) + '\n')
 
 outcontents = ["Spacer_ID\tGenomes_with_spacer"]
 
@@ -317,4 +320,4 @@ for k,v in spacer_genomes.items():
     outcontents.append("{}\t{}".format(k, " ".join(v)))
 
 with open(outdir + "Spacer_representatives.txt", 'w') as fout:
-    fout.write('\n'.join(outcontents))
+    fout.write('\n'.join(outcontents) + '\n')
