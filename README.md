@@ -21,6 +21,7 @@ If you have reads then you will also need to know the repeat sequence(s) of the 
 ## run_CRISPR_cas_finder_MP.py
 ### Dependencies
 [CRISPRCasFinder](https://crisprcas.i2bc.paris-saclay.fr/Home/Download)
+
 perl
 
 ## reps2spacers.py
@@ -28,8 +29,11 @@ perl
 [BLAST+](https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/) (tested with blast 2.9.0)
 
 
+
 ## narbl_pipeline.py
 ### Dependencies
 [BLAST+](https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/) (tested with blast 2.9.0)
+
 [fuzznuc](http://emboss.sourceforge.net/apps/cvs/emboss/apps/fuzznuc.html)
+
 [FASTX](http://hannonlab.cshl.edu/fastx_toolkit/download.html)
