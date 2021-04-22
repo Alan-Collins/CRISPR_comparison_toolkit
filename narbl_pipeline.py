@@ -144,13 +144,13 @@ parser.add_argument(
 args = parser.parse_args(sys.argv[1:])
 
 if len(args.out_dir) !=0:
-	main_outdir = os.path.abspath(args.out_dir)# + '/' if args.out_dir[-1] != '/' else args.out_dir
+	main_outdir = os.path.abspath(args.out_dir)
 	if not os.path.isdir(main_outdir):
 		os.mkdir(main_outdir)
 else:
 	main_outdir = os.path.abspath(os.getcwd())
 
-scripts_dir = os.path.abspath(args.scripts_dir) # + '/' if args.scripts_dir[-1] != '/' else args.scripts_dir
+scripts_dir = os.path.abspath(args.scripts_dir)
 
 
 
