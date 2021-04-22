@@ -2,13 +2,15 @@
 
 
 # AUTHOR        :    ALAN COLLINS
-# VERSION       :    v1.1
+# VERSION       :    v1.1.1
 # DATE          :    2021-3-17
 # DESCRIPTION   :    Given fasta CRISPR repeats and a blast db of genomes, pulls out spacer arrays of >= 2 spacers
 # CHANGELOG
 # V1.1 
 #   Added contig information to array location column in .csv output file. 
 #   Contig information is taken from the sseqid of the blast result.
+# V1.1
+#   Removed print commands that I had forgotten to get rid of.
 
 import sys
 import os
@@ -166,8 +168,6 @@ def blastn_to_arrays(query, db, pattern):
                     rep = run_blastcmd(db, entry.sseqid, entry.sstart, entry.send, entry.strand)
                     array.repeats.append(rep)
                     if i+1 != n_reps:
-                        print(entry.sstart, entry.send)
-                        print(a[-(i+2)].send+1, entry.sstart-1)
                         spacer = run_blastcmd(db, entry.sseqid, a[-(i+2)].send+1, entry.sstart-1, entry.strand)
                         array.spacers.append(spacer)
 
