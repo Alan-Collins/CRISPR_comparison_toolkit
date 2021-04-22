@@ -15,8 +15,6 @@
 
 import argparse
 import re
-import hamming_dist
-import rev_comp
 import os
 import sys
 import subprocess
@@ -29,6 +27,7 @@ class LineWrapRawTextHelpFormatter(argparse.RawDescriptionHelpFormatter):
 	def _split_lines(self, text, width):
 		text = self._whitespace_matcher.sub(' ', text).strip()
 		return _textwrap.wrap(text, width)
+
 
 class MincedObj():
 	"""Class for reading and storing contents of minced output"""
@@ -79,6 +78,7 @@ class MincedObj():
 
 			f.close()
 
+
 def fasta_to_dict(FASTA_file):
 	fasta_dict = {}
 	with open(FASTA_file, 'r') as f:
@@ -99,6 +99,46 @@ def fasta_to_dict(FASTA_file):
 
 	return fasta_dict
 
+
+def rev_comp(string):
+	rev_str = ''
+	rev_comp_lookup = {"A" : "T", "T" : "A", "C" : "G", "G" : "C", "a" : "t", "t" : "a", "c" : "g", "g" : "c"}
+	for i in reversed(string):
+		if i in "ATCGatcg":
+			rev_str += rev_comp_lookup[i]
+		else:
+			rev_str += i
+	return rev_str
+
+
+def hamming(string1, string2):
+	dist, distplus1, distminus1 = 0,0,0
+	string1plus1 = string1[1:]
+	string2plus1 = string2[1:]
+	for i in range(max(len(string1), len(string2))):
+		if i < len(string1) and i < len(string2):
+			if string1[i] != string2[i]:
+				dist += 1
+		else:
+			dist += 1
+	
+	for i in range(max(len(string1plus1), len(string2))):
+		if i < len(string1plus1) and i < len(string2):
+			if string1plus1[i] != string2[i]:
+				distplus1 += 1
+		else:
+			distplus1 += 1
+	
+	for i in range(max(len(string1), len(string2plus1))):
+		if i < len(string1) and i < len(string2plus1):
+			if string1[i] != string2plus1[i]:
+				distminus1 += 1
+		else:
+			distminus1 += 1
+
+	return dist, distplus1, distminus1
+
+
 def mince_it(minced_path, genomes_dir, out_dir):
 	minced_out = out_dir + "MINCED_OUT/"
 	if not os.path.isdir(out_dir):
@@ -118,8 +158,10 @@ def mince_it(minced_path, genomes_dir, out_dir):
 		# Without this your computer will endlessly start running things and run out of resources.
 		p_status = p.wait()
 
+
 def most_common(lst):
     return max(set(lst), key=lst.count)
+
 
 def get_repeat_info(CRISPR_types_dict, repeat):
 
@@ -127,13 +169,13 @@ def get_repeat_info(CRISPR_types_dict, repeat):
 	best_match = ''
 	reverse = False
 	for k,v in CRISPR_types_dict.items():
-		score = min(hamming_dist.hamming(repeat, v))
+		score = min(hamming(repeat, v))
 		if score < best_score:
 			best_score = score
 			best_match = k
 			reverse = False
 
-		score = min(hamming_dist.hamming(rev_comp.rev_comp(repeat), v))
+		score = min(hamming(rev_comp(repeat), v))
 		if score < best_score:
 			best_score = score
 			best_match = k
