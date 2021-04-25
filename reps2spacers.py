@@ -2,8 +2,8 @@
 
 
 # AUTHOR        :    ALAN COLLINS
-# VERSION       :    v1.1.1
-# DATE          :    2021-3-17
+# VERSION       :    v1.3
+# DATE          :    2021-4-25
 # DESCRIPTION   :    Given fasta CRISPR repeats and a blast db of genomes, pulls out spacer arrays of >= 2 spacers
 # CHANGELOG
 # V1.1 
@@ -14,6 +14,10 @@
 # v1.2
 #   Fixed mistake where the wrong array_class attribute was being used for storing array ends points for 3'-5' arrays.
 #   added trailing newlines to the end of output files.
+# v1.3
+#   Fixed issue where the end of an array was not found properly if there was only one array in one genome.
+#   Removed btop from blast as it was unused
+#   Added stderr catching and error printing for blastn and blastdbcmd run in case it fails.
 
 import sys
 import os
@@ -47,9 +51,8 @@ class blast_result():
         self.send = int(bits[9])
         self.evalue = bits[10]
         self.bitscore = bits[11]
-        self.btop = bits[12]
-        self.qlen = int(bits[13])
-        self.slen = bits[14]
+        self.qlen = int(bits[12])
+        self.slen = bits[13]
         self.strand = 'plus' if self.sstart < self.send else 'minus'
         self.trunc = False # Store whether repeat might be truncated (i.e. blast result wasn't full qlen)
         self.sstart_mod = False # If repeat appears tuncated, store revised genome locations here
@@ -111,16 +114,25 @@ def rev_comp(string):
 
 
 def run_blastcmd(db, seqid, start, stop, strand):
-    x = subprocess.run("blastdbcmd -db {} -entry {} -range {}-{} -strand {}".format(db, seqid, start, stop, strand), shell=True, universal_newlines = True, capture_output=True).stdout.split('\n')[1]
-    return x
+    x = subprocess.run("blastdbcmd -db {} -entry {} -range {}-{} -strand {}".format(db, seqid, start, stop, strand), shell=True, universal_newlines = True, capture_output=True)
+    if x.stderr:
+        print("ERROR running blastdbcmd on {}:\n{}".format(db, x.stderr))
+        sys.exit()
+    else:
+        return x.stdout.split('\n')[1]
 
 
 def blastn_to_arrays(query, db, pattern):
     
-    blastn_command = "blastn -query {} -db {} -task blastn-short -outfmt '6 std btop qlen slen'".format(query, db)
-
-    blast_lines = [blast_result(i) for i in subprocess.run(blastn_command, shell=True, universal_newlines = True, capture_output=True).stdout.split('\n') if len(i) > 0]
+    blastn_command = "blastn -query {} -db {} -task blastn-short -outfmt '6 std qlen slen'".format(query, db)
+    blast_run = subprocess.run(blastn_command, shell=True, universal_newlines = True, capture_output=True)
+    # blast_lines = [blast_result(i) for i in subprocess.run(blastn_command, shell=True, universal_newlines = True, capture_output=True).stdout.split('\n') if len(i) > 0]
+    if blast_run.stderr:
+        print("ERROR running blast on {}:\n{}".format(db, blast_run.stderr))
+        sys.exit()
+    blast_lines = [blast_result(i) for i in blast_run.stdout.split('\n') if len(i) > 0]
     
+
     good_hits = []
 
     for line in blast_lines:
@@ -139,11 +151,9 @@ def blastn_to_arrays(query, db, pattern):
                         if line.qend != line.length: # if the 3' end of the repeat is missing
                             line.sstart_mod = line.sstart + (line.qend - line.length) # adjust send by the number of bases missing from repeat 3' end
                 good_hits.append(blast_entry(line))
-
     good_hits_sorted = sorted(good_hits, key = lambda x: (x.sseqid, x.strand, x.sstart))
-
     array_entries = identify_same_array_hits(good_hits_sorted)
-
+    # print(array_entries)
     arrays = []
 
     if len(array_entries) > 0:
@@ -193,6 +203,20 @@ def identify_same_array_hits(blast_entries):
             if last_loc > entry.sstart - 150 and last_strand == entry.strand and last_contig == entry.sseqid:
                 this_array.append(entry)
                 last_loc = entry.sstart
+                if entry == blast_entries[-1]:
+                    if len(this_array) > 2:
+                        arrays.append(this_array)
+                        last_loc = entry.sstart
+                        last_strand = entry.strand
+                        last_contig = entry.sseqid
+                        this_array = [entry]
+
+                    else:
+                        last_loc = entry.sstart
+                        last_strand = entry.strand
+                        last_contig = entry.sseqid
+                        this_array = [entry]
+                
             else:
                 if len(this_array) > 2:
                     arrays.append(this_array)
@@ -200,6 +224,7 @@ def identify_same_array_hits(blast_entries):
                     last_strand = entry.strand
                     last_contig = entry.sseqid
                     this_array = [entry]
+
                 else:
                     last_loc = entry.sstart
                     last_strand = entry.strand
@@ -218,7 +243,7 @@ parser = argparse.ArgumentParser(
     formatter_class=LineWrapRawTextHelpFormatter)
 parser.add_argument(
     "-r", dest="repeats_file", required = True,
-    help="FASTA format file containing the CRISPR repeats you want to look for"
+    help=""
     )
 parser.add_argument(
     "-d", dest="blast_db_path", required = True,
@@ -230,7 +255,7 @@ parser.add_argument(
     )
 parser.add_argument(
     "-p", dest="regex_pattern", required = True,
-    help="In order to identify which genome a spacer was found in, put the genome id in your genome files fasta headers before making the blast db and then provide a regex pattern that can extract that id from the fasta header here. e.g. for the fasta header: >animaloris_GCA_900637855.1_LR134440.1 the genome id (animaloris_GCA_900637855.1) can be extracted with '[A-Za-z]+_GCA_[0-9]+\.[0-9]' or '\w+\.\w+\.\w'. N.B. your regex must be in quotes like the examples here. You can test your regex to make sure it gets the right string by inserting it in place of the word 'REGEX' into the following command and grepping the .nhr file of your target blast database: grep -aoE 'REGEX' blast_db.nhr"
+    help="In order to identify which genome a spacer was found in, put the genome id in your genome files fasta headers before making the blast db and then provide a regex pattern that can extract that id from the fasta header here. e.g. for the fasta header: >animaloris_GCA_900637855.1_LR134440.1 the genome id (animaloris_GCA_900637855.1) can be extracted with [A-Za-z]+_GCA_[0-9]+\.[0-9]"
     )
 
 
@@ -238,16 +263,13 @@ args = parser.parse_args(sys.argv[1:])
 
 outdir = args.outdir + '/' if args.outdir[-1] != '/' else args.outdir
 
-#python3 reps2spacers.py -r REPEATS/animaloris_high_confidence_repeats.fasta -d BLAST_DBS/animaloris -p [A-Za-z]+_GCA_[0-9]+\.[0-9] -o Animaloris_CRISPRS/
-
-#pattern = "[A-Za-z]+_GCA_[0-9]+\.[0-9]"
-# all_arrays += blastn_to_arrays("REPEATS/animaloris_high_confidence_repeats.fasta", "BLAST_DBS/animaloris", pattern)
 
 genome_CRISPR_dict = { k : ['False'] for k in subprocess.run("grep -aoE '{}' {}.nhr".format(args.regex_pattern, args.blast_db_path), shell=True, universal_newlines = True, capture_output=True).stdout.split('\n') if len(k) > 0} 
 
 all_arrays = []
 
 all_arrays += blastn_to_arrays(args.repeats_file, args.blast_db_path, args.regex_pattern)
+
 
 spacer_dict = {}
 spacer_count_dict = defaultdict(int)
