@@ -2,7 +2,7 @@
 
 
 # AUTHOR        :    ALAN COLLINS
-# VERSION       :    v1.3
+# VERSION       :    v1.3.1
 # DATE          :    2021-4-25
 # DESCRIPTION   :    Given fasta CRISPR repeats and a blast db of genomes, pulls out spacer arrays of >= 2 spacers
 # CHANGELOG
@@ -18,6 +18,8 @@
 #   Fixed issue where the end of an array was not found properly if there was only one array in one genome.
 #   Removed btop from blast as it was unused
 #   Added stderr catching and error printing for blastn and blastdbcmd run in case it fails.
+# v1.3.1
+#   Fixed issue handling large blastdbs that are split over multiple .nhr files.
 
 import sys
 import os
@@ -263,8 +265,11 @@ args = parser.parse_args(sys.argv[1:])
 
 outdir = args.outdir + '/' if args.outdir[-1] != '/' else args.outdir
 
+# Find the names of all the genomes being searched by looking for the user-provided regex in the blast-db .nhr files.
+# for all genomes, start their entry in the genome_CRISPR_dict with the placeholder False. This indicated no CRISPRs found.
+# If a CRISPR array is found later this entry will be overwritten with infor about the arrays.
+genome_CRISPR_dict = { k : ['False'] for k in subprocess.run("grep -aoE '{}' {}*.nhr".format(args.regex_pattern, args.blast_db_path), shell=True, universal_newlines = True, capture_output=True).stdout.split('\n') if len(k) > 0} 
 
-genome_CRISPR_dict = { k : ['False'] for k in subprocess.run("grep -aoE '{}' {}.nhr".format(args.regex_pattern, args.blast_db_path), shell=True, universal_newlines = True, capture_output=True).stdout.split('\n') if len(k) > 0} 
 
 all_arrays = []
 
