@@ -33,6 +33,7 @@ import subprocess
 import multiprocessing
 import re
 from collections import defaultdict
+import pickle
 
 
 
@@ -126,22 +127,24 @@ def rev_comp(string):
 #         return x.stdout.split('\n')[1]
 
 def run_blastcmd(db, fstring, batch_locations):
-    x = subprocess.run('printf "{}" {} | blastdbcmd -db {} -entry_batch -'.format(fstring, batch_locations, db), 
+    x = subprocess.run('printf "{}" {}| blastdbcmd -db {} -entry_batch -'.format(fstring, batch_locations, db), 
                         shell=True, universal_newlines = True, capture_output=True) 
     if x.stderr:
         print("ERROR running blastdbcmd on {} :\n{}".format(db, batch_locations, x.stderr))
         sys.exit()
     else:
-        return [x.stdout.split('\n')[i] for i in range(1, len(x.stdout.split('\n')), 2)]
+        return [i for i in x.stdout.split('\n') if '>' not in i]
 
 
 def pool_MP_spacer_finder(array_entries, threads, chunksize):
 
     pool = multiprocessing.Pool(processes=int(threads))
 
-    pool.imap_unordered(build_arrays_MP, array_entries, chunksize)
+    output = pool.imap_unordered(build_arrays_MP, array_entries, chunksize)
     pool.close()
     pool.join()
+
+    return output
 
 
 def build_arrays_MP(array_entry):
@@ -159,7 +162,7 @@ def build_arrays_MP(array_entry):
             for i, entry in enumerate(array_entry):
                 if i+1 != n_reps:
                     fstring += '%s %s %s\n'
-                    batch_locations += '{} {}-{} {}'.format(entry.sseqid, entry.send+1, array_entry[i+1].sstart-1, entry.strand)
+                    batch_locations += '{} {}-{} {} '.format(entry.sseqid, entry.send+1, array_entry[i+1].sstart-1, entry.strand)
                     # spacer = run_blastcmd(args.blast_db_path, entry.sseqid, entry.send+1, array_entry[i+1].sstart-1, entry.strand)
                     # array.spacers.append(spacer)
         
@@ -169,7 +172,7 @@ def build_arrays_MP(array_entry):
             for i, entry in enumerate(reversed(array_entry)):
                 if i+1 != n_reps:
                     fstring += '%s %s %s\n'
-                    batch_locations += '{} {}-{} {}'.format(entry.sseqid, array_entry[-(i+2)].send+1, entry.sstart-1, entry.strand)
+                    batch_locations += '{} {}-{} {} '.format(entry.sseqid, array_entry[-(i+2)].send+1, entry.sstart-1, entry.strand)
                     # spacer = run_blastcmd(args.blast_db_path, entry.sseqid, array_entry[-(i+2)].send+1, entry.sstart-1, entry.strand)
                     # array.spacers.append(spacer)
         array.spacers = run_blastcmd(args.blast_db_path, fstring, batch_locations)
@@ -328,75 +331,77 @@ spacer_count_dict = defaultdict(int)
 array_dict = {}
 array_count = 0
 
+with open("temp.pkl" 'wb') as fout:
+    pickle.dump(all_arrays, fout)
+
+sys.eixt()
+
 for i, array in enumerate(all_arrays):
-    try:
-        print(array.spacers)
+    for spacer in array.spacers:
+        print(spacer)
         sys.exit()
-    except:
-        pass
-#     for spacer in array.spacers:
-#         if spacer in spacer_dict.keys():
-#             all_arrays[i].spacer_ids.append(spacer_dict[spacer])
-#         else:
-#             spacer_count_dict[array.repeat_id] +=1
-#             spacer_dict[spacer] = 'rep_' + array.repeat_id + '_sp_' + str(spacer_count_dict[array.repeat_id])
-#             all_arrays[i].spacer_ids.append(spacer_dict[spacer])
+        if spacer in spacer_dict.keys():
+            all_arrays[i].spacer_ids.append(spacer_dict[spacer])
+        else:
+            spacer_count_dict[array.repeat_id] +=1
+            spacer_dict[spacer] = 'rep_' + array.repeat_id + '_sp_' + str(spacer_count_dict[array.repeat_id])
+            all_arrays[i].spacer_ids.append(spacer_dict[spacer])
             
-#     if tuple(array.spacer_ids) in array_dict.keys():
-#         all_arrays[i].array_id = array_dict[tuple(array.spacer_ids)]
-#     else:
-#         array_count += 1
-#         all_arrays[i].array_id = array_count
-#         array_dict[tuple(array.spacer_ids)] = array_count
+    if tuple(array.spacer_ids) in array_dict.keys():
+        all_arrays[i].array_id = array_dict[tuple(array.spacer_ids)]
+    else:
+        array_count += 1
+        all_arrays[i].array_id = array_count
+        array_dict[tuple(array.spacer_ids)] = array_count
 
-# genome_arrays = defaultdict(list) # list of arrays present in each genome
-# array_genomes = defaultdict(list) # list of genomes with this array
-# spacer_genomes = defaultdict(list) # list of genomes with this spacers
+genome_arrays = defaultdict(list) # list of arrays present in each genome
+array_genomes = defaultdict(list) # list of genomes with this array
+spacer_genomes = defaultdict(list) # list of genomes with this spacers
 
-# for array in all_arrays:
-#     genome_arrays[array.genome].append(array)
-#     array_genomes[array.array_id].append(array.genome)
-#     for spacer in array.spacer_ids:
-#         spacer_genomes[spacer].append(array.genome)
+for array in all_arrays:
+    genome_arrays[array.genome].append(array)
+    array_genomes[array.array_id].append(array.genome)
+    for spacer in array.spacer_ids:
+        spacer_genomes[spacer].append(array.genome)
 
 
-# for genome, arrays in genome_arrays.items():
-#     n_arrays = str(len(arrays))
-#     spacers_list = "\t".join(["{}: {}".format(i+1, " ".join(array.spacers)) for i, array in enumerate(arrays)])
-#     spacer_id_list = "\t".join(["{}: {}".format(i+1, " ".join(array.spacer_ids)) for i, array in enumerate(arrays)])
-#     array_id_list = "\t".join(["{}: {}".format(i+1, array.array_id) for i, array in enumerate(arrays)])
-#     array_locs = "\t".join(["{}: {} {} {}".format(i+1, array.contig, array.start, array.stop) for i, array in enumerate(arrays)])
-#     genome_CRISPR_dict[genome] = ['True', n_arrays, spacers_list, spacer_id_list, array_id_list, array_locs]
+for genome, arrays in genome_arrays.items():
+    n_arrays = str(len(arrays))
+    spacers_list = "\t".join(["{}: {}".format(i+1, " ".join(array.spacers)) for i, array in enumerate(arrays)])
+    spacer_id_list = "\t".join(["{}: {}".format(i+1, " ".join(array.spacer_ids)) for i, array in enumerate(arrays)])
+    array_id_list = "\t".join(["{}: {}".format(i+1, array.array_id) for i, array in enumerate(arrays)])
+    array_locs = "\t".join(["{}: {} {} {}".format(i+1, array.contig, array.start, array.stop) for i, array in enumerate(arrays)])
+    genome_CRISPR_dict[genome] = ['True', n_arrays, spacers_list, spacer_id_list, array_id_list, array_locs]
 
-# outcontents = ["Genome,Has_CRISPR,Array_count,Spacers,Spacer_IDs,Array_IDs,Array_locations"]
+outcontents = ["Genome,Has_CRISPR,Array_count,Spacers,Spacer_IDs,Array_IDs,Array_locations"]
 
-# for k,v in genome_CRISPR_dict.items():
-#     outcontents.append(",".join([k]+v))
+for k,v in genome_CRISPR_dict.items():
+    outcontents.append(",".join([k]+v))
 
-# with open(outdir + "CRISPR_summary_table.csv", 'w') as fout:
-#     fout.write('\n'.join(outcontents)+ '\n')
+with open(outdir + "CRISPR_summary_table.csv", 'w') as fout:
+    fout.write('\n'.join(outcontents)+ '\n')
 
-# outcontents = ["Array_ID\tgenomes_with_array"]
+outcontents = ["Array_ID\tgenomes_with_array"]
 
-# for k,v in array_genomes.items():
-#     outcontents.append('{}\t{}'.format(k, ' '.join(v)))
+for k,v in array_genomes.items():
+    outcontents.append('{}\t{}'.format(k, ' '.join(v)))
 
-# with open(outdir + "Array_representatives.txt", 'w') as fout:
-#     fout.write('\n'.join(outcontents) + '\n')
+with open(outdir + "Array_representatives.txt", 'w') as fout:
+    fout.write('\n'.join(outcontents) + '\n')
 
-# outcontents = []
+outcontents = []
 
-# for k,v in spacer_dict.items():
-#     outcontents.append(">{}\n{}".format(v,k))
+for k,v in spacer_dict.items():
+    outcontents.append(">{}\n{}".format(v,k))
 
-# with open(outdir + "CRISPR_spacers.fna", 'w') as fout:
-#     fout.write('\n'.join(outcontents) + '\n')
+with open(outdir + "CRISPR_spacers.fna", 'w') as fout:
+    fout.write('\n'.join(outcontents) + '\n')
 
-# outcontents = ["Spacer_ID\tGenomes_with_spacer"]
+outcontents = ["Spacer_ID\tGenomes_with_spacer"]
 
-# for k,v in spacer_genomes.items():
-#     v = list(set(v))
-#     outcontents.append("{}\t{}".format(k, " ".join(v)))
+for k,v in spacer_genomes.items():
+    v = list(set(v))
+    outcontents.append("{}\t{}".format(k, " ".join(v)))
 
-# with open(outdir + "Spacer_representatives.txt", 'w') as fout:
-#     fout.write('\n'.join(outcontents) + '\n')
+with open(outdir + "Spacer_representatives.txt", 'w') as fout:
+    fout.write('\n'.join(outcontents) + '\n')
