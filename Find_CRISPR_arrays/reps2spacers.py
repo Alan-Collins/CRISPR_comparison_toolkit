@@ -116,13 +116,23 @@ def rev_comp(string):
     return rev_str
 
 
-def run_blastcmd(db, seqid, start, stop, strand):
-    x = subprocess.run("blastdbcmd -db {} -entry {} -range {}-{} -strand {}".format(db, seqid, start, stop, strand), shell=True, universal_newlines = True, capture_output=True) 
+# def run_blastcmd(db, seqid, start, stop, strand):
+#     x = subprocess.run("blastdbcmd -db {} -entry {} -range {}-{} -strand {}".format(db, seqid, start, stop, strand), shell=True, universal_newlines = True, capture_output=True) 
+#     if x.stderr:
+#         print("ERROR running blastdbcmd on {} {} {} {} {}:\n{}".format(db, seqid, start, stop, strand, x.stderr))
+#         sys.exit()
+#     else:
+
+#         return x.stdout.split('\n')[1]
+
+def run_blastcmd(db, fstring, batch_locations):
+    x = subprocess.run('printf "{}" {} | blastdbcmd -db {} -entry_batch -'.format(fstring, batch_locations, db), 
+                        shell=True, universal_newlines = True, capture_output=True) 
     if x.stderr:
-        print("ERROR running blastdbcmd on {} {} {} {} {}:\n{}".format(db, seqid, start, stop, strand, x.stderr))
+        print("ERROR running blastdbcmd on {} :\n{}".format(db, batch_locations, x.stderr))
         sys.exit()
     else:
-        return x.stdout.split('\n')[1]
+        return [x.stdout.split('\n')[i] for i in range(1, len(x.stdout.split('\n')), 2)]
 
 
 def pool_MP_spacer_finder(array_entries, threads, chunksize):
@@ -136,6 +146,8 @@ def pool_MP_spacer_finder(array_entries, threads, chunksize):
 
 def build_arrays_MP(array_entry):
     try:
+        fstring = '' #retrieve spacer seqs in batch for quicker blastdbcmd usage.
+        batch_locations = ''
         array = array_class()
         array.genome = re.match(args.regex_pattern, array_entry[0].sseqid)[0]
         n_reps = len(array_entry)
@@ -146,16 +158,22 @@ def build_arrays_MP(array_entry):
             array.stop = array_entry[0].sstart
             for i, entry in enumerate(array_entry):
                 if i+1 != n_reps:
-                    spacer = run_blastcmd(args.blast_db_path, entry.sseqid, entry.send+1, array_entry[i+1].sstart-1, entry.strand)
-                    array.spacers.append(spacer)
+                    fstring += '%s %s %s\n'
+                    batch_locations += '{} {}-{} {}'.format(entry.sseqid, entry.send+1, array_entry[i+1].sstart-1, entry.strand)
+                    # spacer = run_blastcmd(args.blast_db_path, entry.sseqid, entry.send+1, array_entry[i+1].sstart-1, entry.strand)
+                    # array.spacers.append(spacer)
         
         else:
             array.start = array_entry[0].send
             array.stop = array_entry[-1].sstart
             for i, entry in enumerate(reversed(array_entry)):
                 if i+1 != n_reps:
-                    spacer = run_blastcmd(args.blast_db_path, entry.sseqid, array_entry[-(i+2)].send+1, entry.sstart-1, entry.strand)
-                    array.spacers.append(spacer)
+                    fstring += '%s %s %s\n'
+                    batch_locations += '{} {}-{} {}'.format(entry.sseqid, array_entry[-(i+2)].send+1, entry.sstart-1, entry.strand)
+                    # spacer = run_blastcmd(args.blast_db_path, entry.sseqid, array_entry[-(i+2)].send+1, entry.sstart-1, entry.strand)
+                    # array.spacers.append(spacer)
+        array.spacers = run_blastcmd(args.blast_db_path, fstring, batch_locations)
+
         return array
 
 
