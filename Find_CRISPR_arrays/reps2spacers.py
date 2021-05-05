@@ -290,7 +290,7 @@ parser.add_argument(
     help="path to directory you want output files saved in"
     )
 parser.add_argument(
-    "-e", dest="evalue", required = False, default='1',
+    "-e", dest="evalue", required = False, default='10',
     help="set the evalue cutoff below which blastn will keep blast hits when looking for CRISPR repeats in your blast database. Useful for reducing inclusion of low quality blast hits with big databases in combination with the -m option."
     )
 parser.add_argument(
@@ -324,9 +324,8 @@ outdir = args.outdir + '/' if args.outdir[-1] != '/' else args.outdir
 # If a CRISPR array is found later this entry will be overwritten with infor about the arrays.
 genome_CRISPR_dict = { k : ['False'] for k in subprocess.run("blastdbcmd -db {} -entry all -outfmt '\%a' | grep -o{} '{}' | sort | uniq".format(args.blast_db_path, args.regex_type, args.regex_pattern), shell=True, universal_newlines = True, capture_output=True).stdout.split('\n') if len(k) > 0} 
 
-# all_arrays = blastn_to_arrays(args)
+all_arrays = blastn_to_arrays(args)
 
-# print(all_arrays)
 
 
 spacer_dict = {}
@@ -339,14 +338,12 @@ array_count = 0
 
 # sys.exit()
 
-with open("temp.pkl", "rb") as fin:
-    all_arrays = pickle.load(fin)
+# with open("temp.pkl", "rb") as fin:
+#     all_arrays = pickle.load(fin)
 
 
 for i, array in enumerate(all_arrays):
     for spacer in array.spacers:
-        print(spacer)
-        sys.exit()
         if spacer in spacer_dict.keys():
             all_arrays[i].spacer_ids.append(spacer_dict[spacer])
         else:
