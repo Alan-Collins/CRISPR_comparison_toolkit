@@ -25,24 +25,50 @@
 #   Added argparse options to control thread count, evalue, and max_target_seqs blast options
 #   Added multithreading to the spacer finding function to the blastdbcmd step that finds spacer sequences as this is the slowest part.
 #   Added user provided option to control type of regex used for grep against database files.
+#   Changed search for genome names from grepping the database files. Now uses blastdbcmd to return all sequence headers and greps for unique regex matches in those.
+#   Relaxed array blast hit parameters to catch repeats that have up to 20% mismatches over 90% length.
+#   Added option to define expected interval between repeats.
+#   Improved documentation with docstrings for functions and classes and stated defaults for command-line help message.
+#   Added a check to abort if no arrays are found in the blastdb
+#   Removed unused functions and os import
 
 import sys
-import os
 import argparse
 import subprocess
 import multiprocessing
 import re
 from collections import defaultdict
-import pickle
 
 
 
 class blast_result():
+    """
+    A class to store column contents from a blast result in an easily retrieved form.
+    Allows improved code readability when interacting with blast result lines
 
+    Attributes:
+        qseqid (str):   query (e.g., unknown gene) sequence id
+        sseqid (str):   subject (e.g., reference genome) sequence id
+        pident (float): percentage of identical matches
+        length (int):   alignment length (sequence overlap)
+        mismatch (int): number of mismatches
+        gapopen (int):  number of gap openings
+        qstart (int):   start of alignment in query
+        qend (int): end of alignment in query
+        sstart (int):   start of alignment in subject
+        send (int): end of alignment in subject
+        evalue (str):   expect value
+        bitscore (float):   bit score
+        qlen (int)  length of query sequence
+        slen (int)  length of subject sequence
+        strand (str)    Whether the blast hit was on the top (plus) or bottom (minus) strand of the DNA
+        trunc (bool)    Whether repeat might be truncated (i.e. blast result wasn't full qlen)
+        sstart_mod (bool/int)   If repeat appears tuncated, store revised genome locations here
+        send_mod (bool/int) If repeat appears tuncated, store revised genome locations here
+    """
     def __init__(self, blast_line):
         bits = blast_line.split('\t')
         self.qseqid = bits[0]
-
         self.sseqid = bits[1]
         self.pident = float(bits[2])
         self.length = int(bits[3])
@@ -55,18 +81,28 @@ class blast_result():
         self.evalue = bits[10]
         self.bitscore = bits[11]
         self.qlen = int(bits[12])
-        self.slen = bits[13]
+        self.slen = int(bits[13])
         self.strand = 'plus' if self.sstart < self.send else 'minus'
-        self.trunc = False # Store whether repeat might be truncated (i.e. blast result wasn't full qlen)
-        self.sstart_mod = False # If repeat appears tuncated, store revised genome locations here
+        self.trunc = False # 
+        self.sstart_mod = False # 
         self.send_mod = False
 
 class blast_entry():
+    """
+    An abbreviated version of the blast_result class to store just the pertinant
+    information from that class
+    
+    Attributes:
+        qseqid (str):    query (e.g., unknown gene) sequence id
+        sseqid (str):    subject (e.g., reference genome) sequence id
+        strand (str):    Whether the blast hit was on the top (plus) or bottom (minus) strand of the DNA
+        sstart (int):    start of alignment in subject
+        send (int):  end of alignment in subject
+
+    """
     def __init__(self, blast_result, args):
         self.qseqid = blast_result.qseqid
         self.sseqid = blast_result.sseqid
-        #self.regex_pattern = args.regex_pattern
-        #self.blastdb = args.blast_db_path
         if blast_result.sstart < blast_result.send:
             self.strand = 'plus'
             if blast_result.trunc:
@@ -85,6 +121,20 @@ class blast_entry():
                 self.send = blast_result.sstart
 
 class array_class():
+    """
+    Class to store information about a CRISPR array: Where it was found and what spacers 
+    it contains.
+    
+    Attributes:
+        genome (str)    ID of the genome in which this array was identified
+        contig (str)    fasta header of the sequence in which this array was identified (blast result sseqid)
+        start (int) start position of array in contig
+        stop (int)  end position of array in contig
+        repeat_id (str) with which repeat was this array identified?
+        spacers (list of strs)  list of the seqeuences of the identified spacers
+        spacer_id (list of ints)    list of the IDs of the identified spacers as stored in spacer_dict
+        array_id (int)  ID of this array as stored in array_dict
+    """
     def __init__(self):
         self.genome = ''
         self.contig = ''
@@ -95,38 +145,25 @@ class array_class():
         self.spacer_ids = []
         self.array_id = 0
 
-def hamming(string1, string2):
-    dist = 0
-    for i in range(max(len(string1), len(string2))):
-        if i < len(string1) and i < len(string2):
-            if string1[i] != string2[i]:
-                dist += 1
-        else:
-            dist += 1
-
-    return dist
-
-def rev_comp(string):
-    rev_str = ''
-    rev_comp_lookup = {"A" : "T", "T" : "A", "C" : "G", "G" : "C", "a" : "t", "t" : "a", "c" : "g", "g" : "c"}
-    for i in reversed(string):
-        if i in "ATCGatcg":
-            rev_str += rev_comp_lookup[i]
-        else:
-            rev_str += i
-    return rev_str
-
-
-# def run_blastcmd(db, seqid, start, stop, strand):
-#     x = subprocess.run("blastdbcmd -db {} -entry {} -range {}-{} -strand {}".format(db, seqid, start, stop, strand), shell=True, universal_newlines = True, capture_output=True) 
-#     if x.stderr:
-#         print("ERROR running blastdbcmd on {} {} {} {} {}:\n{}".format(db, seqid, start, stop, strand, x.stderr))
-#         sys.exit()
-#     else:
-
-#         return x.stdout.split('\n')[1]
 
 def run_blastcmd(db, fstring, batch_locations):
+    """
+    function to call blastdbcmd in a shell and process the output. Uses a batch query of the format provided in
+    the blastdbcmd docs. e.g.
+    printf "%s %s %s %s\\n%s %s %s\\n" 13626247 40-80 plus 30 14772189 1-10 minus | blastdbcmd -db GPIPE/9606/current/all_contig -entry_batch -
+    
+    Args:
+        db (str): path to the blast db you want to query.
+        fstring (str):  The string to give to printf
+        batch_locations (str):  the seqid, locations, and strand of all the spacers to be retrieved
+    
+    Returns:
+        (list) List of the sequences of regions returned by blastdbcmd in response to the query locations submitted
+    
+    Raises:
+        ERROR running blastdbcmd: Raises an exception when blastdbcmd returns something to stderr, 
+        prints the error as well as the information provided to blastdbcmd and aborts the process.
+    """
     x = subprocess.run('printf "{}" {}| blastdbcmd -db {} -entry_batch -'.format(fstring, batch_locations, db), 
                         shell=True, universal_newlines = True, capture_output=True) 
     if x.stderr:
@@ -137,8 +174,18 @@ def run_blastcmd(db, fstring, batch_locations):
 
 
 def pool_MP_spacer_finder(array_entries, threads, chunksize):
+    """
+    Manages the multiprocess worker pool and returns to arrays found by build_arrays_MP to whatever called it.
+    Args:
+        array_entries (list): A list of lists of blast_entry class instances.
+        threads (int): Number of threads to use for multiprocessing.
+        Chunksize (int):    Approximate size of batches into which pool should split array_entries 
+    
+    Returns:
+        (list) List of array_class instances representing distinct arrays
+    """
 
-    pool = multiprocessing.Pool(processes=int(threads))
+    pool = multiprocessing.Pool(processes=threads)
 
     output = pool.imap_unordered(build_arrays_MP, array_entries, chunksize)
     output = [i for i in output]
@@ -149,6 +196,17 @@ def pool_MP_spacer_finder(array_entries, threads, chunksize):
 
 
 def build_arrays_MP(array_entry):
+    """
+    Builds the fstring and batch_locations objects to give to run_blastdbcmd and then calls that and returns the output.
+    Args:
+        array_entry (list): list of blast_entry class instances.
+    
+    Returns:
+        (array_class) Array_class instance representing the contiguous array identified.
+    
+    Raises:
+        Exception: Raises an exception and prints the exception if one occurs.
+    """
     try:
         fstring = '' #retrieve spacer seqs in batch for quicker blastdbcmd usage.
         batch_locations = ''
@@ -164,9 +222,6 @@ def build_arrays_MP(array_entry):
                 if i+1 != n_reps:
                     fstring += '%s %s %s\n'
                     batch_locations += '{} {}-{} {} '.format(entry.sseqid, entry.send+1, array_entry[i+1].sstart-1, entry.strand)
-                    # spacer = run_blastcmd(args.blast_db_path, entry.sseqid, entry.send+1, array_entry[i+1].sstart-1, entry.strand)
-                    # array.spacers.append(spacer)
-        
         else:
             array.start = array_entry[0].send
             array.stop = array_entry[-1].sstart
@@ -174,8 +229,6 @@ def build_arrays_MP(array_entry):
                 if i+1 != n_reps:
                     fstring += '%s %s %s\n'
                     batch_locations += '{} {}-{} {} '.format(entry.sseqid, array_entry[-(i+2)].send+1, entry.sstart-1, entry.strand)
-                    # spacer = run_blastcmd(args.blast_db_path, entry.sseqid, array_entry[-(i+2)].send+1, entry.sstart-1, entry.strand)
-                    # array.spacers.append(spacer)
         array.spacers = run_blastcmd(args.blast_db_path, fstring, batch_locations)
 
         return array
@@ -187,7 +240,21 @@ def build_arrays_MP(array_entry):
 
 
 def blastn_to_arrays(args):
+    """
+    Runs blastn of provided repeats against provided blastdb. Processes the blast output to find hits that are good enough to keep.
+    Passes those good hits to identify_same_array_hits and stores the list of arrays returned to it. Passes that list of arrays to
+    pool_MP_spacer_finder and stores the arrays returned to it that now have spacer information. If arrays were found, these are
+    returned. If none are found an error is raised.
+    Args:
+        args (argparse class): All of the argparse options given by the user.
+
     
+    Returns:
+        (list):  List of lists of array_class instances representing distinct arrays.
+    
+    Raises:
+        No arrays found: If no arrays were found in the blast database then this raises an error stating that and exits.
+    """    
     blastn_command = "blastn -query {} -db {} -task blastn-short -outfmt '6 std qlen slen' -num_threads {} -max_target_seqs {} -evalue {} {}".format(args.repeats_file, args.blast_db_path, args.num_threads, args.max_target_seqs, args.evalue, args.other_blast_options)
     blast_run = subprocess.run(blastn_command, shell=True, universal_newlines = True, capture_output=True)
     # blast_lines = [blast_result(i) for i in subprocess.run(blastn_command, shell=True, universal_newlines = True, capture_output=True).stdout.split('\n') if len(i) > 0]
@@ -201,7 +268,7 @@ def blastn_to_arrays(args):
 
     for line in blast_lines:
         if line.length > 0.9 * line.qlen: # Keep any blast hits where the match length is over 90% of query
-            if line.pident > 90:
+            if line.pident > 80:
                 if line.length != line.qlen: # If match length isn't 100%, extend repeat to expected length
                     line.trunc = True
                     if line.sstart < line.send: # if the blast hit is on the positive strand
@@ -221,15 +288,30 @@ def blastn_to_arrays(args):
     
 
     if len(array_entries) > 0:
-        arrays = pool_MP_spacer_finder(array_entries, args.num_threads, int(len(array_entries)//int(args.num_threads)))
+        chunksize = max(int(len(array_entries)//args.num_threads), 1)
+        arrays = pool_MP_spacer_finder(array_entries, args.num_threads, chunksize)
 
-    return arrays
+        return arrays
+
+    else:
+        print("No arrays identified from the query file {} in the database {}".format(args.repeats_file, args.blast_db_path))
+        sys.exit()
 
 
-def identify_same_array_hits(blast_entries, args): 
-    # Using position and orientation of sorted (by contig and start position) repeats, 
-    # group them into arrays if there are at least 3 repeats in a group. 
-    # Otherwise discard them
+def identify_same_array_hits(blast_entries, args):
+    """
+    Given a list of blast results, identify which of them are from a contiguous spacer array by checking:
+    Are they close enough?
+    Are they on the same strand?
+    Are they in the same genome, contig?
+    If it finds 3 or more repeats close together on the same strand of the same contig, groups them into an array.
+    Args:
+        blast_entries (list):   List of blast entry classes sorted by contig, then start, then location.
+        args (argparse class):  The arguments provided to argparse.
+    
+    Returns:
+        (list) List of lists of blast_entry classes.
+    """
     arrays = []
     n_spacers = 0 # count spacers in the current array
     last_contig = False
@@ -237,7 +319,7 @@ def identify_same_array_hits(blast_entries, args):
     last_strand = False # store orientation of last repeat
     for entry in blast_entries:
         if last_loc:
-            if last_loc > entry.sstart - 150 and last_strand == entry.strand and last_contig == entry.sseqid:
+            if last_loc > entry.sstart - args.rep_interval and last_strand == entry.strand and last_contig == entry.sseqid:
                 this_array.append(entry)
                 last_loc = entry.sstart
                 if entry == blast_entries[-1]:
@@ -291,27 +373,31 @@ parser.add_argument(
     )
 parser.add_argument(
     "-e", dest="evalue", required = False, default='10',
-    help="set the evalue cutoff below which blastn will keep blast hits when looking for CRISPR repeats in your blast database. Useful for reducing inclusion of low quality blast hits with big databases in combination with the -m option."
+    help="DEFAULT: 10. set the evalue cutoff below which blastn will keep blast hits when looking for CRISPR repeats in your blast database. Useful for reducing inclusion of low quality blast hits with big databases in combination with the -m option."
     )
 parser.add_argument(
     "-m", dest="max_target_seqs", required = False, default='10000',
-    help="Set the max_target_seqs option for blastn when looking for CRISPR repeats in your blast database. Blast stops looking for hits after finding and internal limit (N_i) sequences for each query sequence, where N_i=2*N+50. These are just the first N_i sequences with better evalue scores than the cutoff, not the best N_i hits. Because of the nature of the blast used here (small number of queries with many expected hits) it may be necessary to increase the max_target_seqs value to avoid blast ceasing to search for repeats before all have been found. The blast default value is 500. The default used here is 10,000. You may want to reduce it to increase speed or increase it to make sure every repeat is being found. If increasing this value (e.g. doubling it) finds no new spacers then you can be confident that this is not an issue with your dataset."
+    help="DEFAULT: 10000. Set the max_target_seqs option for blastn when looking for CRISPR repeats in your blast database. Blast stops looking for hits after finding and internal limit (N_i) sequences for each query sequence, where N_i=2*N+50. These are just the first N_i sequences with better evalue scores than the cutoff, not the best N_i hits. Because of the nature of the blast used here (small number of queries with many expected hits) it may be necessary to increase the max_target_seqs value to avoid blast ceasing to search for repeats before all have been found. The blast default value is 500. The default used here is 10,000. You may want to reduce it to increase speed or increase it to make sure every repeat is being found. If increasing this value (e.g. doubling it) finds no new spacers then you can be confident that this is not an issue with your dataset."
     )
 parser.add_argument(
-    "-t", dest="num_threads", required = False, default='1',
-    help="Number of threads you want to use for the blastn step of this script."
+    "-t", dest="num_threads", required = False, default=1, type=int,
+    help="DEFAULT: 1. Number of threads you want to use for the blastn step of this script."
     )
 parser.add_argument(
     "-p", dest="regex_pattern", required = True,
     help="In order to identify which genome a spacer was found in, put the genome id in your genome files fasta headers before making the blast db and then provide a regex pattern that can extract that id from the fasta header here. e.g. for the fasta header: >animaloris_GCA_900637855.1_LR134440.1 the genome id (animaloris_GCA_900637855.1) can be extracted with [A-Za-z]+_GCA_[0-9]+\.[0-9]"
     )
 parser.add_argument(
-    "-q", dest="regex_type", required = True, default='P',
-    help="Regex type declaration option for grep (e.g. E, P, etc). Your regex pattern will be used with grep to find genome names in the .nhr file of your blast database. If you want to use regex patterns like \d+ you need to use the P option for Perl regex. Test your regex using the function 'grep -haoP' or 'grep -haoE' etc with your regex pattern against the nhr file in your blastdb."
+    "-q", dest="regex_type", required = False, default='P',
+    help="DEFAULT: P. Regex type declaration option for grep (e.g. E, P, etc). Your regex pattern will be used with grep to find genome names in the .nhr file of your blast database. If you want to use regex patterns like \d+ you need to use the P option for Perl regex. Test your regex using the function 'grep -haoP' or 'grep -haoE' etc with your regex pattern against the nhr file in your blastdb."
     )
 parser.add_argument(
     "-x", dest="other_blast_options", required = False, default='',
-    help="If you want to include any other options to control the blastn command, you can add them here. Options you should not provide here are: blastn -query -db -task -outfmt -num_threads -max_target_seqs -evalue"
+    help="DEFAULT: none. If you want to include any other options to control the blastn command, you can add them here. Options you should not provide here are: blastn -query -db -task -outfmt -num_threads -max_target_seqs -evalue"
+    )
+parser.add_argument(
+    "-i", dest="rep_interval", required = False, default=80, type=int,
+    help="DEFAULT: 80. Set the expected interval between the start position of your repeats. Any repeats identified further apart from this on the same strand of the same contig will be considered a different array and the sequence between them will not be stored as a spacer. e.g. if your repeats are 28 bases and your spacers 32, you would expect 60 bases between the start of a repeat and the start of the following repeat. In that case a setting of 70 would allow some wiggle room, but would cut the array if more than 10 bases more than expected separated the repeats."
     )
 
 
@@ -319,7 +405,7 @@ args = parser.parse_args(sys.argv[1:])
 
 outdir = args.outdir + '/' if args.outdir[-1] != '/' else args.outdir
 
-# Find the names of all the genomes being searched by looking for the user-provided regex in the blast-db .nhr files.
+# Find the names of all the genomes being searched by looking for the user-provided regex in the blast-db sequence IDs.
 # for all genomes, start their entry in the genome_CRISPR_dict with the placeholder False. This indicated no CRISPRs found.
 # If a CRISPR array is found later this entry will be overwritten with infor about the arrays.
 genome_CRISPR_dict = { k : ['False'] for k in subprocess.run("blastdbcmd -db {} -entry all -outfmt '\%a' | grep -o{} '{}' | sort | uniq".format(args.blast_db_path, args.regex_type, args.regex_pattern), shell=True, universal_newlines = True, capture_output=True).stdout.split('\n') if len(k) > 0} 
@@ -332,50 +418,45 @@ spacer_dict = {}
 spacer_count_dict = defaultdict(int)
 array_dict = {}
 array_count = 0
-
-# with open("temp.pkl", 'wb') as fout:
-#     pickle.dump(all_arrays, fout)
-
-# sys.exit()
-
-# with open("temp.pkl", "rb") as fin:
-#     all_arrays = pickle.load(fin)
-
-
-for i, array in enumerate(all_arrays):
-    for spacer in array.spacers:
-        if spacer in spacer_dict.keys():
-            all_arrays[i].spacer_ids.append(spacer_dict[spacer])
-        else:
-            spacer_count_dict[array.repeat_id] +=1
-            spacer_dict[spacer] = 'rep_' + array.repeat_id + '_sp_' + str(spacer_count_dict[array.repeat_id])
-            all_arrays[i].spacer_ids.append(spacer_dict[spacer])
-            
-    if tuple(array.spacer_ids) in array_dict.keys():
-        all_arrays[i].array_id = array_dict[tuple(array.spacer_ids)]
-    else:
-        array_count += 1
-        all_arrays[i].array_id = array_count
-        array_dict[tuple(array.spacer_ids)] = array_count
-
 genome_arrays = defaultdict(list) # list of arrays present in each genome
 array_genomes = defaultdict(list) # list of genomes with this array
 spacer_genomes = defaultdict(list) # list of genomes with this spacers
 
-for array in all_arrays:
-    genome_arrays[array.genome].append(array)
-    array_genomes[array.array_id].append(array.genome)
-    for spacer in array.spacer_ids:
-        spacer_genomes[spacer].append(array.genome)
+if len(all_arrays) > 0:
+
+    for i, array in enumerate(all_arrays):
+        for spacer in array.spacers:
+            if spacer in spacer_dict.keys():
+                all_arrays[i].spacer_ids.append(spacer_dict[spacer])
+            else:
+                spacer_count_dict[array.repeat_id] +=1
+                spacer_dict[spacer] = 'rep_' + array.repeat_id + '_sp_' + str(spacer_count_dict[array.repeat_id])
+                all_arrays[i].spacer_ids.append(spacer_dict[spacer])
+                
+        if tuple(array.spacer_ids) in array_dict.keys():
+            all_arrays[i].array_id = array_dict[tuple(array.spacer_ids)]
+        else:
+            array_count += 1
+            all_arrays[i].array_id = array_count
+            array_dict[tuple(array.spacer_ids)] = array_count
 
 
-for genome, arrays in genome_arrays.items():
-    n_arrays = str(len(arrays))
-    spacers_list = "\t".join(["{}: {}".format(i+1, " ".join(array.spacers)) for i, array in enumerate(arrays)])
-    spacer_id_list = "\t".join(["{}: {}".format(i+1, " ".join(array.spacer_ids)) for i, array in enumerate(arrays)])
-    array_id_list = "\t".join(["{}: {}".format(i+1, array.array_id) for i, array in enumerate(arrays)])
-    array_locs = "\t".join(["{}: {} {} {}".format(i+1, array.contig, array.start, array.stop) for i, array in enumerate(arrays)])
-    genome_CRISPR_dict[genome] = ['True', n_arrays, spacers_list, spacer_id_list, array_id_list, array_locs]
+
+    for array in all_arrays:
+        genome_arrays[array.genome].append(array)
+        array_genomes[array.array_id].append(array.genome)
+        for spacer in array.spacer_ids:
+            spacer_genomes[spacer].append(array.genome)
+
+
+    for genome, arrays in genome_arrays.items():
+        n_arrays = str(len(arrays))
+        spacers_list = "\t".join(["{}: {}".format(i+1, " ".join(array.spacers)) for i, array in enumerate(arrays)])
+        spacer_id_list = "\t".join(["{}: {}".format(i+1, " ".join(array.spacer_ids)) for i, array in enumerate(arrays)])
+        array_id_list = "\t".join(["{}: {}".format(i+1, array.array_id) for i, array in enumerate(arrays)])
+        array_locs = "\t".join(["{}: {} {} {}".format(i+1, array.contig, array.start, array.stop) for i, array in enumerate(arrays)])
+        genome_CRISPR_dict[genome] = ['True', n_arrays, spacers_list, spacer_id_list, array_id_list, array_locs]
+
 
 outcontents = ["Genome,Has_CRISPR,Array_count,Spacers,Spacer_IDs,Array_IDs,Array_locations"]
 
