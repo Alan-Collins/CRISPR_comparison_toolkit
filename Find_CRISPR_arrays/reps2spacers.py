@@ -118,7 +118,7 @@ def rev_comp(string):
 
 
 def run_blastcmd(db, seqid, start, stop, strand):
-    x = subprocess.run("blastdbcmd -db {} -entry {} -range {}-{} -strand {}".format(db, seqid, start, stop, strand), shell=True, universal_newlines = True, capture_output=True)
+    x = subprocess.run("blastdbcmd -db {} -entry {} -range {}-{} -strand {}".format(db, seqid, start, stop, strand), shell=True, universal_newlines = True, capture_output=True) 
     if x.stderr:
         print("ERROR running blastdbcmd on {}:\n{}".format(db, x.stderr))
         sys.exit()
@@ -167,7 +167,7 @@ def build_arrays_MP(array_entry):
 
 def blastn_to_arrays(args):
     
-    blastn_command = "blastn -query {} -db {} -task blastn-short -outfmt '6 std qlen slen' -num_threads {} -max_target_seqs {} -evalue {} {}".format(args.repeats_file, args.blast_db_path, args.numthreads, args.max_target_seqs, args.evalue, args.other_blast_options)
+    blastn_command = "blastn -query {} -db {} -task blastn-short -outfmt '6 std qlen slen' -num_threads {} -max_target_seqs {} -evalue {} {}".format(args.repeats_file, args.blast_db_path, args.num_threads, args.max_target_seqs, args.evalue, args.other_blast_options)
     blast_run = subprocess.run(blastn_command, shell=True, universal_newlines = True, capture_output=True)
     # blast_lines = [blast_result(i) for i in subprocess.run(blastn_command, shell=True, universal_newlines = True, capture_output=True).stdout.split('\n') if len(i) > 0]
     if blast_run.stderr:
@@ -201,7 +201,7 @@ def blastn_to_arrays(args):
     arrays = []
 
     if len(array_entries) > 0:
-        arrays.append(pool_MP_spacer_finder(array_entries, args.num_threads, int(len(array_entries)//args.num_threads)))
+        arrays.append(pool_MP_spacer_finder(array_entries, args.num_threads, int(len(array_entries)//int(args.num_threads))))
 
     return arrays
 
@@ -302,7 +302,8 @@ outdir = args.outdir + '/' if args.outdir[-1] != '/' else args.outdir
 # Find the names of all the genomes being searched by looking for the user-provided regex in the blast-db .nhr files.
 # for all genomes, start their entry in the genome_CRISPR_dict with the placeholder False. This indicated no CRISPRs found.
 # If a CRISPR array is found later this entry will be overwritten with infor about the arrays.
-genome_CRISPR_dict = { k : ['False'] for k in subprocess.run("grep -hao{} '{}' {}*.nhr | sort -u".format(args.regex_type, args.regex_pattern, args.blast_db_path), shell=True, universal_newlines = True, capture_output=True).stdout.split('\n') if len(k) > 0} 
+genome_CRISPR_dict = { k : ['False'] for k in subprocess.run("blastdbcmd -db {} -entry all -outfmt '\%a' | grep -o{} '{}' | sort | uniq".format(args.blast_db_path, args.regex_type, args.regex_pattern), shell=True, universal_newlines = True, capture_output=True).stdout.split('\n') if len(k) > 0} 
+
 
 
 all_arrays = []
