@@ -89,7 +89,6 @@ class array_class():
         self.contig = ''
         self.start = 0
         self.stop = 0
-        self.repeats = []
         self.repeat_id = ''
         self.spacers = []
         self.spacer_ids = []
@@ -146,8 +145,6 @@ def build_arrays_MP(array_entry):
             array.start = array_entry[-1].send
             array.stop = array_entry[0].sstart
             for i, entry in enumerate(array_entry):
-                rep = run_blastcmd(args.blast_db_path, entry.sseqid, entry.sstart, entry.send, entry.strand)
-                array.repeats.append(rep)
                 if i+1 != n_reps:
                     spacer = run_blastcmd(args.blast_db_path, entry.sseqid, entry.send+1, array_entry[i+1].sstart-1, entry.strand)
                     array.spacers.append(spacer)
@@ -156,8 +153,6 @@ def build_arrays_MP(array_entry):
             array.start = array_entry[0].send
             array.stop = array_entry[-1].sstart
             for i, entry in enumerate(reversed(array_entry)):
-                rep = run_blastcmd(args.blast_db_path, entry.sseqid, entry.sstart, entry.send, entry.strand)
-                array.repeats.append(rep)
                 if i+1 != n_reps:
                     spacer = run_blastcmd(args.blast_db_path, entry.sseqid, array_entry[-(i+2)].send+1, entry.sstart-1, entry.strand)
                     array.spacers.append(spacer)
