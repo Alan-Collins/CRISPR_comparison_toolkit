@@ -120,7 +120,7 @@ def rev_comp(string):
 def run_blastcmd(db, seqid, start, stop, strand):
     x = subprocess.run("blastdbcmd -db {} -entry {} -range {}-{} -strand {}".format(db, seqid, start, stop, strand), shell=True, universal_newlines = True, capture_output=True) 
     if x.stderr:
-        print("ERROR running blastdbcmd on {}:\n{}".format(db, x.stderr))
+        print("ERROR running blastdbcmd on {} {} {} {} {}:\n{}".format(db, seqid, start, stop, strand, x.stderr))
         sys.exit()
     else:
         return x.stdout.split('\n')[1]
@@ -146,7 +146,6 @@ def build_arrays_MP(array_entry):
             array.start = array_entry[-1].send
             array.stop = array_entry[0].sstart
             for i, entry in enumerate(array_entry):
-
                 rep = run_blastcmd(args.blast_db_path, entry.sseqid, entry.sstart, entry.send, entry.strand)
                 array.repeats.append(rep)
                 if i+1 != n_reps:
