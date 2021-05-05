@@ -2,8 +2,8 @@
 
 
 # AUTHOR        :    ALAN COLLINS
-# VERSION       :    v1.3.1
-# DATE          :    2021-4-25
+# VERSION       :    v1.4
+# DATE          :    2021-5-5
 # DESCRIPTION   :    Given fasta CRISPR repeats and a blast db of genomes, pulls out spacer arrays of >= 2 spacers
 # CHANGELOG
 # V1.1 
@@ -20,24 +20,22 @@
 #   Added stderr catching and error printing for blastn and blastdbcmd run in case it fails.
 # v1.3.1
 #   Fixed issue handling large blastdbs that are split over multiple .nhr files.
+# v1.4
+#   Added e-value cutoff and max_target_seqs options to the blastn step so that blast doesn't stop looking for repeats prematurely with large databases.
+#   Added argparse options to control thread count, evalue, and max_target_seqs blast options
+
 
 import sys
 import os
 import argparse
-import textwrap as _textwrap
 import subprocess
 import re
 from collections import defaultdict
 
-class LineWrapRawTextHelpFormatter(argparse.RawDescriptionHelpFormatter):
-    """
-    Short function for argparse that wraps text properly when printing to terminal
-    """
-    def _split_lines(self, text, width):
-        text = self._whitespace_matcher.sub(' ', text).strip()
-        return _textwrap.wrap(text, width)
+
 
 class blast_result():
+
     def __init__(self, blast_line):
         bits = blast_line.split('\t')
         self.qseqid = bits[0]
@@ -124,13 +122,13 @@ def run_blastcmd(db, seqid, start, stop, strand):
         return x.stdout.split('\n')[1]
 
 
-def blastn_to_arrays(query, db, pattern):
+def blastn_to_arrays(args):
     
-    blastn_command = "blastn -query {} -db {} -task blastn-short -outfmt '6 std qlen slen'".format(query, db)
+    blastn_command = "blastn -query {} -db {} -task blastn-short -outfmt '6 std qlen slen' -num_threads {} -max_target_seqs {} -evalue {} {}".format(args.repeats_file, args.blast_db_path, args.numthreads, args.max_target_seqs, args.evalue, args.other_blast_options)
     blast_run = subprocess.run(blastn_command, shell=True, universal_newlines = True, capture_output=True)
     # blast_lines = [blast_result(i) for i in subprocess.run(blastn_command, shell=True, universal_newlines = True, capture_output=True).stdout.split('\n') if len(i) > 0]
     if blast_run.stderr:
-        print("ERROR running blast on {}:\n{}".format(db, blast_run.stderr))
+        print("ERROR running blast on {}:\n{}".format(args.blast_db_path, blast_run.stderr))
         sys.exit()
     blast_lines = [blast_result(i) for i in blast_run.stdout.split('\n') if len(i) > 0]
     
@@ -161,7 +159,7 @@ def blastn_to_arrays(query, db, pattern):
     if len(array_entries) > 0:
         for a in array_entries: # a[0] is the first repeat in the array. a[-1] is the last
             array = array_class()
-            array.genome = re.match(pattern, a[0].sseqid)[0]
+            array.genome = re.match(args.regex_pattern, a[0].sseqid)[0]
             n_reps = len(a)
             array.repeat_id = a[0].qseqid
             array.contig = a[0].sseqid
@@ -170,20 +168,20 @@ def blastn_to_arrays(query, db, pattern):
                 array.stop = a[0].sstart
                 for i, entry in enumerate(a):
 
-                    rep = run_blastcmd(db, entry.sseqid, entry.sstart, entry.send, entry.strand)
+                    rep = run_blastcmd(args.blast_db_path, entry.sseqid, entry.sstart, entry.send, entry.strand)
                     array.repeats.append(rep)
                     if i+1 != n_reps:
-                        spacer = run_blastcmd(db, entry.sseqid, entry.send+1, a[i+1].sstart-1, entry.strand)
+                        spacer = run_blastcmd(args.blast_db_path, entry.sseqid, entry.send+1, a[i+1].sstart-1, entry.strand)
                         array.spacers.append(spacer)
             
             else:
                 array.start = a[0].send
                 array.stop = a[-1].sstart
                 for i, entry in enumerate(reversed(a)):
-                    rep = run_blastcmd(db, entry.sseqid, entry.sstart, entry.send, entry.strand)
+                    rep = run_blastcmd(args.blast_db_path, entry.sseqid, entry.sstart, entry.send, entry.strand)
                     array.repeats.append(rep)
                     if i+1 != n_reps:
-                        spacer = run_blastcmd(db, entry.sseqid, a[-(i+2)].send+1, entry.sstart-1, entry.strand)
+                        spacer = run_blastcmd(args.blast_db_path, entry.sseqid, a[-(i+2)].send+1, entry.sstart-1, entry.strand)
                         array.spacers.append(spacer)
 
             arrays.append(array)
@@ -241,8 +239,7 @@ def identify_same_array_hits(blast_entries):
     return arrays
 
 parser = argparse.ArgumentParser(
-    description="Given fasta CRISPR repeats and a blast db of genomes, pulls out spacer arrays of >= 2 spacers",
-    formatter_class=LineWrapRawTextHelpFormatter)
+    description="Given fasta CRISPR repeats and a blast db of genomes, pulls out spacer arrays of >= 2 spacers")
 parser.add_argument(
     "-r", dest="repeats_file", required = True,
     help=""
@@ -256,8 +253,24 @@ parser.add_argument(
     help="path to directory you want output files saved in"
     )
 parser.add_argument(
+    "-e", dest="evalue", required = False, default='1e-5',
+    help="set the evalue cutoff below which blastn will keep blast hits when looking for CRISPR repeats in your blast database. Useful for reducing inclusion of low quality blast hits with big databases in combination with the -m option."
+    )
+parser.add_argument(
+    "-m", dest="max_target_seqs", required = False, default='10000',
+    help="Set the max_target_seqs option for blastn when looking for CRISPR repeats in your blast database. Blast stops looking for hits after finding and internal limit (N_i) sequences for each query sequence, where N_i=2*N+50. These are just the first N_i sequences with better evalue scores than the cutoff, not the best N_i hits. Because of the nature of the blast used here (small number of queries with many expected hits) it may be necessary to increase the max_target_seqs value to avoid blast ceasing to search for repeats before all have been found. The blast default value is 500. The default used here is 10,000. You may want to reduce it to increase speed or increase it to make sure every repeat is being found. If increasing this value (e.g. doubling it) finds no new spacers then you can be confident that this is not an issue with your dataset."
+    )
+parser.add_argument(
+    "-t", dest="num_threads", required = False, default='1'
+    help="Number of threads you want to use for the blastn step of this script."
+    )
+parser.add_argument(
     "-p", dest="regex_pattern", required = True,
     help="In order to identify which genome a spacer was found in, put the genome id in your genome files fasta headers before making the blast db and then provide a regex pattern that can extract that id from the fasta header here. e.g. for the fasta header: >animaloris_GCA_900637855.1_LR134440.1 the genome id (animaloris_GCA_900637855.1) can be extracted with [A-Za-z]+_GCA_[0-9]+\.[0-9]"
+    )
+parser.add_argument(
+    "-x", dest="other_blast_options", required = False, default=''
+    help="If you want to include any other options to control the blastn command, you can add them here. Options you should not provide here are: blastn -query -db -task -outfmt -num_threads -max_target_seqs -evalue"
     )
 
 
@@ -273,7 +286,7 @@ genome_CRISPR_dict = { k : ['False'] for k in subprocess.run("grep -haoE '{}' {}
 
 all_arrays = []
 
-all_arrays += blastn_to_arrays(args.repeats_file, args.blast_db_path, args.regex_pattern)
+all_arrays += blastn_to_arrays(args)
 
 
 spacer_dict = {}
