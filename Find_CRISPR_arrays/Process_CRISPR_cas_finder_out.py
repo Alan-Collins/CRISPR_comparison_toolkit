@@ -7,25 +7,13 @@
 
 import sys
 import argparse
-import textwrap as _textwrap
 import json
 import os
 import xml.etree.ElementTree as Et
 
-# local packages
-
-import rev_comp
-import hamming_dist
 
 
 
-class LineWrapRawTextHelpFormatter(argparse.RawDescriptionHelpFormatter):
-	"""
-	Short function for argparse that wraps text properly when printing to terminal
-	"""
-	def _split_lines(self, text, width):
-		text = self._whitespace_matcher.sub(' ', text).strip()
-		return _textwrap.wrap(text, width)
 
 parser = argparse.ArgumentParser(
 	description="Script to process json files output by CRISPR-cas finder and summarize them in various human-readable files.",
@@ -53,13 +41,13 @@ def get_repeat_info(CRISPR_types_dict, repeat):
 	best_match = ''
 	reverse = False
 	for k,v in CRISPR_types_dict.items():
-		score = min(hamming_dist.hamming(repeat, v))
+		score = min(hamming(repeat, v))
 		if score < best_score:
 			best_score = score
 			best_match = k
 			reverse = False
 
-		score = min(hamming_dist.hamming(rev_comp.rev_comp(repeat), v))
+		score = min(hamming(rev_comp(repeat), v))
 		if score < best_score:
 			best_score = score
 			best_match = k
@@ -88,6 +76,45 @@ def fasta_to_dict(FASTA_file):
 
 	return fasta_dict
 
+
+def hamming(string1, string2):
+	dist, distplus1, distminus1 = 0,0,0
+	string1plus1 = string1[1:]
+	string2plus1 = string2[1:]
+	for i in range(max(len(string1), len(string2))):
+		if i < len(string1) and i < len(string2):
+			if string1[i] != string2[i]:
+				dist += 1
+		else:
+			dist += 1
+	
+	for i in range(max(len(string1plus1), len(string2))):
+		if i < len(string1plus1) and i < len(string2):
+			if string1plus1[i] != string2[i]:
+				distplus1 += 1
+		else:
+			distplus1 += 1
+	
+	for i in range(max(len(string1), len(string2plus1))):
+		if i < len(string1) and i < len(string2plus1):
+			if string1[i] != string2plus1[i]:
+				distminus1 += 1
+		else:
+			distminus1 += 1
+
+	return dist, distplus1, distminus1
+
+
+def rev_comp(string):
+	rev_str = ''
+	rev_comp_lookup = {"A" : "T", "T" : "A", "C" : "G", "G" : "C", "a" : "t", "t" : "a", "c" : "g", "g" : "c"}
+	for i in reversed(string):
+		if i in "ATCGatcg":
+			rev_str += rev_comp_lookup[i]
+		else:
+			rev_str += i
+	return rev_str
+	
 
 args = parser.parse_args(sys.argv[1:])
 
@@ -179,18 +206,18 @@ for indir in args.indirs:
 										nspacers_seen += 1
 
 					else:
-						results[isolate_id][array_num]['DR_Consensus'] = rev_comp.rev_comp(j["DR_Consensus"])
+						results[isolate_id][array_num]['DR_Consensus'] = rev_comp(j["DR_Consensus"])
 						for k in reversed(j['Regions']):
 							if 'FLANK' in k['Type']:
 								if k['Leader'] == 1:
-									results[isolate_id][array_num]['Leader'] = rev_comp.rev_comp(k['Sequence'])
+									results[isolate_id][array_num]['Leader'] = rev_comp(k['Sequence'])
 							else:	
-								results[isolate_id][array_num][k['Type']].append(rev_comp.rev_comp(k['Sequence']))
+								results[isolate_id][array_num][k['Type']].append(rev_comp(k['Sequence']))
 								if k['Type'] == 'Spacer':
-									if rev_comp.rev_comp(k['Sequence']) in spacers.keys():
-										results[isolate_id][array_num]['Spacer_encoded'].append(str(spacers[rev_comp.rev_comp(k['Sequence'])]))
+									if rev_comp(k['Sequence']) in spacers.keys():
+										results[isolate_id][array_num]['Spacer_encoded'].append(str(spacers[rev_comp(k['Sequence'])]))
 									else:
-										spacers[rev_comp.rev_comp(k['Sequence'])] = nspacers_seen
+										spacers[rev_comp(k['Sequence'])] = nspacers_seen
 										results[isolate_id][array_num]['Spacer_encoded'].append(str(nspacers_seen))
 										nspacers_seen += 1
 					# array stuff
