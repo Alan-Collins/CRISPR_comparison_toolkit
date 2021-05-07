@@ -18,15 +18,7 @@ import re
 import os
 import sys
 import subprocess
-import textwrap as _textwrap
 
-class LineWrapRawTextHelpFormatter(argparse.RawDescriptionHelpFormatter):
-	"""
-	Short function for argparse that wraps text properly when printing to terminal
-	"""
-	def _split_lines(self, text, width):
-		text = self._whitespace_matcher.sub(' ', text).strip()
-		return _textwrap.wrap(text, width)
 
 
 class MincedObj():
@@ -153,9 +145,6 @@ def mince_it(minced_path, genomes_dir, out_dir):
 
 		command = minced_path + " " + genomefile + " " + minced_out + accession + "_minced_out.txt"
 		p = subprocess.Popen(command, shell=True)
-
-		# This makes it wait until the last command finishes running before running the next one.
-		# Without this your computer will endlessly start running things and run out of resources.
 		p_status = p.wait()
 
 
@@ -335,8 +324,7 @@ def process_minced_out(CRISPR_types_dict, out_dir):
 if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser(
-		description="Runs minced and processes the output into a spacer multifasta and summary tables describing which genomes have which CRISPRs",
-		formatter_class=LineWrapRawTextHelpFormatter)
+		description="Runs minced and processes the output into a spacer multifasta and summary tables describing which genomes have which CRISPRs")
 	parser.add_argument(
 		"-i",  dest="indir", required = False,
 		help="Specify the input directory containing genome fastas. "
@@ -375,7 +363,7 @@ if __name__ == '__main__':
 	if args.repeats_file:
 		CRISPR_types_dict = fasta_to_dict(args.repeats_file)
 	else:
-		CRISPR_types_dict = { #Specify the desired orientation and type of all repeats you are interested in here
+		CRISPR_types_dict = { #Specify the desired orientation and type of all repeats you are interested in here or provide them as a fasta file.
 		'1E':'GTGTTCCCCACGGGTGTGGGGATGAACCG',
 		'1F':'GTTCACTGCCGTGTAGGCAGCTAAGAAA',
 		'1C':'GTCGCGCCCCGCACGGGCGCGTGGATTGAAAC'
