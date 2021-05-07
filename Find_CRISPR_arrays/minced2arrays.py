@@ -20,9 +20,27 @@ import sys
 import subprocess
 
 
-
 class MincedObj():
-	"""Class for reading and storing contents of minced output"""
+	"""Class for reading and storing contents of minced output.
+
+		Args:
+			CRISPR_types_dict (dict): dictionary of fasta sequence of CRISPR repeats to compare to minced-identified repeats
+			minced_file (str): Path to the minced output file to parse into this class instance
+
+		Attributes:
+			accession (str): name of file (up to extension) that minced was run on
+			array_count (int): number of distinct arrays identified
+			array_ids (dict): ID numbers of each array {Array_number : ID number}
+			array_locations (dict): Locations of each array {Array_number : [contig, start, stop]}
+			array_orientations (dict): dict of array numbers and bool of whether they are in the reverse direction {Array_number : reverse?}
+			array_sizes (dict): Number of spacers in each array {Array_number : Spacer_count}
+			arrays (dict): Sequences of spacers in each array {Array_number : [Spacer_sequences]}
+			arrays_encoded (dict): ID numbers of spacers in each array {Array_number : [Spacer_IDs]}
+			has_CRISPR (bool): Whether any CRISPR arrays were identified
+			repeat (dict): For each array, the seqeunce of the mose common repeat {Array_number : repeat_sequence}
+			repeat_scores (dict): For each array, the hamming distance when compared to the most similar repeat in the provided repeats file {Array_number : hammind_dist}
+			repeat_types (dict): For each array, the most similar repeat in the provided repeats file {Array_number : repeat_type}
+	"""
 	def __init__(self, CRISPR_types_dict, minced_file):
 		self.accession = minced_file.split("/")[-1].split("_minced")[0]
 		if os.stat(minced_file).st_size == 0:
@@ -58,7 +76,7 @@ class MincedObj():
 						repeats.append(re.match(r'\d+\s+(\w+)\s+', line)[1])
 						spacers.append(re.match(r'\d+\s+\w+\s+(\w+)\s+', line)[1])
 					if "Repeats" in line:
-						repeat = most_common(repeats)
+						repeat = max(set(repeats), key=repeats.count)
 						self.repeat_types[array_num], self.repeat_scores[array_num], self.array_orientations[array_num] = get_repeat_info(CRISPR_types_dict, repeat)
 						if self.array_orientations[array_num]:
 							self.repeat[array_num] = rev_comp.rev_comp(repeat)
@@ -72,6 +90,14 @@ class MincedObj():
 
 
 def fasta_to_dict(FASTA_file):
+	"""Read a fasta file into a dict with the headers (minus the > symbol) as keys and the associated sequence as values.
+	
+		Args:
+			FASTA_file (str): path to fasta format file
+	
+		Returns:
+			dict: dict of format {fasta_header : sequence}
+	"""
 	fasta_dict = {}
 	with open(FASTA_file, 'r') as f:
 		multifasta = f.read()
@@ -93,6 +119,14 @@ def fasta_to_dict(FASTA_file):
 
 
 def rev_comp(string):
+	"""Reverse complement a string of nucleotide sequence
+	
+		Args:
+			string (str): Nucleotide sequence
+	
+		Returns:
+			str: reverse complement of given nucleotide sequence
+	"""
 	rev_str = ''
 	rev_comp_lookup = {"A" : "T", "T" : "A", "C" : "G", "G" : "C", "a" : "t", "t" : "a", "c" : "g", "g" : "c"}
 	for i in reversed(string):
@@ -104,6 +138,19 @@ def rev_comp(string):
 
 
 def hamming(string1, string2):
+	"""Calculate hamming distance between two sequences. Compare them as provided, and with one sequence
+	shifted one position to the left, and with the other sequence shifted one to the left.
+	
+		Args:
+			string1 (str): First sequence to be compared
+			string2 (str): Second sequence to be compared
+	
+		Returns:
+			tuple:
+				dist (int): the hamming distance of the unadjusted sequences
+				distplus1 (int): the hamming distance of the first sequence shifted
+				distminus1 (int): the hamming distance of the econd sequence shifted
+	"""
 	dist, distplus1, distminus1 = 0,0,0
 	string1plus1 = string1[1:]
 	string2plus1 = string2[1:]
@@ -132,6 +179,13 @@ def hamming(string1, string2):
 
 
 def mince_it(minced_path, genomes_dir, out_dir):
+	"""Run minced on the files in your input directory
+	
+		Args:
+			minced_path (str): Path to the minced executable
+			genomes_dir (str): path to the genomes you want to run minced on
+			out_dir (str): path to the directory you want to save minced output files. A dir called MINCED/ will be created and files stored in there.
+	"""
 	minced_out = out_dir + "MINCED_OUT/"
 	if not os.path.isdir(out_dir):
 		os.mkdir(out_dir)
@@ -148,12 +202,20 @@ def mince_it(minced_path, genomes_dir, out_dir):
 		p_status = p.wait()
 
 
-def most_common(lst):
-    return max(set(lst), key=lst.count)
-
 
 def get_repeat_info(CRISPR_types_dict, repeat):
-
+	"""Figure out which of the repeats the user provides in the repeats fasta file is the most similar to the repeat found by minced
+	
+		Args:
+			CRISPR_types_dict (dict): fasta dict of the repeats fasta file as returned by fasta_to_dict
+			repeat (str): The repeat identified by minced for which you want to find a match
+	
+		Returns:
+			tuple: 
+				best_match (str): the fasta header of the user-provided repeat that is most similar to that found by minced
+				best_score (int): the hamming distance between the best match repeat and the minced-identified repeat
+				reverse (bool): Is the best match repeat the reverse complement of the identified repeat?
+	"""
 	best_score = 1000
 	best_match = ''
 	reverse = False
@@ -175,7 +237,14 @@ def get_repeat_info(CRISPR_types_dict, repeat):
 
 
 def process_minced_out(CRISPR_types_dict, out_dir):
-
+	"""Read in minced output files and aggregate the data into a more easily analysed form.
+	
+		Args:
+			CRISPR_types_dict (dict): fasta dict of the repeats fasta file as returned by fasta_to_dict
+			out_dir (str): Path to the output directory into which minced files were saved in the MINCED/ dir.
+						   A dir called PROCESSED will be created and the files generated from processed minced output
+						   will be stored there.
+	"""
 	Minced_out_dir = out_dir + "MINCED_OUT/" 
 	ProcessedOut = out_dir + "PROCESSED/"
 
