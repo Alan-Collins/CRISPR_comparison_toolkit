@@ -71,17 +71,26 @@ with open(args.array_reps, 'r') as fin:
 possible_hits = []
 
 for array1, array2 in permutations(list(array_rep_genomes.keys()), 2):
-	if array2 not in network_edges[array1]:
-		edge_overlap = set(network_edges[array1]).intersection(set(network_edges[array2]))
-		if len(edge_overlap) > 1:
-			for hit1, hit2 in permutations(edge_overlap, 2):
-				if hit2 not in network_edges[hit1]:
-					print("found a possible hit.")
-					print("In the first genome: ", array1, array2)
-					print("In the second genome: ", hit1, hit2)
-					command = "CRISPR_alignment_plot.py -a {} -o {}{}.png {}".format(args.Array_IDs, outdir, "_".join([array1, array2,hit1, hit2]), " ".join([array1, array2,hit1, hit2]))
-					run = subprocess.Popen(command, shell=True)
-					run.wait()
+	genome_overlap = set(array_rep_genomes[array1]).intersection(set(array_rep_genomes[array2]))
+	if len(genome_overlap) > 1:
+		if array2 not in network_edges[array1]:
+			edge_overlap = set(network_edges[array1]).intersection(set(network_edges[array2]))
+			if len(edge_overlap) > 1:
+				for hit1, hit2 in permutations(edge_overlap, 2):
+					hit_genome_overlap = set(array_rep_genomes[hit1]).intersection(set(array_rep_genomes[hit2]))
+					if hit2 not in network_edges[hit1]:
+						with open("{}{}.txt".format(outdir, "_".join([array1, array2,hit1, hit2]))) as fout:
+							fout.write("Arrays {} and {} were found in these genomes: {}\n\
+								Connected arrays {} and {} were found in genomes {}\n".format(
+									array1, array2, " ".join(genome_overlap),
+									hit1, hit2, " ".join(hit_genome_overlap)))
+
+						print("found a possible hit.")
+						print("In the first genome: ", array1, array2)
+						print("In the second genome: ", hit1, hit2)
+						command = "CRISPR_alignment_plot.py -a {} -o {}{}.png {}".format(args.Array_IDs, outdir, "_".join([array1, array2,hit1, hit2]), " ".join([array1, array2,hit1, hit2]))
+						run = subprocess.Popen(command, shell=True)
+						run.wait()
 			
 
 
