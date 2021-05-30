@@ -21,6 +21,8 @@
 import sys
 import argparse
 from collections import defaultdict
+from itertools import permutations
+import subprocess
 
 parser = argparse.ArgumentParser(
 	description="Identify CRISPR arrays that may have undergone recombination with another array in the same genome.")
@@ -36,10 +38,15 @@ parser.add_argument(
 	"-i", dest="Array_IDs", required = True,
 	help="Array IDs file with 1 array per line, array ID in the first column and spacer IDs or sequences in subsequent columns."
 	)
+parser.add_argument(
+	"-o", dest="outdir", required = True,
+	help="Path to location you want output files written."
+	)
 
 
 args = parser.parse_args(sys.argv[1:])
 
+outdir = args.outdir + '/' if args.outdir[-1] != '/' else args.outdir
 
 network_edges = defaultdict(list)
 
@@ -60,3 +67,20 @@ with open(args.array_reps, 'r') as fin:
 		array_rep_genomes[line.split()[0]] = line.split()[1:]
 
 # print(list(array_rep_genomes.items())[:5])
+
+possible_hits = []
+
+for array1, array2 in permutations(list(array_rep_genomes.keys()), 2):
+	if array2 not in network_edges[array1]:
+		edge_overlap = set(network_edges[array1]).intersection(set(network_edges[array2]))
+		if len(edge_overlap) > 1:
+			for hit1, hit2 in permutations(edge_overlap, 2):
+				print("found a possible hit.")
+				print("In the first genome: ", array1, array2)
+				print("In the second genome: ", hit1, hit2)
+				command = "CRISPR_alignment_plot.py -a {} -o {}{}.png {}".format(args.Array_IDs, outdir, "_".join([array1, array2,hit1, hit2]), " ".join([array1, array2,hit1, hit2]))
+				run = subprocess.Popen(command, shell=True)
+				run.wait()
+			
+
+
