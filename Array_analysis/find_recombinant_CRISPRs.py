@@ -52,3 +52,11 @@ with open(args.network, 'r') as fin:
 		network_edges[array2].append(array1)
 
 # print(list(network_edges.items())[:1])
+
+array_rep_genomes = {}
+
+with open(args.array_reps, 'r') as fin:
+	for line in fin.readlines()[1:]:
+		array_rep_genomes[line.split()[0]] = line.split()[1:]
+
+# print(list(array_rep_genomes.items())[:5])
