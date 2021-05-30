@@ -20,8 +20,7 @@
 
 import sys
 import argparse
-import textwrap as _textwrap
-
+from collections import defaultdict
 
 parser = argparse.ArgumentParser(
 	description="Identify CRISPR arrays that may have undergone recombination with another array in the same genome.")
@@ -40,3 +39,16 @@ parser.add_argument(
 
 
 args = parser.parse_args(sys.argv[1:])
+
+
+network_edges = defaultdict(list)
+
+
+with open(args.network, 'r') as fin:
+	for line in fin.readlines()[1:]:
+		array1 = line.split()[0]
+		array2 = line.split()[2]
+		network_edges[array1].append(array2)
+		network_edges[array2].append(array1)
+
+# print(list(network_edges.items())[:1])
