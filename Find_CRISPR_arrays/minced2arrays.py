@@ -294,8 +294,12 @@ def process_minced_out(CRISPR_types_dict, out_dir):
 	with open(ProcessedOut + "Array_IDs.txt", 'w+') as f:
 		for k,v in non_red_array_dict.items():
 			f.write("%s\tspacer_IDs:\t%s\n" %(v," ".join([str(non_red_spacer_dict[i]) for i in k.split()])))
-			f.write("%s\tspacer_seq:\t%s\n" %(v,k))
 	f.close()
+
+	with open(ProcessedOut + "Array_seqs.txt", 'w+') as f:
+		for k,v in non_red_array_dict.items():
+			f.write("%s\tspacer_seq:\t%s\n" %(v,k))
+	f.close
 
 
 	with open(ProcessedOut + "CRISPR_summary_table.csv", 'w') as f:
