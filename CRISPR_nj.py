@@ -7,7 +7,7 @@
 
 import sys
 import argparse
-
+import numpy as np
 
 
 parser = argparse.ArgumentParser(
@@ -27,9 +27,19 @@ parser.add_argument(
 args = parser.parse_args(sys.argv[1:])
 
 
-array_dict = {}
-with open(args.array_file, 'r') as fin:
-	for line in fin.readlines():
-		bits = line.split()
-		array_dict[bits[0]] = bits[2:]
+
+def needle(seq1, seq2, match = 1, mismatch = -1, gap = -1):
+	"""
+	Args:
+		seq1 (str or list): First sequence of items to align.
+		seq2 (str or list): Second sequence of items to align
+		match (int): Score for match at a position in alignment.
+		mismatch(int): Penalty for mismatch at a position in alignment.
+		gap (int): Penalty for a gap at a position in alignment.
+	
+	Returns:
+		(tuple of str lists) Returns a tuple containing the input seq1 and seq2 aligned with '-' added as gaps.
+		If strings were given then strings are returned. If lists were given then lists are returned.
+
+	"""
 
