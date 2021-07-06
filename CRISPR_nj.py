@@ -43,3 +43,25 @@ def needle(seq1, seq2, match = 1, mismatch = -1, gap = -1):
 
 	"""
 
+	# Make a list of lists of 0s with dimensions x by y: list containing x lists of y 0s each.
+	grid = np.zeros((len(seq2)+1, len(seq1)+1))
+
+	# Fill in grid with scores for all possible alignments
+	# First score for no alignment (i.e. all gaps)
+	for i in range(len(seq1)+1):
+		grid[0][i] = gap*i
+	for i in range(len(seq2)+1):
+		grid[i][0] = gap*i
+
+	# Then score for each cell if you came to it from the nearest best cell/
+	for i in range(len(seq1)):
+		for j in range(len(seq2)):
+			if seq1[i] == seq2[j]:
+				score = match
+			else:
+				score = mismatch
+			grid[j+1][i+1] = max([grid[j][i]+score, grid[j+1][i]+gap, grid[j][i+1]+gap])
+
+	print(grid)
+
+print(needle("ATCG", "CCATGG"))
