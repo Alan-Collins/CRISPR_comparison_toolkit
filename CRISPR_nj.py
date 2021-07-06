@@ -142,6 +142,34 @@ def hamming(seq1, seq2):
 
 	return dist
 
-s1, s2 = needle(array_dict[args.arrays_to_join[0]], array_dict[args.arrays_to_join[1]])
 
-print(hamming(s1, s2))
+def make_dist_mat(seqs):
+	"""
+	Args:
+		seqs (list): List of sequences to be compared.
+	
+	Returns:
+		(numpy.array) numpy array of the pairwise distances between arrays.
+	"""
+
+	n = len(seqs)
+
+	grid = np.zeros((n,n))
+	
+	# Iterate across all combinations of arrays
+	for i in range(n):
+		for j in range(i+1, n):
+			seq1 = seqs[i]
+			seq2 = seqs[j]
+
+			aln1, aln2 = needle(seq1, seq2)
+			d = hamming(aln1, aln2)
+			# Assign distance to both parts of symetrical distance matrix
+			grid[i][j] = d
+			grid[j][i] = d
+
+	return grid
+
+
+arrays = [array_dict[i] for i in args.arrays_to_join]
+print(make_dist_mat(arrays))
