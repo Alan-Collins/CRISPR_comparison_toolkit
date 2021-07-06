@@ -16,7 +16,7 @@ Given the below cartooned alignments of CRISPR arrays, where:
 * Lines drawn between identical colours in arrays plotted adjacent help to highlight identical spacers
 * Thin black line in arrays indicate spacers unique to that array
 
-![Alignment of CRISPR arrays](https://https://github.com/Alan-Collins/CRISPR_tree/blob/master/images/alignment.png)
+![Alignment of CRISPR arrays](https://github.com/Alan-Collins/CRISPR_tree/blob/master/images/alignment.png)
 
 The CRISPR_nj.py script produces the following tree in newick format as well as an optional graphical representation produced by ete3:
 
