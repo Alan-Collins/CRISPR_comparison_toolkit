@@ -251,11 +251,16 @@ def make_new_dist_mat(old_mat, index):
 	return new_mat
 
 
-
-
 arrays = [array_dict[i] for i in args.arrays_to_join]
+labels = args.arrays_to_join
 dmat = make_dist_mat(arrays)
-qmat = make_q_mat(dmat)
-best_idx = find_best_pair(qmat)
-new_dmat = make_new_dist_mat(dmat, best_idx)
 
+while dmat.shape[0] > 1: # Keep joining neighbours until the tree is fully resolved
+	qmat = make_q_mat(dmat)
+	best_idx = find_best_pair(qmat)
+	# To form a newick tree structure, combine the labels of the best_idx into a sublist in the list of labels
+	labels = [[labels[best_idx[0]],labels[best_idx[1]]]] + [i for i in labels if i != labels[best_idx[0]] and i != labels[best_idx[1]]]
+	dmat = make_new_dist_mat(dmat, best_idx)
+
+# Convert sublists into newick format by replacing square brackets with parentheses
+print(str(labels)[1:-1].replace('[','(').replace(']',')').replace("'","")+';')
