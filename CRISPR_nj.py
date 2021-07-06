@@ -256,19 +256,33 @@ def make_new_dist_mat(old_mat, index):
 	return new_mat
 
 
+
+def calc_dist_to_node(dmat, index):
+	i,j = index
+	dist_i = (dmat[i][j])/2 + 1/(2*(dmat.shape[0]-2))*(sum(dmat[i])-sum(dmat[j]))
+	dist_j = dmat[i][j] - dist_i
+
+	return dist_i, dist_j
+
+
 arrays = [array_dict[i] for i in args.arrays_to_join]
 labels = args.arrays_to_join
 dmat = make_dist_mat(arrays)
 
-while dmat.shape[0] > 1: # Keep joining neighbours until the tree is fully resolved
+
+while dmat.shape[0] > 2: # Keep joining neighbours until the tree is fully resolved
 	qmat = make_q_mat(dmat)
 	best_idx = find_best_pair(qmat)
+	dists = calc_dist_to_node(dmat, best_idx)
 	# To form a newick tree structure, combine the labels of the best_idx into a sublist in the list of labels
-	labels = [[labels[best_idx[0]],labels[best_idx[1]]]] + [i for i in labels if i != labels[best_idx[0]] and i != labels[best_idx[1]]]
+	a = str(labels[best_idx[0]]).replace('[','(').replace(']',')').replace("'","")
+	b = str(labels[best_idx[1]]).replace('[','(').replace(']',')').replace("'","")
+	newnode_labels = [["{}:{}".format(a, dists[0]), "{}:{}".format(b, dists[1])]]
+	labels = newnode_labels + [i for i in labels if i != labels[best_idx[0]] and i != labels[best_idx[1]]]
 	dmat = make_new_dist_mat(dmat, best_idx)
 
 # Convert sublists into newick format by replacing square brackets with parentheses
-tree = str(labels)[1:-1].replace('[','(').replace(']',')').replace("'","")+';'
+tree = str(labels).replace('[','(').replace(']',')').replace("'","")+';'
 
 print(tree)
 
