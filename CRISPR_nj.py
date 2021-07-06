@@ -22,6 +22,9 @@ parser.add_argument(
 	help="Print a graphical representation of the tree using ascii characters (required ete3 to be installed)."
 	)
 parser.add_argument(
+	'-d', dest="distance_model", choices=['hamming', 'evol'], default='hamming'
+	)
+parser.add_argument(
 	"arrays_to_join", nargs="+",  
 	help="Specify the IDs of the arrays you want to join. **Must come at the end of your command after all other arguments.**"
 	)
@@ -168,7 +171,10 @@ def make_dist_mat(seqs):
 			seq2 = seqs[j]
 
 			aln1, aln2 = needle(seq1, seq2)
-			d = hamming(aln1, aln2)
+			if args.distance_model == 'hamming':
+				d = hamming(aln1, aln2)
+			elif args.distance_model == 'evol':
+				d = CRISPR_evol_model_dist(aln1, aln2)
 			# Assign distance to both parts of symetrical distance matrix
 			grid[i][j] = d
 			grid[j][i] = d
@@ -263,6 +269,90 @@ def calc_dist_to_node(dmat, index):
 	dist_j = dmat[i][j] - dist_i
 
 	return dist_i, dist_j
+
+
+def CRISPR_evol_model_dist(s1, s2):
+	"""
+	Args:
+		s1 (str or list): The first aligned sequence for which you want a distance.
+		s2 (str or list): The second aligned sequence for which you want a distance.
+	
+	Returns:
+		(int) Distance.
+	"""
+
+	event_cost_dict = {
+	'sp_aq' : 1, # Acquisition of a spacer at the leader end
+	'ectopic_sp_aq' : 1, # Acquisition of a spacer inside the array
+	'deletion' : 1 # Loss of some number of spacers
+	}
+
+	leader = True
+	gap = False
+	mismatch = False
+
+	n_aq = 0
+	n_ec_aq = 0
+	n_del = 0
+
+	gaps = []
+	gaps_n = []
+	gap_size = 0
+	mismatch_size = 0
+
+	for n, (i,j) in enumerate(zip(s1,s2)):
+		if i == '-' or j == '-':
+			if leader:
+				n_aq += 1
+			else:
+				if gap:
+					gap_size += 1
+				else:
+					if mismatch: # Mismatched spacer before a gap may be an ectopic acquisition that aligns wierdly due to the gap.
+						if mismatch_size == 1:  
+							n_ec_aq += 1
+						else: # If it's more than 1 spacer long it's unlikely to be multiple ectopic acquisitions in the same place.
+							n_del += 2
+						mismatch = False
+					gap = True
+					gaps_n.append(n)
+					gap_size += 1
+		elif i == j:
+			if gap:
+				gaps.append(gap_size)
+				gap = False
+				gap_size = 0
+			if leader:
+				leader = False
+			if mismatch: # If two spacers mismatch before a region of identity, then there must have been an indel in each
+						 # or ectopic acquisitions at the same position. Deletions may be more likely.
+				n_del += 2
+				mismatch = False
+		else: # if i != j
+			if leader:
+				n_aq += 2
+			else:
+				if mismatch:
+					mismatch_size += 1
+				else:
+					mismatch = True
+					mismatch_size = 1
+		if i == s1[-1]:
+			if mismatch:
+				n_del += 2 # If the trailer end has different spacers then perhaps either they recombined or both come from an ancestral longer array
+
+	for n, gap in zip(gaps_n, gaps):
+		if gap == 1:
+			if n < 10:
+				n_ec_aq += 1
+			else:
+				n_del += 1
+		else:
+			n_del += 1
+
+	dist = n_aq*event_cost_dict['sp_aq'] + n_ec_aq*event_cost_dict['ectopic_sp_aq'] + n_del*event_cost_dict['deletion']
+
+	return dist
 
 
 arrays = [array_dict[i] for i in args.arrays_to_join]
