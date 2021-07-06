@@ -170,6 +170,35 @@ def make_dist_mat(seqs):
 
 	return grid
 
+def make_q_mat(mat):
+	""" 
+	Make a matrix of Q values based on the formula on the wikipedia page https://en.wikipedia.org/wiki/Neighbor_joining
+	Q[i,j] = (n-2)d[i,j] - sum(d[i]) - sum(d[j]) 
+	Args:
+		mat (numpy.array): Matrix of pairwise distances.
+	
+	Returns:
+		(numpy.array) Matrix of pairwise Q values.
+	"""
+
+	# make matrix of 0s to fill in
+	q = np.zeros(mat.shape)
+	n = mat.shape[0]
+
+	# Iterate across matrix
+	for i in range(n):
+		for j in range(i+1, n):
+			qval = (n-2)*mat[i,j] - sum(mat[i]) - sum(mat[j])
+			q[i,j] = qval
+			q[j,i] = qval
+
+
+	return q
+
+
+
 
 arrays = [array_dict[i] for i in args.arrays_to_join]
-print(make_dist_mat(arrays))
+dmat = make_dist_mat(arrays)
+
+print(make_q_mat(dmat))
