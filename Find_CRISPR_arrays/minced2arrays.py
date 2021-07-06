@@ -79,8 +79,8 @@ class MincedObj():
 						repeat = max(set(repeats), key=repeats.count)
 						self.repeat_types[array_num], self.repeat_scores[array_num], self.array_orientations[array_num] = get_repeat_info(CRISPR_types_dict, repeat)
 						if self.array_orientations[array_num]:
-							self.repeat[array_num] = rev_comp.rev_comp(repeat)
-							self.arrays[array_num] = [rev_comp.rev_comp(spacer) for spacer in reversed(spacers)]
+							self.repeat[array_num] = rev_comp(repeat)
+							self.arrays[array_num] = [rev_comp(spacer) for spacer in reversed(spacers)]
 						else:
 							self.repeat[array_num] = repeat
 							self.arrays[array_num] = spacers
