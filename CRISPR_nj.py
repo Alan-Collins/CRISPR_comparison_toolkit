@@ -28,7 +28,7 @@ args = parser.parse_args(sys.argv[1:])
 
 
 
-def needle(seq1, seq2, match = 1, mismatch = -1, gap = -1):
+def needle(seq1, seq2, match = 1, mismatch = -1, gap = -2):
 	"""
 	Args:
 		seq1 (str or list): First sequence of items to align.
@@ -112,4 +112,11 @@ def needle(seq1, seq2, match = 1, mismatch = -1, gap = -1):
 	
 	return align1, align2
 
-print(needle("ATCG", "CCATGG"))
+
+array_dict = {}
+with open(args.array_file, 'r') as fin:
+	for line in fin.readlines():
+		bits = line.split()
+		array_dict[bits[0]] = bits[2:]
+
+print(needle(array_dict[args.arrays_to_join[0]], array_dict[args.arrays_to_join[1]]))
