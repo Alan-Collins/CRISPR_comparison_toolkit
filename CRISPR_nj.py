@@ -119,4 +119,29 @@ with open(args.array_file, 'r') as fin:
 		bits = line.split()
 		array_dict[bits[0]] = bits[2:]
 
-print(needle(array_dict[args.arrays_to_join[0]], array_dict[args.arrays_to_join[1]]))
+
+
+def hamming(seq1, seq2):
+	"""
+	Args:
+		seq1 (str or list): First sequence to compare.
+		seq2 (str or list): Second sequence to compare.
+	
+	Returns:
+		(int) The hamming distance between the two sequences.
+	"""
+
+	dist = 0
+
+	for i in range(max(len(seq1), len(seq2))):
+		if i < len(seq1) and i < len(seq2):
+			if seq1[i] != seq2[i]:
+				dist += 1
+		else:
+			dist += 1
+
+	return dist
+
+s1, s2 = needle(array_dict[args.arrays_to_join[0]], array_dict[args.arrays_to_join[1]])
+
+print(hamming(s1, s2))
