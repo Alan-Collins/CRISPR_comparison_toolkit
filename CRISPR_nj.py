@@ -265,7 +265,10 @@ def make_new_dist_mat(old_mat, index):
 
 def calc_dist_to_node(dmat, index):
 	i,j = index
-	dist_i = (dmat[i][j])/2 + 1/(2*(dmat.shape[0]-2))*(sum(dmat[i])-sum(dmat[j]))
+	if dmat.shape[0] != 2:
+		dist_i = (dmat[i][j])/2 + 1/(2*(dmat.shape[0]-2))*(sum(dmat[i])-sum(dmat[j]))
+	else:
+		dist_i = 0
 	dist_j = dmat[i][j] - dist_i
 
 	return dist_i, dist_j
@@ -360,7 +363,7 @@ labels = args.arrays_to_join
 dmat = make_dist_mat(arrays)
 
 
-while dmat.shape[0] > 2: # Keep joining neighbours until the tree is fully resolved
+while dmat.shape[0] > 1: # Keep joining neighbours until the tree is fully resolved
 	qmat = make_q_mat(dmat)
 	best_idx = find_best_pair(qmat)
 	dists = calc_dist_to_node(dmat, best_idx)
@@ -372,7 +375,7 @@ while dmat.shape[0] > 2: # Keep joining neighbours until the tree is fully resol
 	dmat = make_new_dist_mat(dmat, best_idx)
 
 # Convert sublists into newick format by replacing square brackets with parentheses
-tree = str(labels).replace('[','(').replace(']',')').replace("'","")+';'
+tree = str(labels)[1:-1].replace('[','(').replace(']',')').replace("'","")+';'
 
 print(tree)
 
