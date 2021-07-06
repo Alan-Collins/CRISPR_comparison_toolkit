@@ -196,9 +196,31 @@ def make_q_mat(mat):
 	return q
 
 
+def find_best_pair(qmat):
+	"""
+	Find the closest pair of items in a Q matrix
+	Args:
+		qmat (numpy.array): Matrix of Q values.
+	
+	Returns:
+		(tuple of ints) Index of the best scoring pair.
+	"""
+
+	best_score = 999999
+	best_idx = 9999999
+
+	n = qmat.shape[0]
+	for i in range(n):
+		for j in range(i+1, n):
+			if qmat[i,j] < best_score:
+				best_score = qmat[i,j]
+				best_idx = (i,j)
+
+	return best_idx
 
 
 arrays = [array_dict[i] for i in args.arrays_to_join]
 dmat = make_dist_mat(arrays)
+qmat = make_q_mat(dmat)
 
-print(make_q_mat(dmat))
+print(find_best_pair(qmat))
