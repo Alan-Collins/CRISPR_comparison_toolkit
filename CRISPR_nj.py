@@ -219,8 +219,43 @@ def find_best_pair(qmat):
 	return best_idx
 
 
+def make_new_dist_mat(old_mat, index):
+	"""
+	Args:
+		oldmat (numpy.array): distance matrix used to find best pair.
+		index (tuple of ints): indices of best pair.
+	
+	Returns:
+		(numpy.array) New distance matrix with joined pair collapsed to a single row/column in the matrix.
+	"""
+	old_n = old_mat.shape[0]
+	new_mat = np.zeros((old_n-1, old_n-1))
+	new_n = old_n-1
+
+	x = 1
+	y = 1
+
+	for i in range(old_n):
+		if i != index[0] and i != index[1]:
+			for j in range(old_n):
+				if j != index[0] and j != index[1]:
+					new_mat[x][y] = old_mat[i][j]
+					y += 1
+			y = 1
+			x += 1
+
+	for i in range(new_n):
+		new_mat[0,i] = (old_mat[index[0]][i+1] + old_mat[index[1]][i+1] - old_mat[index[0],index[1]])/2
+		new_mat[i,0] = (old_mat[index[0]][i+1] + old_mat[index[1]][i+1] - old_mat[index[0],index[1]])/2
+	
+	return new_mat
+
+
+
+
 arrays = [array_dict[i] for i in args.arrays_to_join]
 dmat = make_dist_mat(arrays)
 qmat = make_q_mat(dmat)
+best_idx = find_best_pair(qmat)
+new_dmat = make_new_dist_mat(dmat, best_idx)
 
-print(find_best_pair(qmat))
