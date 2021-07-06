@@ -18,9 +18,14 @@ parser.add_argument(
 	help="Specify array representatives file."
 	)
 parser.add_argument(
+	"-p", dest="print_tree", action='store_true',  
+	help="Print a graphical representation of the tree using ascii characters (required ete3 to be installed)."
+	)
+parser.add_argument(
 	"arrays_to_join", nargs="+",  
 	help="Specify the IDs of the arrays you want to join. **Must come at the end of your command after all other arguments.**"
 	)
+
 
 
 
@@ -263,4 +268,10 @@ while dmat.shape[0] > 1: # Keep joining neighbours until the tree is fully resol
 	dmat = make_new_dist_mat(dmat, best_idx)
 
 # Convert sublists into newick format by replacing square brackets with parentheses
-print(str(labels)[1:-1].replace('[','(').replace(']',')').replace("'","")+';')
+tree = str(labels)[1:-1].replace('[','(').replace(']',')').replace("'","")+';'
+
+print(tree)
+
+if args.print_tree:
+	from ete3 import Tree
+	print(Tree(tree))
