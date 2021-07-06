@@ -16,7 +16,7 @@ Given the below cartooned alignments of CRISPR arrays, where:
 * Lines drawn between identical colours in arrays plotted adjacent help to highlight identical spacers
 * Thin black line in arrays indicate spacers unique to that array
 
-![Alignment of CRISPR arrays](https://github.com/Alan-Collins/CRISPR_tree/images/alignment.png)
+![Alignment of CRISPR arrays](https://https://github.com/Alan-Collins/CRISPR_tree/blob/master/images/alignment.png)
 
 The CRISPR_nj.py script produces the following tree in newick format as well as an optional graphical representation produced by ete3:
 
@@ -34,4 +34,4 @@ The CRISPR_nj.py script produces the following tree in newick format as well as 
 
 N.B. While the representation produced by ete3 appears rooted, the trees produced by this approach are unrooted. The newick representation of this tree can  be given to software such as iToL to examine it in an unrooted format such as that in the below image:
 
-![Tree representation of relationships between CRISPR arrays](https://github.com/Alan-Collins/CRISPR_tree/images/tree.png)
+![Tree representation of relationships between CRISPR arrays](https://github.com/Alan-Collins/CRISPR_tree/blob/master/images/tree.png)
