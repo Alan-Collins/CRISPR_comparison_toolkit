@@ -62,6 +62,54 @@ def needle(seq1, seq2, match = 1, mismatch = -1, gap = -1):
 				score = mismatch
 			grid[j+1][i+1] = max([grid[j][i]+score, grid[j+1][i]+gap, grid[j][i+1]+gap])
 
-	print(grid)
+	i = len(seq2)
+	j = len(seq1)
+
+	# Read back through the grid along the best path to create the best alignment
+	align1, align2 = [], []
+	while i > 0 and j > 0: # end when it reaches the top or the left edge
+		score_current = grid[i][j]
+		score_diagonal = grid[i-1][j-1]
+		score_up = grid[i][j-1]
+		score_left = grid[i-1][j]
+		if seq1[j-1] == seq2[i-1]:
+			score = match
+		else:
+			score = mismatch
+		# Check to figure out which cell the current score was calculated from,
+		# then update i and j to correspond to that cell.
+		if score_current == score_diagonal + score:
+			align1.append(seq1[j-1])
+			align2.append(seq2[i-1])
+			i -= 1
+			j -= 1
+		elif score_current == score_up + gap:
+			align1.append(seq1[j-1])
+			align2.append('-')
+			j -= 1
+		elif score_current == score_left + gap:
+			align1.append('-')
+			align2.append(seq2[i-1])
+			i -= 1
+
+	# Finish tracing up to the top left cell
+	while j > 0:
+		align1.append(seq1[j-1])
+		align2.append('-')
+		j -= 1
+	while i > 0:
+		align1.append('-')
+		align2.append(seq2[i-1])
+		i -= 1
+	
+	# Since we traversed the score matrix backwards, need to reverse alignments.
+	align1 = align1[::-1]
+	align2 = align2[::-1]
+
+	if isinstance(seq1, str) and isinstance(seq2, str):
+		align1 = ''.join(align1)
+		align2 = ''.join(align2)
+	
+	return align1, align2
 
 print(needle("ATCG", "CCATGG"))
