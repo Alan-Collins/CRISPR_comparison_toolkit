@@ -113,6 +113,19 @@ def needle(seq1, seq2, match = 1, mismatch = -1, gap = -2):
 	return align1, align2
 
 
+def infer_ancestor(seq1, seq2):
+	"""
+	Args:
+		seq1 (str or list): The first sequence to be compared.
+		seq2 (str or list): The second sequence to be compared.
+	
+	Returns:
+		(str or list) A hypothesis of the ancestral state of the provided sequences.
+	"""
+
+	pass
+
+
 array_dict = {}
 with open(args.array_file, 'r') as fin:
 	for line in fin.readlines():
