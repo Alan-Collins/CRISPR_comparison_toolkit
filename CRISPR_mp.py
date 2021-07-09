@@ -8,6 +8,8 @@
 import sys
 import argparse
 import numpy as np
+from itertools import product
+from string import ascii_lowercase
 
 
 parser = argparse.ArgumentParser(
@@ -39,13 +41,15 @@ class Array():
 		modules (list): A list of the contiguous blocks of spacers with common features (e.g. consecutive spacers that are absent in aligned array).
 		spacers (list): A list of the spacers in this array.
 		aligned (list): A list of spacers in aligned format relative to another array
+		module_lookup (dict): A dict with indices as keys and Spacer_Module instances as values where a given Spacer_module instance will be pointed to by all the indices at which it is locatd.
 	"""
-	def __init__(self, ID, spacers, extant=True):
+	def __init__(self, ID, spacers=[], extant=True):
 		self.id = ID
 		self.extant = extant
 		self.modules = []
 		self.spacers = spacers
 		self.aligned = []
+		self.module_lookup = {}
 
 	def sort_modules(self):
 		self.modules.sort(key=lambda x: int(x.indices[0]))
@@ -162,7 +166,7 @@ def needle(seq1, seq2, match = 20, mismatch = -1, gap = -2):
 	return align1, align2
 
 
-def infer_ancestor(array1, array2, all_spacers):
+def infer_ancestor(array1, array2, all_spacers, node_ids, node_count):
 	"""
 	Args:
 		seq1 (str or list): The first sequence to be compared.
@@ -173,7 +177,8 @@ def infer_ancestor(array1, array2, all_spacers):
 		(str or list) A hypothesis of the ancestral state of the provided sequences.
 	"""
 
-	ancestor = None
+	ancestor = Array(node_ids[node_count], extant=False)
+	node_count += 1
 
 
 	array1.aligned, array2.aligned = needle(array1.spacers, array2.spacers)
@@ -198,6 +203,8 @@ def infer_ancestor(array1, array2, all_spacers):
 					# Module1 processing for no_acqusition module
 					if module1.type != "no_acquisition" and module1.type != "":
 						array1.modules.append(module1)
+						for k in module1.indices:
+							array1.module_lookup[k] = module1
 						module1 = Spacer_Module()
 					module1.type = "no_acquisition"
 					module1.indices.append(n)
@@ -214,6 +221,8 @@ def infer_ancestor(array1, array2, all_spacers):
 				else:
 					if module2.type != "no_acquisition" and module2.type != "":
 						array2.modules.append(module2)
+						for k in module2.indices:
+							array2.module_lookup[k] = module2
 						module2 = Spacer_Module()
 					module2.type = "no_acquisition"
 					module2.indices.append(n)
@@ -228,6 +237,8 @@ def infer_ancestor(array1, array2, all_spacers):
 
 				if module1.type != "acquisition" and module1.type != "":
 					array1.modules.append(module1)
+					for k in module1.indices:
+						array1.module_lookup[k] = module1
 					module1 = Spacer_Module()
 				module1.type = "acquisition"
 				module1.indices.append(n)
@@ -235,6 +246,8 @@ def infer_ancestor(array1, array2, all_spacers):
 
 				if module2.type != "acquisition" and module2.type != "":
 					array2.modules.append(module2)
+					for k in module2.indices:
+						array2.module_lookup[k] = module2
 					module2 = Spacer_Module()
 				module2.type = "acquisition"
 				module2.indices.append(n)
@@ -243,13 +256,17 @@ def infer_ancestor(array1, array2, all_spacers):
 			else: # Other alternative is identical spacers and end of leader region
 				leader = False
 				if module1.type != "":
-					array1.modules.append(module1) 
+					array1.modules.append(module1)
+					for k in module1.indices:
+						array1.module_lookup[k] = module1
 					module1 = Spacer_Module()
 				module1.type = "shared"
 				module1.indices.append(n)
 				module1.spacers.append(a)
 				if module2.type != "":
 					array2.modules.append(module2)
+					for k in module2.indices:
+						array2.module_lookup[k] = module2
 					module2 = Spacer_Module()
 				module2.type = "shared"
 				module2.indices.append(n)
@@ -259,6 +276,8 @@ def infer_ancestor(array1, array2, all_spacers):
 			if a == b:
 				if module1.type != "shared" and module1.type != "":
 					array1.modules.append(module1)
+					for k in module1.indices:
+						array1.module_lookup[k] = module1
 					module1 = Spacer_Module()
 				module1.type = "shared"
 				module1.indices.append(n)
@@ -266,6 +285,8 @@ def infer_ancestor(array1, array2, all_spacers):
 
 				if module2.type != "shared" and module2.type != "":
 					array2.modules.append(module2)
+					for k in module2.indices:
+						array2.module_lookup[k] = module2
 					module2 = Spacer_Module()
 				module2.type = "shared"
 				module2.indices.append(n)
@@ -274,6 +295,8 @@ def infer_ancestor(array1, array2, all_spacers):
 				# Module1 processing for indel module
 				if module1.type != "indel" and module1.type != "":
 					array1.modules.append(module1)
+					for k in module1.indices:
+						array1.module_lookup[k] = module1
 					module1 = Spacer_Module()
 				module1.type = "indel"
 				module1.indices.append(n)
@@ -281,6 +304,8 @@ def infer_ancestor(array1, array2, all_spacers):
 				# Module2 processing for indel module
 				if module2.type != "indel" and module2.type != "":
 					array2.modules.append(module2)
+					for k in module2.indices:
+						array2.module_lookup[k] = module2
 					module2 = Spacer_Module()
 				module2.type = "indel"
 				module2.indices.append(n)
@@ -295,19 +320,49 @@ def infer_ancestor(array1, array2, all_spacers):
 	array2.sort_modules()
 
 	# Process modules to build hypothetical ancestor
+	for idx in range(max(array1.module_lookup.keys())):
+		mod1 = array1.module_lookup[idx]
+		mod2 = array2.module_lookup[idx]
+		if mod1.type == "acquisition" or mod2.type == "acquisition": 
+			# If either has acquired spacers not in the other then those weren't in the ancestor.
+			idx = max([mod1.indices, mod2.indices]) + 1 # Skip the rest of this module.
+			continue
+		else:
+			if mod1.type == "shared":
+				ancestor.modules.append(mod1)
+				idx = mod1.indices + 1
+				continue
+			elif mod1.type == "indel":
+				# If one array has just spacers and the other just gaps in the indel then pick the spacers as ancestral unless those spacers are singletons.
+				print(mod1.spacers)
+				print(mod2.spacers)
+				print(all([i == '-' for i in mod1.spacers]))
+				print(all([i == '-' for i in mod2.spacers]))
+
+				# Check if spacers in either module are found in other provided arrays
+				# if any mod1.spacers != '-':
 
 
 
-	print(array1.aligned)
-	print(array2.aligned)
-	print("{}: {}".format(array1.id, [(i.indices, i.spacers, i.type) for i in array1.modules]))
-	print("{}: {}".format(array2.id, [(i.indices, i.spacers, i.type) for i in array2.modules]))
+
+	ancestor.spacers = [ancestor.spacers + i.spacers for i in ancestor.modules]
+
+	# print(array1.aligned)
+	# print(array2.aligned)
+	# print("{}: {}".format(array1.id, [(i.indices, i.spacers, i.type) for i in array1.modules]))
+	# print("{}: {}".format(array2.id, [(i.indices, i.spacers, i.type) for i in array2.modules]))
 
 
 
 
 	return ancestor
 
+
+# Generate strings to assign as internal node_IDs (This makes 702)
+
+node_ids = ["Internal_" + i for i in ascii_lowercase]
+node_ids += ["Internal_" + "".join(i) for i in product(ascii_lowercase, repeat = 2)]
+node_count = 0 # Keep track of which internal node ID should be used for each node
 
 array_dict = {}
 with open(args.array_file, 'r') as fin:
@@ -319,8 +374,9 @@ arrays = [Array(i, array_dict[i]) for i in args.arrays_to_join]
 labels = args.arrays_to_join
 
 # print([array.spacers for array in arrays])
-ancestor = infer_ancestor(arrays[0], arrays[1], [array.spacers for array in arrays])
+ancestor = infer_ancestor(arrays[0], arrays[1], [array.spacers for array in arrays], node_ids, node_count)
 
+print(ancestor.spacers)
 
 if args.print_tree:
 	from ete3 import Tree
