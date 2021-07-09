@@ -57,10 +57,10 @@ class Spacer_Module():
 	Attributes:
 		singleton (bool): A boolean indicating if this spacer module is only found in a single array.
 		type (str): A string indicating the nature of this module. Possible types:
-			- aqcuisition: Spacers at the leader end of one array where no (or different) spacers are found in the other array. 
 			N.B. leader region ends once first identical spacer is found.
+			- aqcuisition: Spacers at the leader end of one array where no (or different) spacers are found in the other array. 
 			- no_acquisition: Gap at leader end of array when other array has spacers not found in this array.
-			- indel: non-leader region with spacers present in one array but a gap in the other array
+			- indel: non-leader region with spacers present in one array but a gap or different spacers in the other array
 			- shared: Region where both arrays have the same spacers.
 			- duplication_singleton: Region of spacers that occur in two copies in this array, but are not found in the other array.
 			- duplication_shared: Region of spacers that occur in two copies in this array, but one copy in the other array.
@@ -77,7 +77,7 @@ class Spacer_Module():
 		
 
 
-def needle(seq1, seq2, match = 1, mismatch = -1, gap = -2):
+def needle(seq1, seq2, match = 20, mismatch = -1, gap = -2):
 	"""
 	Args:
 		seq1 (str or list): First sequence of items to align.
@@ -185,6 +185,7 @@ def infer_ancestor(array1, array2, all_spacers):
 	module1 = Spacer_Module()
 	module2 = Spacer_Module()
 
+	# Identify modules in aligned arrays
 
 	for n, (a,b) in enumerate(zip(array1.aligned, array2.aligned)):
 
@@ -241,14 +242,15 @@ def infer_ancestor(array1, array2, all_spacers):
 
 			else: # Other alternative is identical spacers and end of leader region
 				leader = False
-				# No need to check if the module was already shared due to leader check
-				array1.modules.append(module1) 
-				module1 = Spacer_Module()
+				if module1.type != "":
+					array1.modules.append(module1) 
+					module1 = Spacer_Module()
 				module1.type = "shared"
 				module1.indices.append(n)
 				module1.spacers.append(a)
-				array2.modules.append(module2)
-				module2 = Spacer_Module()
+				if module2.type != "":
+					array2.modules.append(module2)
+					module2 = Spacer_Module()
 				module2.type = "shared"
 				module2.indices.append(n)
 				module2.spacers.append(b)
@@ -268,19 +270,38 @@ def infer_ancestor(array1, array2, all_spacers):
 				module2.type = "shared"
 				module2.indices.append(n)
 				module2.spacers.append(b)
+			else:
+				# Module1 processing for indel module
+				if module1.type != "indel" and module1.type != "":
+					array1.modules.append(module1)
+					module1 = Spacer_Module()
+				module1.type = "indel"
+				module1.indices.append(n)
+				module1.spacers.append(a)
+				# Module2 processing for indel module
+				if module2.type != "indel" and module2.type != "":
+					array2.modules.append(module2)
+					module2 = Spacer_Module()
+				module2.type = "indel"
+				module2.indices.append(n)
+				module2.spacers.append(b)
 
 
-
-
-	array1.modules.append(module1)
-	array2.modules.append(module2)
+	if module1.type != "":
+		array1.modules.append(module1)
+	if module2.type != "":
+		array2.modules.append(module2)
 	array1.sort_modules()
 	array2.sort_modules()
 
+	# Process modules to build hypothetical ancestor
 
 
-	print("{}: {}".format(array1.id, [(i.indices, i.type) for i in array1.modules]))
-	print("{}: {}".format(array2.id, [(i.indices, i.type) for i in array2.modules]))
+
+	print(array1.aligned)
+	print(array2.aligned)
+	print("{}: {}".format(array1.id, [(i.indices, i.spacers, i.type) for i in array1.modules]))
+	print("{}: {}".format(array2.id, [(i.indices, i.spacers, i.type) for i in array2.modules]))
 
 
 
@@ -297,7 +318,8 @@ with open(args.array_file, 'r') as fin:
 arrays = [Array(i, array_dict[i]) for i in args.arrays_to_join]
 labels = args.arrays_to_join
 
-print(infer_ancestor(Array('1338', array_dict['1338']), Array('1285', array_dict['1285']), [array.spacers for array in arrays]))
+# print([array.spacers for array in arrays])
+ancestor = infer_ancestor(arrays[0], arrays[1], [array.spacers for array in arrays])
 
 
 if args.print_tree:
