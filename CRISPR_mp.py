@@ -363,7 +363,33 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 						if singleton == False:
 							ancestor.modules.append(mod1)
 					idx = mod1.indices[-1] + 1
-				
+				else:
+					# If both modules contain spacers then this may be two deletions from a larger ancestor or a recombination event.
+					# First check if all these spacers exits in another array
+					spacers_to_check = mod1.spacers + mod2.spacers
+					found_array = False # If we find all the spacers in an array keep it to determine order
+					for array in all_arrays:
+						count = 0
+						for spacer in spacers_to_check:
+							if spacer in array:
+								count += 1
+						if count == len(spacers_to_check):
+							found_array = array
+							continue
+					if found_array: # All the spacers were found in 1 array. That looks like 2 deletions from larger array.
+						# Were the spacers consecutive in another array
+						if " ".join(mod1.spacers + mod2.spacers) in " ".join(found_array):
+							new_mod = Spacer_Module()
+							new_mod.spacers = mod1.spacers + mod2.spacers
+							ancestor.modules.append(new_mod)
+						elif " ".join(mod2.spacers + mod1.spacers) in " ".join(found_array):
+							new_mod = Spacer_Module()
+							new_mod.spacers = mod2.spacers + mod1.spacers
+							ancestor.modules.append(new_mod)
+						else:
+							# Something else has happened.
+							pass
+
 
 					
 
