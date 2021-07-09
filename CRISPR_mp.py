@@ -36,21 +36,23 @@ class Array():
 	Attributes:
 		extant (bool): A boolean indicating if the array is extant in our dataset or if it was inferred as a hypothetical ancestral state.
 		chunks (list): A list of the contiguous blocks of spacers with common features (e.g. consecutive spacers that are absent in aligned array).
-		spacers (list): A list of the spacers in this arrayconda 
+		spacers (list): A list of the spacers in this array.
+		aligned (list): A list of spacers in aligned format relative to another array
 	"""
 	def __init__(self, spacers, extant=True):
 		self.extant = extant
 		self.chunks = []
 		self.spacers = spacers
+		self.aligned = []
 
-class Spacer_Chunk(object):
+class Spacer_Module(object):
 	"""
 	Class to store information about spacers in CRISPR arrays.
 	
 	Attributes:
-		singleton (bool): A boolean indicating if this spacer chunk is only found in a single array.
-		type (str): A string indicating the nature of this chunk. e.g. indel, aqcuisition, shared...
-		spacers (list): A list of the spacer IDs in this chunk.
+		singleton (bool): A boolean indicating if this spacer module is only found in a single array.
+		type (str): A string indicating the nature of this module. e.g. indel, aqcuisition, shared...
+		spacers (list): A list of the spacer IDs in this module.
 		linked (bool): A boolean indicating whether these spacers are always found together in arrays when one of them is found.
 	"""
 	def __init__(self):
@@ -147,9 +149,7 @@ def needle(seq1, seq2, match = 1, mismatch = -1, gap = -2):
 
 
 
-
-
-def infer_ancestor(seq1, seq2, all_spacers):
+def infer_ancestor(array1, array2, all_spacers):
 	"""
 	Args:
 		seq1 (str or list): The first sequence to be compared.
@@ -162,10 +162,11 @@ def infer_ancestor(seq1, seq2, all_spacers):
 
 	ancestor = None
 
-	aln1, aln2 = needle(seq1, seq2)
 
-	print(aln1)
-	print(aln2)
+	array1.aligned, array2.aligned = needle(array1.spacers, array2.spacers)
+
+	print(array1.aligned)
+	print(array2.aligned)
 
 	return ancestor
 
@@ -176,10 +177,10 @@ with open(args.array_file, 'r') as fin:
 		bits = line.split()
 		array_dict[bits[0]] = bits[2:]
 
-arrays = [array_dict[i] for i in args.arrays_to_join]
+arrays = [Array(array_dict[i]) for i in args.arrays_to_join]
 labels = args.arrays_to_join
 
-print(infer_ancestor(array_dict['1338'], array_dict['1285'], arrays))
+print(infer_ancestor(Array(array_dict['1338']), Array(array_dict['1285']), [array.spacers for array in arrays]))
 
 
 if args.print_tree:
