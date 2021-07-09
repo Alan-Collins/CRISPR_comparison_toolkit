@@ -166,7 +166,7 @@ def needle(seq1, seq2, match = 20, mismatch = -1, gap = -2):
 	return align1, align2
 
 
-def infer_ancestor(array1, array2, all_spacers, node_ids, node_count):
+def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 	"""
 	Args:
 		seq1 (str or list): The first sequence to be compared.
@@ -320,32 +320,62 @@ def infer_ancestor(array1, array2, all_spacers, node_ids, node_count):
 	array2.sort_modules()
 
 	# Process modules to build hypothetical ancestor
-	for idx in range(max(array1.module_lookup.keys())):
+	idx = 0
+	while idx < max(array1.module_lookup.keys()):
 		mod1 = array1.module_lookup[idx]
 		mod2 = array2.module_lookup[idx]
 		if mod1.type == "acquisition" or mod2.type == "acquisition": 
 			# If either has acquired spacers not in the other then those weren't in the ancestor.
-			idx = max([mod1.indices, mod2.indices]) + 1 # Skip the rest of this module.
+			idx = max([mod1.indices[-1], mod2.indices[-1]]) + 1 # Skip the rest of this module.
 			continue
 		else:
 			if mod1.type == "shared":
+				# If spacers are shared in these they are assumed to have been in the ancestor.
 				ancestor.modules.append(mod1)
-				idx = mod1.indices + 1
+				idx = mod1.indices[-1] + 1
 				continue
 			elif mod1.type == "indel":
 				# If one array has just spacers and the other just gaps in the indel then pick the spacers as ancestral unless those spacers are singletons.
-				print(mod1.spacers)
-				print(mod2.spacers)
-				print(all([i == '-' for i in mod1.spacers]))
-				print(all([i == '-' for i in mod2.spacers]))
+				if all([i == '-' for i in mod1.spacers]) or all([i == '-' for i in mod2.spacers]):
+					# Figure out which one is all gaps and store the other one if it isn't singletons.
+					if all([i == '-' for i in mod1.spacers]):
+						singleton = True # Start with the assumption that these spacers aren't found in another array.
+						for sp in mod2.spacers:
+							count = 0
+							for array in all_arrays:
+								if sp in array:
+									count += 1
+								if count == 2:
+									singleton = False
+									continue
+						if singleton == False:
+							ancestor.modules.append(mod2)
+					else:
+						singleton = True # Start with the assumption that these spacers aren't found in another array.
+						for sp in mod1.spacers:
+							count = 0
+							for array in all_arrays:
+								if sp in array:
+									count += 1
+								if count == 2:
+									singleton = False
+									continue
+						if singleton == False:
+							ancestor.modules.append(mod1)
+					idx = mod1.indices[-1] + 1
+				
+
+					
+
 
 				# Check if spacers in either module are found in other provided arrays
-				# if any mod1.spacers != '-':
 
 
 
 
-	ancestor.spacers = [ancestor.spacers + i.spacers for i in ancestor.modules]
+	ancestor.spacers = [i.spacers for i in ancestor.modules]
+	if isinstance(ancestor.spacers[0], list):
+		ancestor.spacers = [spacer for sublist in ancestor.spacers for spacer in sublist]
 
 	# print(array1.aligned)
 	# print(array2.aligned)
