@@ -34,32 +34,43 @@ class Array():
 	Class to store information about extant and inferred ancestral CRISPR arrays to aid in their comparisons.
 	
 	Attributes:
+		id (str): Identifier for this array.
 		extant (bool): A boolean indicating if the array is extant in our dataset or if it was inferred as a hypothetical ancestral state.
-		chunks (list): A list of the contiguous blocks of spacers with common features (e.g. consecutive spacers that are absent in aligned array).
+		modules (list): A list of the contiguous blocks of spacers with common features (e.g. consecutive spacers that are absent in aligned array).
 		spacers (list): A list of the spacers in this array.
 		aligned (list): A list of spacers in aligned format relative to another array
 	"""
-	def __init__(self, spacers, extant=True):
+	def __init__(self, ID, spacers, extant=True):
+		self.id = ID
 		self.extant = extant
-		self.chunks = []
+		self.modules = []
 		self.spacers = spacers
 		self.aligned = []
 
-class Spacer_Module(object):
+class Spacer_Module():
 	"""
 	Class to store information about spacers in CRISPR arrays.
 	
 	Attributes:
 		singleton (bool): A boolean indicating if this spacer module is only found in a single array.
-		type (str): A string indicating the nature of this module. e.g. indel, aqcuisition, shared...
+		type (str): A string indicating the nature of this module. Possible types:
+			- aqcuisition: Spacers at the leader end of one array where no (or different) spacers are found in the other array. 
+			N.B. leader region ends once first identical spacer is found.
+			- no_acquisition: Gap at leader end of array when other array has spacers not found in this array.
+			- indel: non-leader region with spacers present in one array but a gap in the other array
+			- shared: Region where both arrays have the same spacers.
+			- duplication_singleton: Region of spacers that occur in two copies in this array, but are not found in the other array.
+			- duplication_shared: Region of spacers that occur in two copies in this array, but one copy in the other array.
 		spacers (list): A list of the spacer IDs in this module.
 		linked (bool): A boolean indicating whether these spacers are always found together in arrays when one of them is found.
+		indices (list): A list of the indices in the respective array where this spacer module is located.
 	"""
 	def __init__(self):
-		self.singleton = arg
-		self.type = arg
-		self.spacers = arg
-		self.linked = arg
+		self.singleton = False
+		self.type = ""
+		self.spacers = []
+		self.linked = False
+		self.indices = []
 		
 
 
@@ -148,7 +159,6 @@ def needle(seq1, seq2, match = 1, mismatch = -1, gap = -2):
 	return align1, align2
 
 
-
 def infer_ancestor(array1, array2, all_spacers):
 	"""
 	Args:
@@ -165,8 +175,86 @@ def infer_ancestor(array1, array2, all_spacers):
 
 	array1.aligned, array2.aligned = needle(array1.spacers, array2.spacers)
 
-	print(array1.aligned)
-	print(array2.aligned)
+	leader = True
+	gap = False
+	mismatch = False
+
+	module1 = Spacer_Module()
+	module2 = Spacer_Module()
+
+	for n, (a,b) in enumerate(zip(array1.aligned, array2.aligned)):
+
+		# Leader end processing
+
+		if leader:
+			if a == '-' or b == '-': # Indicates one array acquired spacers that the other didn't
+				if a == '-':
+
+					# Module1 processing for no_acqusition module
+					if module1.type != "no_acquisition" and module1.type != "":
+						array1.modules.append(module1)
+						module1 = Spacer_Module()
+					module1.type = "no_acquisition"
+					module1.indices.append(n)
+					module1.spacers.append(a)
+
+					# Module2 processing for acquisition module
+					# No need to check module type as gap penalty means needle func will never return stretch like the following:
+					# array1	A B C - - -
+					# array2	- - - D E F
+					module2.type = "acquisition"
+					module2.indices.append(n)
+					module2.spacers.append(b)
+
+				else:
+					if module2.type != "no_acquisition" and module2.type != "":
+						array2.modules.append(module2)
+						module2 = Spacer_Module()
+					module2.type = "no_acquisition"
+					module2.indices.append(n)
+					module2.spacers.append(b)
+
+					module1.type = "acquisition"
+					module1.indices.append(n)
+					module1.spacers.append(a)
+
+			elif a != b: # Mismatch at leader end probably means they've both acquired spacers since ancestor
+				# Indel also possible. Maybe implement parsimony evaluation of that when comparing ancestor to other arrays?
+
+				if module1.type != "acquisition" and module1.type != "":
+					array1.modules.append(module1)
+					module1 = Spacer_Module()
+				module1.type = "acquisition"
+				module1.indices.append(n)
+				module1.spacers.append(a)
+
+				if module2.type != "acquisition" and module2.type != "":
+					array2.modules.append(module2)
+					module2 = Spacer_Module()
+				module2.type = "acquisition"
+				module2.indices.append(n)
+				module2.spacers.append(b)
+
+			else: # Other alternative is identical spacers and end of leader region
+				leader = False
+				# No need to check if the module was already shared due to leader check
+				array1.modules.append(module1) 
+				module1 = Spacer_Module()
+				module1.type = "shared"
+				module1.indices.append(n)
+				module1.spacers.append(a)
+				array2.modules.append(module2)
+				module2 = Spacer_Module()
+				module2.type = "shared"
+				module2.indices.append(n)
+				module2.spacers.append(b)
+
+
+	print("{}: {}".format(array1.id, [(i.indices, i.type) for i in array1.modules]))
+	print("{}: {}".format(array2.id, [(i.indices, i.type) for i in array2.modules]))
+
+
+
 
 	return ancestor
 
@@ -177,10 +265,10 @@ with open(args.array_file, 'r') as fin:
 		bits = line.split()
 		array_dict[bits[0]] = bits[2:]
 
-arrays = [Array(array_dict[i]) for i in args.arrays_to_join]
+arrays = [Array(i, array_dict[i]) for i in args.arrays_to_join]
 labels = args.arrays_to_join
 
-print(infer_ancestor(Array(array_dict['1338']), Array(array_dict['1285']), [array.spacers for array in arrays]))
+print(infer_ancestor(Array('1338', array_dict['1338']), Array('1285', array_dict['1285']), [array.spacers for array in arrays]))
 
 
 if args.print_tree:
