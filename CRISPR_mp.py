@@ -47,6 +47,9 @@ class Array():
 		self.spacers = spacers
 		self.aligned = []
 
+	def sort_modules(self):
+		self.modules.sort(key=lambda x: int(x.indices[0]))
+
 class Spacer_Module():
 	"""
 	Class to store information about spacers in CRISPR arrays.
@@ -182,6 +185,7 @@ def infer_ancestor(array1, array2, all_spacers):
 	module1 = Spacer_Module()
 	module2 = Spacer_Module()
 
+
 	for n, (a,b) in enumerate(zip(array1.aligned, array2.aligned)):
 
 		# Leader end processing
@@ -248,6 +252,31 @@ def infer_ancestor(array1, array2, all_spacers):
 				module2.type = "shared"
 				module2.indices.append(n)
 				module2.spacers.append(b)
+
+		else:
+			if a == b:
+				if module1.type != "shared" and module1.type != "":
+					array1.modules.append(module1)
+					module1 = Spacer_Module()
+				module1.type = "shared"
+				module1.indices.append(n)
+				module1.spacers.append(a)
+
+				if module2.type != "shared" and module2.type != "":
+					array2.modules.append(module2)
+					module2 = Spacer_Module()
+				module2.type = "shared"
+				module2.indices.append(n)
+				module2.spacers.append(b)
+
+
+
+
+	array1.modules.append(module1)
+	array2.modules.append(module2)
+	array1.sort_modules()
+	array2.sort_modules()
+
 
 
 	print("{}: {}".format(array1.id, [(i.indices, i.type) for i in array1.modules]))
