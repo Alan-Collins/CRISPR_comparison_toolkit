@@ -457,6 +457,17 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 	return ancestor
 
 
+def find_dupes(child, ancestor):
+	"""
+	Look for spacers in two copies in the child that exist in one copy in the ancestor
+	Args:
+		child (Array class instance): The child array.
+		ancestor (Array class instance): The hypothetical ancestor of the child array.
+	
+	Returns:
+		(list) list of indices of duplicated spacers if found. Empty list if none found
+	"""
+
 def count_parsimony_events(child, ancestor):
 	"""
 	Args:
@@ -471,6 +482,22 @@ def count_parsimony_events(child, ancestor):
 
 	print(child.aligned)
 	print(["{} : {}".format(i.type, i.spacers) for i in child.modules])
+
+	events = { # Record what each event is for later addition of event weights.
+	"acquisition" : 0,
+	"indel" : 0,
+	"duplication": 0,
+	}
+
+	# Process modules to count events since ancestor
+
+	# First look for duplications
+
+	dupes = find_dupes(child, ancestor)
+
+	idx = 0
+	while idx < max(array1.module_lookup.keys()):
+		mod1 = array1.module_lookup[idx]
 
 
 def resolve_pairwise_parsimony(array1, array2, all_arrays, node_ids, node_count):
