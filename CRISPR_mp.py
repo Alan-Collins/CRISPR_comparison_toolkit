@@ -578,7 +578,8 @@ def count_parsimony_events(child, ancestor):
 			idx += 1
 			continue
 		mod = child.module_lookup[idx]
-		if mod.type == 'acquisition':
+		if mod.type == 'acquisition' or mod.type == 'no_acquisition': 
+		# Checking no acquisition allows comparison of child-child as well as child-ancestor arrays.
 			child.events['acquisition'] += len(mod.indices)
 			idx = mod.indices[-1] + 1 # Skip the rest of this module.
 			continue
@@ -609,20 +610,50 @@ def resolve_pairwise_parsimony(array1, array2, all_arrays, node_ids, node_count)
 		No ID: Raises an exception if the two arrays share no spacers.
 	"""
 
-	array1, array2 = find_modules(array1, array2)
+	if len(list(set(array1.spacers) & set(array2.spacers))) > 0:
 
-	ancestor = infer_ancestor(array1, array2, all_arrays, node_ids, node_count)
+		array1, array2 = find_modules(array1, array2)
 
-	array1 = count_parsimony_events(array1, ancestor)
+		ancestor = infer_ancestor(array1, array2, all_arrays, node_ids, node_count)
 
-	array2 = count_parsimony_events(array2, ancestor)
+		array1 = count_parsimony_events(array1, ancestor)
+
+		array2 = count_parsimony_events(array2, ancestor)
+		
+
+		for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
+			array1.distance += array1.events[k] * v
+			array2.distance += array2.events[k] * v
+
+		return array1, array2, ancestor
 	
 
-	for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
-		array1.distance += array1.events[k] * v
-		array2.distance += array2.events[k] * v
+	else:
+		return "No_ID"
 
-	return array1, array2, ancestor
+
+def find_closest_array(array, array_dict):
+	"""
+	Args:
+		array (Array class instance): The array you want to find the closest match for.
+		array_dict (dict): The dictionary with values of Array class instances of arrays already in your tree
+	
+	Returns:
+		(Array class instance) The array already in your tree that is the most parsimonious match to the query array.
+	"""
+
+	best_score = 9999999999
+
+	for array_id, comparator_array in array_dict.items():
+		x = count_parsimony_events(comparator_array, array)
+		for k,v in event_costs.items():
+			x.distance += x.events[k] * v
+		if x.distance < best_score:
+			best_score = x.distance
+			best_match = array_dict[x.id]
+
+
+	return best_match
 
 
 event_costs = { 
@@ -648,27 +679,57 @@ with open(args.array_file, 'r') as fin:
 arrays = [Array(i, array_spacers_dict[i]) for i in args.arrays_to_join]
 labels = args.arrays_to_join
 
-array1, array2, ancestor = resolve_pairwise_parsimony(arrays[0], arrays[1], [array.spacers for array in arrays], node_ids, node_count)
+random.seed(101) # Set seed for consistent results while getting everything working.
+
+addition_order = random.sample(arrays, len(arrays)) # Shuffle array order to build tree.
+
+# print([i.id for i in addition_order]) # ['1902', '1401', '1245', '1231']
 
 taxon_namespace = dendropy.TaxonNamespace(args.arrays_to_join + node_ids)
 tree = dendropy.Tree(taxon_namespace=taxon_namespace)
 
-
 array_dict = {}
-
 tree_child_dict = {}
 
+# First round
+
+results = resolve_pairwise_parsimony(arrays[0], arrays[1], [array.spacers for array in arrays], node_ids, node_count)
+if results != "No_ID":
+	array1, array2, ancestor = results
+else:
+	while results == "No_ID":
+		addition_order = random.sample(arrays, len(arrays)) # Shuffle array order to build tree.
+		results = resolve_pairwise_parsimony(arrays[0], arrays[1], [array.spacers for array in arrays], node_ids, node_count)
+		if results != "No_ID":
+			array1, array2, ancestor = results
+
+
 for a in [array1, array2, ancestor]:
+	# Create tree nodes
 	tree_child_dict[a.id] = dendropy.Node(edge_length=a.distance)
 	tree_child_dict[a.id].taxon = taxon_namespace.get_taxon(a.id)
+	#Store arrays for further comparisons
+	array_dict[a.id] = a
 
+# Add initial relationships to the tree.
 tree.seed_node.add_child(tree_child_dict[ancestor.id])
 tree_child_dict[ancestor.id].add_child(tree_child_dict[array1.id])
 tree_child_dict[ancestor.id].add_child(tree_child_dict[array2.id])
 
-print(tree.as_string("newick"))#, suppress_leaf_node_labels=False, suppress_annotations=False))
+for a in addition_order[2:]: # Already added the first two so now add the rest 1 by 1
+	# Find the most similar array already in the tree (measured in parsimony score)
+	best_match = find_closest_array(a, array_dict)
+	print(best_match.id)
 
-print(tree.as_ascii_plot(show_internal_node_labels=True))
 
 
-print(tree_child_dict[array2.id].parent_node.taxon)
+
+
+
+
+# print(tree.as_string("newick"))#, suppress_leaf_node_labels=False, suppress_annotations=False))
+
+# print(tree.as_ascii_plot(show_internal_node_labels=True))
+
+
+# print(tree_child_dict[array2.id].parent_node.taxon)
