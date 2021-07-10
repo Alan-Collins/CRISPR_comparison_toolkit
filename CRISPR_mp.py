@@ -59,24 +59,18 @@ class Spacer_Module():
 	Class to store information about spacers in CRISPR arrays.
 	
 	Attributes:
-		singleton (bool): A boolean indicating if this spacer module is only found in a single array.
 		type (str): A string indicating the nature of this module. Possible types:
 			N.B. leader region ends once first identical spacer is found.
 			- aqcuisition: Spacers at the leader end of one array where no (or different) spacers are found in the other array. 
 			- no_acquisition: Gap at leader end of array when other array has spacers not found in this array.
 			- indel: non-leader region with spacers present in one array but a gap or different spacers in the other array
 			- shared: Region where both arrays have the same spacers.
-			- duplication_singleton: Region of spacers that occur in two copies in this array, but are not found in the other array.
-			- duplication_shared: Region of spacers that occur in two copies in this array, but one copy in the other array.
 		spacers (list): A list of the spacer IDs in this module.
-		linked (bool): A boolean indicating whether these spacers are always found together in arrays when one of them is found.
 		indices (list): A list of the indices in the respective array where this spacer module is located.
 	"""
 	def __init__(self):
-		self.singleton = False
 		self.type = ""
 		self.spacers = []
-		self.linked = False
 		self.indices = []
 		
 
@@ -314,8 +308,12 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 
 	if module1.type != "":
 		array1.modules.append(module1)
+		for k in module1.indices:
+			array1.module_lookup[k] = module1
 	if module2.type != "":
 		array2.modules.append(module2)
+		for k in module2.indices:
+			array2.module_lookup[k] = module2
 	array1.sort_modules()
 	array2.sort_modules()
 
@@ -329,6 +327,7 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 			idx = max([mod1.indices[-1], mod2.indices[-1]]) + 1 # Skip the rest of this module.
 			continue
 		else:
+
 			if mod1.type == "shared":
 				# If spacers are shared in these they are assumed to have been in the ancestor.
 				ancestor.modules.append(mod1)
@@ -425,14 +424,6 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 	if isinstance(ancestor.spacers[0], list):
 		ancestor.spacers = [spacer for sublist in ancestor.spacers for spacer in sublist]
 
-	# print(array1.aligned)
-	# print(array2.aligned)
-	# print("{}: {}".format(array1.id, [(i.indices, i.spacers, i.type) for i in array1.modules]))
-	# print("{}: {}".format(array2.id, [(i.indices, i.spacers, i.type) for i in array2.modules]))
-
-
-
-
 	return ancestor
 
 
@@ -454,7 +445,7 @@ labels = args.arrays_to_join
 # print([array.spacers for array in arrays])
 ancestor = infer_ancestor(arrays[0], arrays[1], [array.spacers for array in arrays], node_ids, node_count)
 
-print(ancestor.spacers)
+print("{} : {}".format(ancestor.id, ancestor.spacers))
 
 if args.print_tree:
 	from ete3 import Tree
