@@ -77,6 +77,7 @@ class Spacer_Module():
 
 def needle(seq1, seq2, match = 20, mismatch = -1, gap = -2):
 	"""
+	Perform Needleman-Wunsch pairwise alignment of two sequences.
 	Args:
 		seq1 (str or list): First sequence of items to align.
 		seq2 (str or list): Second sequence of items to align
@@ -160,20 +161,16 @@ def needle(seq1, seq2, match = 20, mismatch = -1, gap = -2):
 	return align1, align2
 
 
-def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
+def find_modules(array1, array2):
 	"""
+	Identify contiguous stretches of spacers that share an evolutionary property in terms of how they differ from the comparator array (e.g. indel region). Assigns types to each module according to the types defined in the Spacer_Module class docstring.
 	Args:
-		seq1 (str or list): The first sequence to be compared.
-		seq2 (str or list): The second sequence to be compared.
-		all_spacers (list): The list of all arrays so that indels can be resolved to favour keeping spacers found in other arrays.
+		array1 (Array class instance): The first array to be compared.
+		array2 (Array class instance): The second array to be compared.
 	
 	Returns:
-		(str or list) A hypothesis of the ancestral state of the provided sequences.
+		(tuple of Array class instances) The provided arrays with module information added to the .module attribute.
 	"""
-
-	ancestor = Array(node_ids[node_count], extant=False)
-	node_count += 1
-
 
 	array1.aligned, array2.aligned = needle(array1.spacers, array2.spacers)
 
@@ -317,6 +314,28 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 	array1.sort_modules()
 	array2.sort_modules()
 
+	return array1, array2
+
+
+def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
+	"""
+	Based on the modules found in two aligned arrays, construct a hypothethetical ancestral state of the two arrays
+	Args:
+		array1 (Array class instance): The first array to be compared.
+		array2 (Array class instance): The second array to be compared.
+		all_arrays (list): The list of all arrays so that indels can be resolved to favour keeping spacers found in other arrays.
+		node_ids (list): A list of names to be used to name internal nodes.
+		node_count (int): The index of the name to use in the node_ids list to name this internal node.
+	
+	Returns:
+		(str or list) A hypothesis of the ancestral state of the provided sequences.
+	"""
+
+	ancestor = Array(node_ids[node_count], extant=False)
+	node_count += 1
+
+	array1, array2 = find_modules(array1, array2)	
+
 	# Process modules to build hypothetical ancestor
 	idx = 0
 	while idx < max(array1.module_lookup.keys()):
@@ -442,7 +461,7 @@ with open(args.array_file, 'r') as fin:
 arrays = [Array(i, array_dict[i]) for i in args.arrays_to_join]
 labels = args.arrays_to_join
 
-# print([array.spacers for array in arrays])
+
 ancestor = infer_ancestor(arrays[0], arrays[1], [array.spacers for array in arrays], node_ids, node_count)
 
 print("{} : {}".format(ancestor.id, ancestor.spacers))
