@@ -387,15 +387,37 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 							new_mod.spacers = mod2.spacers + mod1.spacers
 							ancestor.modules.append(new_mod)
 						else:
-							# Something else has happened.
+							# Something else has happened. For now don't put these spacers in the ancestral array. May revisit.
 							pass
-
-
-					
-
-
-				# Check if spacers in either module are found in other provided arrays
-
+					else: # Not all the spacers were found in a single array. Is either set found in another array?
+						spacers1_found = False
+						spacers2_found = False
+						for array in all_arrays:
+							count = 0
+							for spacer in mod1.spacers:
+								if spacer in array:
+									count += 1
+							if count == len(mod1.spacers):
+								spacers1_found = True
+								continue
+						for array in all_arrays:
+							count = 0
+							for spacer in mod2.spacers:
+								if spacer in array:
+									count += 1
+							if count == len(mod2.spacers):
+								spacers2_found = True
+								continue
+						if spacers1_found and spacers2_found: 
+							# Both are also in another array. Each has parsimony cost. Pick one.
+							ancestor.modules.append(mod1)
+						elif spacers1_found:
+							ancestor.modules.append(mod1)
+						elif spacers2_found:
+							ancestor.modules.append(mod2)
+						else:
+							# Neither was found.
+							pass
 
 
 
