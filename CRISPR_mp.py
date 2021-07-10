@@ -11,6 +11,7 @@ import numpy as np
 from itertools import product
 from string import ascii_lowercase
 import random
+from collections import Counter
 
 
 parser = argparse.ArgumentParser(
@@ -44,6 +45,7 @@ class Array():
 		aligned (list): A list of spacers in aligned format relative to another array
 		module_lookup (dict): A dict with indices as keys and Spacer_Module instances as values where a given Spacer_module instance will be pointed to by all the indices at which it is located.
 		distance (int): Parsimony distance from the hypothetical ancestral state of this array.
+		events (dict): Record what each event is for later addition of event parsimony weights.
 		"""
 	def __init__(self, ID, spacers=[], extant=True):
 		self.id = ID
@@ -53,6 +55,11 @@ class Array():
 		self.aligned = []
 		self.module_lookup = {}
 		self.distance = 0
+		self.events = { 
+						"acquisition" : 0,
+						"indel" : 0,
+						"duplication": 0,
+						}
 
 	def sort_modules(self):
 		self.modules.sort(key=lambda x: int(x.indices[0]))
@@ -468,6 +475,58 @@ def find_dupes(child, ancestor):
 		(list) list of indices of duplicated spacers if found. Empty list if none found
 	"""
 
+	spacer_counts = Counter(child.aligned)
+
+	dupe_indices = []
+
+	for k,v in spacer_counts.items():
+		if k != '-':
+			if v > 1:
+				indices = [idx for idx, el in enumerate(child.aligned) if el == k]
+				dupe_indices.append(indices)
+
+	dupe_groups = []
+	if len(dupe_indices) > 0: # If there were no duplications, return the empty list.
+		# Identify groups of consecutive spacers to seperate duplicated modules in case there is more than 1 event.
+
+		total_spacers = sum([len(i) for i in dupe_indices])
+		included_spacers = [[],[]] # First list stores which spacer has been included. Second stores which copy of that spacer has been used.
+		checked_spacers = []
+		group = [min([x for y in dupe_indices for x in y])] # Start with the first duplicated spacer
+
+		x = 0
+		# while sum([len(i) for i in dupe_groups]) < total_spacers:
+		while all([_ != [] for _ in dupe_indices]):
+			for n, spacer in enumerate(dupe_indices):
+				if spacer != [] and n not in included_spacers[0] and n not in checked_spacers:
+					for m, idx in enumerate(spacer):
+						if idx == group[-1]:
+							included_spacers[0].append(n)
+							included_spacers[1].append(m)
+							break
+						elif idx == group[-1] + 1: # If this spacer follows the last spacer added, add it.
+							group.append(dupe_indices[n][m])
+							checked_spacers = [] # If we change the latest spacer we need to recheck ones that haven't added yet
+							included_spacers[0].append(n)
+							included_spacers[1].append(m)
+							break
+						elif idx != group[-1] + 1 and idx == spacer[-1]: 
+							checked_spacers.append(n) # If this spacer doesn't have an index following the last spacer then we don't need to check it again unless we find another spacer elsewhere.
+			if len(checked_spacers) + len(included_spacers[0]) == len(dupe_indices):
+				dupe_groups.append(group)
+				checked_spacers = []
+				for x, y in zip(reversed(included_spacers[0]), reversed(included_spacers[1])):
+					del dupe_indices[x][y]
+				try:
+					group = [min([x for y in dupe_indices for x in y])] # Restart the process with the next earliest spacer
+				except: # If all the dupe_indices have been deleted this will fail and we'll be finished
+					break
+				included_spacers = [[],[]]
+
+
+	return dupe_groups
+
+
 def count_parsimony_events(child, ancestor):
 	"""
 	Args:
@@ -480,24 +539,33 @@ def count_parsimony_events(child, ancestor):
 
 	child, ancestor = find_modules(child, ancestor)
 
-	print(child.aligned)
-	print(["{} : {}".format(i.type, i.spacers) for i in child.modules])
-
-	events = { # Record what each event is for later addition of event weights.
-	"acquisition" : 0,
-	"indel" : 0,
-	"duplication": 0,
-	}
 
 	# Process modules to count events since ancestor
 
 	# First look for duplications
 
 	dupes = find_dupes(child, ancestor)
+	dupe_indices = [x for y in dupes for x in y] # Flatten list to check against later
+
+	child.events['duplication'] = len(dupes) / 2
 
 	idx = 0
-	while idx < max(array1.module_lookup.keys()):
-		mod1 = array1.module_lookup[idx]
+	while idx < max(child.module_lookup.keys()):
+		if idx in dupe_indices:
+			idx += 1
+			continue
+		mod = child.module_lookup[idx]
+		if mod.type == 'acquisition':
+			child.events['acquisition'] += len(mod.indices)
+			idx = mod.indices[-1] + 1 # Skip the rest of this module.
+			continue
+		if mod.type == 'indel':
+			child.events['indel'] += 1
+			idx = mod.indices[-1] + 1 # Skip the rest of this module.
+		else:
+			idx += 1
+
+	return child
 
 
 def resolve_pairwise_parsimony(array1, array2, all_arrays, node_ids, node_count):
@@ -522,8 +590,19 @@ def resolve_pairwise_parsimony(array1, array2, all_arrays, node_ids, node_count)
 
 	ancestor = infer_ancestor(array1, array2, all_arrays, node_ids, node_count)
 
+	array1 = count_parsimony_events(array1, ancestor)
+
+	print(ancestor.aligned)
+	print(array1.aligned)
+
 	array2 = count_parsimony_events(array2, ancestor)
 
+	print(ancestor.aligned)
+	print(array2.aligned)
+	
+
+	print(array1.events)
+	print(array2.events)
 
 # Generate strings to assign as internal node_IDs (This makes 702)
 
