@@ -12,6 +12,7 @@ from itertools import product
 from string import ascii_lowercase
 import random
 from collections import Counter
+import dendropy
 
 
 parser = argparse.ArgumentParser(
@@ -64,6 +65,7 @@ class Array():
 	def sort_modules(self):
 		self.modules.sort(key=lambda x: int(x.indices[0]))
 
+
 class Spacer_Module():
 	"""
 	Class to store information about spacers in CRISPR arrays.
@@ -83,7 +85,6 @@ class Spacer_Module():
 		self.spacers = []
 		self.indices = []
 		
-
 
 def needle(seq1, seq2, match = 20, mismatch = -1, gap = -2):
 	"""
@@ -614,17 +615,22 @@ def resolve_pairwise_parsimony(array1, array2, all_arrays, node_ids, node_count)
 
 	array1 = count_parsimony_events(array1, ancestor)
 
-	print(ancestor.aligned)
-	print(array1.aligned)
-
 	array2 = count_parsimony_events(array2, ancestor)
-
-	print(ancestor.aligned)
-	print(array2.aligned)
 	
 
-	print(array1.events)
-	print(array2.events)
+	for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
+		array1.distance += array1.events[k] * v
+		array2.distance += array2.events[k] * v
+
+	return array1, array2, ancestor
+
+
+event_costs = { 
+				"acquisition" : 1,
+				"indel" : 1,
+				"duplication": 1,
+				}
+
 
 # Generate strings to assign as internal node_IDs (This makes 702)
 
@@ -633,20 +639,36 @@ if len(args.arrays_to_join) > 27: # Maximum internal nodes in tree is n-2 so onl
 	node_ids += ["Internal_" + "".join(i) for i in product(ascii_lowercase, repeat = 2)]
 node_count = 0 # Keep track of which internal node ID should be used for each node
 
-array_dict = {}
+array_spacers_dict = {}
 with open(args.array_file, 'r') as fin:
 	for line in fin.readlines():
 		bits = line.split()
-		array_dict[bits[0]] = bits[2:]
+		array_spacers_dict[bits[0]] = bits[2:]
 
-arrays = [Array(i, array_dict[i]) for i in args.arrays_to_join]
+arrays = [Array(i, array_spacers_dict[i]) for i in args.arrays_to_join]
 labels = args.arrays_to_join
 
+array1, array2, ancestor = resolve_pairwise_parsimony(arrays[0], arrays[1], [array.spacers for array in arrays], node_ids, node_count)
 
-ancestor = resolve_pairwise_parsimony(arrays[0], arrays[1], [array.spacers for array in arrays], node_ids, node_count)
+taxon_namespace = dendropy.TaxonNamespace(args.arrays_to_join + node_ids)
+tree = dendropy.Tree(taxon_namespace=taxon_namespace)
 
-# print("{} : {}".format(ancestor.id, ancestor.spacers))
 
-if args.print_tree:
-	from ete3 import Tree
-	#print(Tree(tree))
+array_dict = {}
+
+tree_child_dict = {}
+
+for a in [array1, array2, ancestor]:
+	tree_child_dict[a.id] = dendropy.Node(edge_length=a.distance)
+	tree_child_dict[a.id].taxon = taxon_namespace.get_taxon(a.id)
+
+tree.seed_node.add_child(tree_child_dict[ancestor.id])
+tree_child_dict[ancestor.id].add_child(tree_child_dict[array1.id])
+tree_child_dict[ancestor.id].add_child(tree_child_dict[array2.id])
+
+print(tree.as_string("newick"))#, suppress_leaf_node_labels=False, suppress_annotations=False))
+
+print(tree.as_ascii_plot(show_internal_node_labels=True))
+
+
+print(tree_child_dict[array2.id].parent_node.taxon)
