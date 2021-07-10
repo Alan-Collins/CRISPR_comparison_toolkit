@@ -10,6 +10,7 @@ import argparse
 import numpy as np
 from itertools import product
 from string import ascii_lowercase
+import random
 
 
 parser = argparse.ArgumentParser(
@@ -41,8 +42,9 @@ class Array():
 		modules (list): A list of the contiguous blocks of spacers with common features (e.g. consecutive spacers that are absent in aligned array).
 		spacers (list): A list of the spacers in this array.
 		aligned (list): A list of spacers in aligned format relative to another array
-		module_lookup (dict): A dict with indices as keys and Spacer_Module instances as values where a given Spacer_module instance will be pointed to by all the indices at which it is locatd.
-	"""
+		module_lookup (dict): A dict with indices as keys and Spacer_Module instances as values where a given Spacer_module instance will be pointed to by all the indices at which it is located.
+		distance (int): Parsimony distance from the hypothetical ancestral state of this array.
+		"""
 	def __init__(self, ID, spacers=[], extant=True):
 		self.id = ID
 		self.extant = extant
@@ -50,6 +52,7 @@ class Array():
 		self.spacers = spacers
 		self.aligned = []
 		self.module_lookup = {}
+		self.distance = 0
 
 	def sort_modules(self):
 		self.modules.sort(key=lambda x: int(x.indices[0]))
@@ -173,6 +176,14 @@ def find_modules(array1, array2):
 	"""
 
 	array1.aligned, array2.aligned = needle(array1.spacers, array2.spacers)
+
+	# If this isn't the first comparison these arrays have been part of
+	# then need to reset module list and lookup dict.
+	array1.modules = []
+	array2.modules = []
+
+	array1.module_lookup = {}
+	array2.module_lookup = {}
 
 	leader = True
 	gap = False
@@ -446,10 +457,52 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 	return ancestor
 
 
+def count_parsimony_events(child, ancestor):
+	"""
+	Args:
+		child (Array class instance): The child array.
+		ancestor (Array class instance): The hypothetical ancestor of the child array.
+	
+	Returns:
+		(Array class instance) The child Array class instance with parsimony distance added to the .distance attribute.
+	"""
+
+	child, ancestor = find_modules(child, ancestor)
+
+	print(child.aligned)
+	print(["{} : {}".format(i.type, i.spacers) for i in child.modules])
+
+
+def resolve_pairwise_parsimony(array1, array2, all_arrays, node_ids, node_count):
+	"""
+	Given two arrays, make a hypothetical ancestral state and calculate parsimony distance of each input array to that ancestor. 
+	Can only build an ancestor state if there are shared spacers so throws an error if none are found.
+	Args:
+		array1 (Array class instance): The first array to be compared.
+		array2 (Array class instance): The second array to be compared.
+		all_arrays (list): The list of all arrays so that indels can be resolved to favour keeping spacers found in other arrays.
+		node_ids (list): A list of names to be used to name internal nodes.
+		node_count (int): The index of the name to use in the node_ids list to name this internal node.
+
+	Returns:
+		(tuple of Array class instances) The input Array class instances with module and distance info added, the ancestral array Array class instance. Tuple order is (array1, array2, ancestor)
+
+	Raises:
+		No ID: Raises an exception if the two arrays share no spacers.
+	"""
+
+	array1, array2 = find_modules(array1, array2)
+
+	ancestor = infer_ancestor(array1, array2, all_arrays, node_ids, node_count)
+
+	array2 = count_parsimony_events(array2, ancestor)
+
+
 # Generate strings to assign as internal node_IDs (This makes 702)
 
 node_ids = ["Internal_" + i for i in ascii_lowercase]
-node_ids += ["Internal_" + "".join(i) for i in product(ascii_lowercase, repeat = 2)]
+if len(args.arrays_to_join) > 27: # Maximum internal nodes in tree is n-2 so only need more than 26 if n >= 28
+	node_ids += ["Internal_" + "".join(i) for i in product(ascii_lowercase, repeat = 2)]
 node_count = 0 # Keep track of which internal node ID should be used for each node
 
 array_dict = {}
@@ -462,9 +515,9 @@ arrays = [Array(i, array_dict[i]) for i in args.arrays_to_join]
 labels = args.arrays_to_join
 
 
-ancestor = infer_ancestor(arrays[0], arrays[1], [array.spacers for array in arrays], node_ids, node_count)
+ancestor = resolve_pairwise_parsimony(arrays[0], arrays[1], [array.spacers for array in arrays], node_ids, node_count)
 
-print("{} : {}".format(ancestor.id, ancestor.spacers))
+# print("{} : {}".format(ancestor.id, ancestor.spacers))
 
 if args.print_tree:
 	from ete3 import Tree
