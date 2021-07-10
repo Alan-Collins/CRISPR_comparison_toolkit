@@ -364,7 +364,6 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 			idx = max([mod1.indices[-1], mod2.indices[-1]]) + 1 # Skip the rest of this module.
 			continue
 		else:
-
 			if mod1.type == "shared":
 				# If spacers are shared in these they are assumed to have been in the ancestor.
 				ancestor.modules.append(mod1)
@@ -444,6 +443,7 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 							new_mod = Spacer_Module()
 							new_mod.spacers = mod2.spacers + mod1.spacers
 							ancestor.modules.append(new_mod)
+							idx = mod1.indices[-1] + 1
 						else:
 							# Something else has happened. For now don't put these spacers in the ancestral array. May revisit.
 							pass
@@ -469,13 +469,17 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 						if spacers1_found and spacers2_found: 
 							# Both are also in another array. Each has parsimony cost. Pick one.
 							ancestor.modules.append(mod1)
+							idx = mod1.indices[-1] + 1
 						elif spacers1_found:
 							ancestor.modules.append(mod1)
+							idx = mod1.indices[-1] + 1
 						elif spacers2_found:
 							ancestor.modules.append(mod2)
+							idx = mod2.indices[-1] + 1
 						else:
 							# Neither was found.
-							pass
+							idx = mod2.indices[-1] + 1
+							
 
 
 
