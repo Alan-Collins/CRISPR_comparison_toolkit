@@ -375,29 +375,51 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 				if all([i == '-' for i in mod1.spacers]) or all([i == '-' for i in mod2.spacers]):
 					# Figure out which one is all gaps and store the other one if it isn't singletons.
 					if all([i == '-' for i in mod1.spacers]):
-						singleton = True # Start with the assumption that these spacers aren't found in another array.
+						# Check first if it's a duplication. If so, remove from ancestor.
+						# If not a duplication check if these spacers are in another array. If so keep.
+						duplication = False # Start with the assumption this isn't a duplication
 						for sp in mod2.spacers:
 							count = 0
-							for array in all_arrays:
-								if sp in array:
+							for spacer in mod2.spacers:
+								if sp == spacer:
 									count += 1
-								if count == 2:
-									singleton = False
-									continue
-						if singleton == False:
-							ancestor.modules.append(mod2)
+								if count == 2: # If the same spacer is present twice then duplication has occured in this region.
+									duplication = True
+									break
+						if duplication == False:
+							singleton = True # Start with the assumption that these spacers aren't found in another array.
+							for sp in mod2.spacers:
+								count = 0
+								for array in all_arrays:
+									if sp in array:
+										count += 1
+									if count == 2:
+										singleton = False
+										continue
+							if singleton == False:
+								ancestor.modules.append(mod2)
 					else:
-						singleton = True # Start with the assumption that these spacers aren't found in another array.
-						for sp in mod1.spacers:
+						duplication = False # Start with the assumption this isn't a duplication
+						for sp in mod2.spacers:
 							count = 0
-							for array in all_arrays:
-								if sp in array:
+							for spacer in mod2.spacers:
+								if sp == spacer:
 									count += 1
-								if count == 2:
-									singleton = False
-									continue
-						if singleton == False:
-							ancestor.modules.append(mod1)
+								if count == 2: # If the same spacer is present twice then duplication has occured in this region.
+									duplication = True
+									break
+						if duplication == False:
+							singleton = True # Start with the assumption that these spacers aren't found in another array.
+							for sp in mod1.spacers:
+								count = 0
+								for array in all_arrays:
+									if sp in array:
+										count += 1
+									if count == 2:
+										singleton = False
+										continue
+							if singleton == False:
+								ancestor.modules.append(mod1)
 					idx = mod1.indices[-1] + 1
 				else:
 					# If both modules contain spacers then this may be two deletions from a larger ancestor or a recombination event.
@@ -547,7 +569,7 @@ def count_parsimony_events(child, ancestor):
 	dupes = find_dupes(child, ancestor)
 	dupe_indices = [x for y in dupes for x in y] # Flatten list to check against later
 
-	child.events['duplication'] = len(dupes) / 2
+	child.events['duplication'] = int(len(dupes) / 2)
 
 	idx = 0
 	while idx < max(child.module_lookup.keys()):
