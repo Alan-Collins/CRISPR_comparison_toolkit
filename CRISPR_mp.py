@@ -654,16 +654,16 @@ def find_closest_array(array, array_dict):
 	return best_match
 
 
-def replace_existing_leaf(existing_leaf, new_leaf, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict):
+def replace_existing_array(existing_array, new_array, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict):
 	"""
-	Given a leaf already in the tree and a leaf to be added, finds an ancestral state for the two leaves and replaces the existing leaf with the following tree structure:
-			   /- existing leaf
+	Given a array already in the tree and an array to be added, finds an ancestral state for the two arrays and replaces the existing array with the following tree structure:
+			   /- existing array
 	- ancestor|
-	           \- new leaf
+	           \- new array
 	Args:
-		existing_leaf (Array class instance): The array that has already been added to the tree.
-		new_leaf (Array class instance): The array you want to add to the tree.
-		current_parent (Array class instance): ID of the parent node of the existing leaf in the tree
+		existing_array (Array class instance): The array that has already been added to the tree.
+		new_array (Array class instance): The array you want to add to the tree.
+		current_parent (Array class instance): ID of the parent node of the existing array in the tree
 		tree (dendropy Tree instance): The tree object to be modified
 		all_arrays (list): The list of all arrays so that indels can be resolved to favour keeping spacers found in other arrays.
 		node_ids (list): A list of names to be used to name internal nodes.
@@ -672,20 +672,22 @@ def replace_existing_leaf(existing_leaf, new_leaf, current_parent, tree, all_arr
 		tree_child_dict (dict): Dict of dendopy tree node class instances in the tree.
 	Returns:
 		(tuple) of the following:
-			(dendropy Tree instance) Tree with the existing leaf replaced with the newly formed node.
+			(dendropy Tree instance) Tree with the existing array replaced with the newly formed node.
 			(dict) Dict of arrays in the tree so far.
 			(dict) Dict of dendopy tree node class instances in the tree.
 	"""
 
-	# Make a hypothetical ancestor for the pair of leaves and calculate the distances
-	existing_leaf, new_leaf, ancestor = resolve_pairwise_parsimony(existing_leaf, new_leaf, all_arrays, node_ids, node_count)
+	# Make a hypothetical ancestor for the pair of arrays and calculate the distances
+	existing_array, new_array, ancestor = resolve_pairwise_parsimony(existing_array, new_array, all_arrays, node_ids, node_count)
 
 	# Calculate distance from this hypothetical ancestor to its new parent in the tree
 	ancestor = count_parsimony_events(ancestor, current_parent)
 	for k,v in event_costs.items():
 		ancestor.distance += ancestor.events[k] * v
 
-	for a in [existing_leaf, new_leaf, ancestor]:
+	tree_child_dict[existing_array.id].edge_length = existing_array.distance
+
+	for a in [new_array, ancestor]:
 		# Create tree nodes
 		tree_child_dict[a.id] = dendropy.Node(edge_length=a.distance)
 		tree_child_dict[a.id].taxon = taxon_namespace.get_taxon(a.id)
@@ -693,14 +695,14 @@ def replace_existing_leaf(existing_leaf, new_leaf, current_parent, tree, all_arr
 		array_dict[a.id] = a
 
 	# Build new tree node
-	tree_child_dict[ancestor.id].set_child_nodes([tree_child_dict[existing_leaf.id], tree_child_dict[new_leaf.id]])
+	tree_child_dict[ancestor.id].set_child_nodes([tree_child_dict[existing_array.id], tree_child_dict[new_array.id]])
 
 	# figure out which were the existing children of the current_parent
 	for child in tree_child_dict[current_parent.id].child_node_iter():
-		if child.taxon.label != existing_leaf.id:
+		if child.taxon.label != existing_array.id:
 			other_child = child.taxon.label
 
-	# Add new node to existing tree as a child of the previous parent of the existing leaf.
+	# Add new node to existing tree as a child of the previous parent of the existing array.
 	tree_child_dict[current_parent.id].set_child_nodes([tree_child_dict[ancestor.id], tree_child_dict[other_child]])
 
 	
@@ -775,15 +777,22 @@ tree_child_dict[ancestor.id].add_child(tree_child_dict[array1.id])
 tree_child_dict[ancestor.id].add_child(tree_child_dict[array2.id])
 
 
-for a in addition_order[2:3]: # Already added the first two so now add the rest 1 by 1
+for a in addition_order[2:]: # Already added the first two so now add the rest 1 by 1
 	# Find the most similar array already in the tree (measured in parsimony score)
 	best_match = find_closest_array(a, array_dict)
-	if best_match.extant: # If the closest match is a leaf then just join them and replace the existing leaf with the new node
+	if best_match.extant: # If the closest match is a array then just join them and replace the existing array with the new node
 		current_parent = array_dict[tree_child_dict[best_match.id].parent_node.taxon.label]
-		tree, array_dict, tree_child_dict = replace_existing_leaf(
+		tree, array_dict, tree_child_dict = replace_existing_array(
 			best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict
 			)
 		node_count += 1
+	else:
+		current_parent = array_dict[tree_child_dict[best_match.id].parent_node.taxon.label]
+		tree, array_dict, tree_child_dict = replace_existing_array(
+			best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict
+			)
+		node_count += 1
+
 
 
 
