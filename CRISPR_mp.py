@@ -809,7 +809,7 @@ def plot_tree(tree, array_dict, filename):
 				if len(nodes_to_revisit) == 0:
 					break
 				else:
-					node = tree.find_node_with_label(list(nodes_to_revisit.keys())[0]) # start the next node to revisit
+					node = tree.find_node_with_taxon_label(list(nodes_to_revisit.keys())[0]) # start the next node to revisit
 					first_node = node.leaf_nodes()[0]# start drawing from a random leaf in the subtree
 					highest_y = y2 = nodes_to_revisit[node.taxon.label] # Set the y position reserved for this subtree
 					second_node = first_node.sibling_nodes()[0]
@@ -964,11 +964,10 @@ taxon_namespace = dendropy.TaxonNamespace(args.arrays_to_join + node_ids)
 
 best_score = 99999999
 
-for i in range(min([args.replicates, len(array_choices)])):
-	addition_order = array_choices[i]
+for i in range(1): #range(min([args.replicates, len(array_choices)])):
+	# addition_order = array_choices[i]
 	# addition_order = random.sample(arrays, len(arrays)) # Shuffle array order to build tree.
-	# addition_order = [Array(i, array_spacers_dict[i]) for i in ['433', '1685', '1254', '146', '355', '159', '761', '487']]
-	#['761', '146', '159', '1254', '433', '487', '1685', '355']] #['532', '1131', '1087', '423', '21']]
+	addition_order = [Array(i, array_spacers_dict[i]) for i in ['1221', '999', '361', '996', '598']]
 	try:
 		tree = dendropy.Tree(taxon_namespace=taxon_namespace)
 
@@ -1040,7 +1039,7 @@ for i in range(min([args.replicates, len(array_choices)])):
 				best_tree_comparator = dendropy.Tree(tree)
 				best_tree = copy.deepcopy(tree)
 			if score == best_score:
-				# best_addition_order = copy.deepcopy(addition_order)
+				best_addition_order = copy.deepcopy(addition_order)
 				if isinstance(best_tree, list):
 					# Check this tree isn't identical to one that's already been found
 					if not any([
@@ -1069,15 +1068,15 @@ print("Score of best tree is: {}".format(best_score))
 try:
 
 	if isinstance(best_tree, list):
-		plot_tree(best_tree[0], best_arrays[0], "test_data/test.png")
 		print("{} equivelantly parsimonious trees were identified.".format(len(best_tree)))
 		for good_tree in best_tree:
 			print(good_tree.as_ascii_plot(show_internal_node_labels=True))
 			print(good_tree.as_string("newick"))
+		plot_tree(best_tree[0], best_arrays[0], "test_data/test.png")
 	else:
-		plot_tree(best_tree, best_arrays, "test_data/test.png")
 		print(best_tree.as_ascii_plot(show_internal_node_labels=True))
 		print(best_tree.as_string("newick"))#, suppress_leaf_node_labels=False, suppress_annotations=False))
+		plot_tree(best_tree, best_arrays, "test_data/test.png")
 except Exception as e:
 	print(e)
 	print(order)
