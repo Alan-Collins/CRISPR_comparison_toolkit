@@ -33,9 +33,22 @@ parser.add_argument(
 		help="Specify number of replicates of tree building to perform. The more replicates, the greater the chance that a better tree will be found. Default: 100"
 	)
 parser.add_argument(
+	"-q",  dest="acquisition", type=int, nargs="?", default = 1,
+		help="Specify the parsimony cost of a spacer acquisition event. Default: 1"
+	)
+parser.add_argument(
+	"-i",  dest="indel", type=int, nargs="?", default = 1,
+		help="Specify the parsimony cost of an indel event involving one or more spacers. Default: 1"
+	)
+parser.add_argument(
+	"-d",  dest="duplication", type=int, nargs="?", default = 1,
+		help="Specify the parsimony cost of a duplication event involving one or more spacers. Default: 1"
+	)
+parser.add_argument(
 	"arrays_to_join", nargs="+",  
 	help="Specify the IDs of the arrays you want to join. **Must come at the end of your command after all other arguments.**"
 	)
+
 
 
 args = parser.parse_args(sys.argv[1:])
@@ -747,9 +760,9 @@ def replace_existing_array(existing_array, new_array, current_parent, tree, all_
 
 
 event_costs = { 
-				"acquisition" : 1,
-				"indel" : 1,
-				"duplication": 1,
+				"acquisition" : args.acquisition,
+				"indel" : args.indel,
+				"duplication": args.duplication,
 				}
 
 
