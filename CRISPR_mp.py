@@ -383,7 +383,7 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 
 	# Process modules to build hypothetical ancestor
 	idx = 0
-	while idx < max(array1.module_lookup.keys()):
+	while idx <= max(array1.module_lookup.keys()):
 		mod1 = array1.module_lookup[idx]
 		mod2 = array2.module_lookup[idx]
 		if mod1.type == "acquisition" or mod2.type == "acquisition": 
@@ -587,7 +587,7 @@ def count_parsimony_events(child, ancestor):
 		ancestor (Array class instance): The hypothetical ancestor of the child array.
 	
 	Returns:
-		(Array class instance) The child Array class instance with parsimony distance added to the .distance attribute.
+		(Array class instance) The child Array class instance with parsimony events added to the .events dict attribute.
 	"""
 
 	child, ancestor = find_modules(child, ancestor)
@@ -603,7 +603,7 @@ def count_parsimony_events(child, ancestor):
 	child.events['duplication'] = int(len(dupes) / 2)
 
 	idx = 0
-	while idx < max(child.module_lookup.keys()):
+	while idx <= max(child.module_lookup.keys()):
 		if idx in dupe_indices:
 			idx += 1
 			continue
@@ -644,6 +644,7 @@ def resolve_pairwise_parsimony(array1, array2, all_arrays, node_ids, node_count)
 
 		array1, array2 = find_modules(array1, array2)
 
+
 		array1.reset() # Make sure the distance and events haven't carried over from a previous usage
 		array2.reset()
 
@@ -677,13 +678,15 @@ def find_closest_array(array, array_dict):
 
 	best_score = 9999999999
 
-	for array_id, comparator_array in array_dict.items():
-		x = count_parsimony_events(comparator_array, array)
+	for array_id in array_dict.keys():
+		comparator_array = copy.deepcopy(array_dict[array_id])
+		comparator_array.reset()
+		comparator_array = count_parsimony_events(comparator_array, array)
 		for k,v in event_costs.items():
-			x.distance += x.events[k] * v
-		if x.distance < best_score:
-			best_score = x.distance
-			best_match = array_dict[x.id]
+			comparator_array.distance += comparator_array.events[k] * v
+		if comparator_array.distance < best_score:
+			best_score = comparator_array.distance
+			best_match = comparator_array
 
 	return best_match
 
@@ -729,8 +732,9 @@ def replace_existing_array(existing_array, new_array, current_parent, tree, all_
 			for k,v in event_costs.items():
 				ancestor.distance += ancestor.events[k] * v
 
-		
-
+		# modify the edge length for the existing array and update its distance in the array_dict
+		tree_child_dict[existing_array.id].edge_length = existing_array.distance
+		array_dict[existing_array.id] = existing_array
 		for a in [new_array, ancestor]:
 			# Create tree nodes
 			tree_child_dict[a.id] = dendropy.Node(edge_length=a.distance)
@@ -752,10 +756,6 @@ def replace_existing_array(existing_array, new_array, current_parent, tree, all_
 		else:
 			tree.seed_node.set_child_nodes([tree_child_dict[ancestor.id]])
 			
-
-
-		
-
 		return tree, array_dict, tree_child_dict
 
 
@@ -785,6 +785,9 @@ labels = args.arrays_to_join
 array_choices = [i for i in permutations(arrays, len(arrays))]
 random.shuffle(array_choices)
 
+array_choices_ids = [[i.id for i in array_entry] for array_entry in array_choices]
+
+
 if len(array_choices) > args.replicates:
 	print("There are {} possible trees to check. If you want to check every possible tree then set -r {}".format(len(array_choices), len(array_choices)))
 
@@ -802,7 +805,7 @@ for i in range(min([args.replicates, len(array_choices)])):
 
 	addition_order = array_choices[i]
 	# addition_order = random.sample(arrays, len(arrays)) # Shuffle array order to build tree.
-	# addition_order = [Array(i, array_spacers_dict[i]) for i in ['355', '433', '761', '1685', '1254', '159', '146', '487']]
+	# addition_order = [Array(i, array_spacers_dict[i]) for i in ['21', '1087', '1131', '532', '423']]
 	try:
 		tree = dendropy.Tree(taxon_namespace=taxon_namespace)
 
@@ -829,7 +832,6 @@ for i in range(min([args.replicates, len(array_choices)])):
 		tree.seed_node.add_child(tree_child_dict[ancestor.id])
 		tree_child_dict[ancestor.id].add_child(tree_child_dict[array1.id])
 		tree_child_dict[ancestor.id].add_child(tree_child_dict[array2.id])
-
 		for a in addition_order[2:]: # Already added the first two so now add the rest 1 by 1
 			seed = False # To check if we are modifying the child of the seed node
 
@@ -860,31 +862,41 @@ for i in range(min([args.replicates, len(array_choices)])):
 					tree, array_dict, tree_child_dict = results
 				node_count += 1
 			if a != addition_order[-1]:
-				score = sum([v.distance for v in array_dict.values()])
+				score = score = tree.length()
 				if score > best_score:
 					break
 		else:
-			score = sum([v.distance for v in array_dict.values()])
+			# score = sum([v.distance for v in array_dict.values()])
+			tree.reroot_at_node(tree.seed_node, update_bipartitions=False) # Need to reroot at the seed so that RF distance works
+			score = tree.length()
 			if score < best_score:
 				best_arrays = copy.deepcopy(array_dict) # Keep inferred ancestral states and information
 				best_score = copy.deepcopy(score)
-				best_tree = dendropy.Tree(tree)
+
+				# Keep one copy for comparisons as copy.deepcopy makes a new taxon namespace which breaks comparisons.
+				best_tree_comparator = dendropy.Tree(tree)
+				best_tree = copy.deepcopy(tree)
 			if score == best_score:
 				if isinstance(best_tree, list):
 					# Check this tree isn't identical to one that's already been found
 					if not any([
-						dendropy.calculate.treecompare.weighted_robinson_foulds_distance(good_tree, tree) == 0. for good_tree in best_tree
+						dendropy.calculate.treecompare.weighted_robinson_foulds_distance(good_tree, tree) == 0. for good_tree in best_tree_comparator
 						]):
-						best_tree.append([best_tree, dendropy.Tree(tree)])
+						best_tree_comparator.append(dendropy.Tree(tree))
+						best_tree.append(copy.deepcopy(tree))
 						best_arrays.append(copy.deepcopy(array_dict))
 				else:
 					# Check this tree isn't identical to the one that's already been found
-					if dendropy.calculate.treecompare.weighted_robinson_foulds_distance(best_tree, tree) != 0.:
-						best_tree = [best_tree, dendropy.Tree(tree)]
+					if dendropy.calculate.treecompare.weighted_robinson_foulds_distance(best_tree_comparator, tree) != 0.:
+						best_tree_comparator = [best_tree_comparator, dendropy.Tree(tree)]
+						best_tree = [best_tree, copy.deepcopy(tree)]
 						best_arrays = [best_arrays, copy.deepcopy(array_dict)]
-	except:
+	except Exception as e:
+		exc_type, exc_obj, exc_tb = sys.exc_info()
 		print('Something went wrong when running with the following array order:')
 		print([i.id for i in addition_order])
+		print(e)
+		print("Error occured on line {}".format(exc_tb.tb_lineno))
 
 
 print("Score of best tree is: {}".format(best_score))
@@ -893,8 +905,6 @@ print("Score of best tree is: {}".format(best_score))
 
 if isinstance(best_tree, list):
 	print("{} equivelantly parsimonious trees were identified.".format(len(best_tree)))
-	print(dendropy.calculate.treecompare.symmetric_difference(best_tree[0], best_tree[1]))
-	print(dendropy.calculate.treecompare.weighted_robinson_foulds_distance(best_tree[0], best_tree[1]))
 	for good_tree in best_tree:
 		print(good_tree.as_ascii_plot(show_internal_node_labels=True))
 		print(good_tree.as_string("newick"))
