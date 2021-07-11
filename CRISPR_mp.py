@@ -95,7 +95,7 @@ class Spacer_Module():
 		self.indices = []
 		
 
-def needle(seq1, seq2, match = 20, mismatch = -1, gap = -2):
+def needle(seq1, seq2, match = 100, mismatch = -1, gap = -2):
 	"""
 	Perform Needleman-Wunsch pairwise alignment of two sequences.
 	Args:
@@ -695,44 +695,50 @@ def replace_existing_array(existing_array, new_array, current_parent, tree, all_
 	"""
 
 	# Make a hypothetical ancestor for the pair of arrays and calculate the distances
-	existing_array, new_array, ancestor = resolve_pairwise_parsimony(existing_array, new_array, all_arrays, node_ids, node_count)
-	tree_child_dict[existing_array.id].edge_length = existing_array.distance
-	# If the current parent is not seed then do this
-	if not seed:
-		# Calculate distance from this hypothetical ancestor to its new parent in the tree
-		ancestor.reset()
-		ancestor = count_parsimony_events(ancestor, current_parent)
-		for k,v in event_costs.items():
-			ancestor.distance += ancestor.events[k] * v
-
-	
-
-	for a in [new_array, ancestor]:
-		# Create tree nodes
-		tree_child_dict[a.id] = dendropy.Node(edge_length=a.distance)
-		tree_child_dict[a.id].taxon = taxon_namespace.get_taxon(a.id)
-		#Store arrays for further comparisons
-		array_dict[a.id] = a
-	# Build new tree node
-	tree_child_dict[ancestor.id].set_child_nodes([tree_child_dict[existing_array.id], tree_child_dict[new_array.id]])
-
-	if not seed:
-		# figure out which were the existing children of the current_parent
-		for child in tree_child_dict[current_parent.id].child_node_iter():
-			if child.taxon.label != existing_array.id:
-				other_child = child.taxon.label
-		# Add new node to existing tree as a child of the previous parent of the existing array.
-		tree_child_dict[current_parent.id].set_child_nodes([tree_child_dict[ancestor.id], tree_child_dict[other_child]])
+	results = resolve_pairwise_parsimony(existing_array, new_array, all_arrays, node_ids, node_count)
+	if results == "No_ID":
+		return results
 
 
 	else:
-		tree.seed_node.set_child_nodes([tree_child_dict[ancestor.id]])
+		existing_array, new_array, ancestor = results
+		tree_child_dict[existing_array.id].edge_length = existing_array.distance
+		# If the current parent is not seed then do this
+		if not seed:
+			# Calculate distance from this hypothetical ancestor to its new parent in the tree
+			ancestor.reset()
+			ancestor = count_parsimony_events(ancestor, current_parent)
+			for k,v in event_costs.items():
+				ancestor.distance += ancestor.events[k] * v
+
 		
 
+		for a in [new_array, ancestor]:
+			# Create tree nodes
+			tree_child_dict[a.id] = dendropy.Node(edge_length=a.distance)
+			tree_child_dict[a.id].taxon = taxon_namespace.get_taxon(a.id)
+			#Store arrays for further comparisons
+			array_dict[a.id] = a
+		# Build new tree node
+		tree_child_dict[ancestor.id].set_child_nodes([tree_child_dict[existing_array.id], tree_child_dict[new_array.id]])
 
-	
+		if not seed:
+			# figure out which were the existing children of the current_parent
+			for child in tree_child_dict[current_parent.id].child_node_iter():
+				if child.taxon.label != existing_array.id:
+					other_child = child.taxon.label
+			# Add new node to existing tree as a child of the previous parent of the existing array.
+			tree_child_dict[current_parent.id].set_child_nodes([tree_child_dict[ancestor.id], tree_child_dict[other_child]])
 
-	return tree, array_dict, tree_child_dict
+
+		else:
+			tree.seed_node.set_child_nodes([tree_child_dict[ancestor.id]])
+			
+
+
+		
+
+		return tree, array_dict, tree_child_dict
 
 
 event_costs = { 
@@ -767,6 +773,7 @@ best_score = 99999999
 for i in range(100):
 
 	addition_order = random.sample(arrays, len(arrays)) # Shuffle array order to build tree.
+	# addition_order = [Array(i, array_spacers_dict[i]) for i in ['355', '433', '761', '1685', '1254', '159', '146', '487']]
 	try:
 		tree = dendropy.Tree(taxon_namespace=taxon_namespace)
 
@@ -779,11 +786,7 @@ for i in range(100):
 			node_count += 1
 			array1, array2, ancestor = results
 		else:
-			while results == "No_ID":
-				addition_order = random.sample(arrays, len(arrays)) # Shuffle array order to build tree.
-				results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count)
-				if results != "No_ID":
-					array1, array2, ancestor = results
+			continue
 
 
 		for a in [array1, array2, ancestor]:
@@ -805,9 +808,13 @@ for i in range(100):
 			best_match = find_closest_array(a, array_dict)
 			if best_match.extant: # If the closest match is a array then just join them and replace the existing array with the new node
 				current_parent = array_dict[tree_child_dict[best_match.id].parent_node.taxon.label]
-				tree, array_dict, tree_child_dict = replace_existing_array(
+				results = replace_existing_array(
 					best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
 					)
+				if results == "No_ID":
+					break
+				else:
+					tree, array_dict, tree_child_dict = results
 				node_count += 1
 			else:
 				try:
@@ -815,19 +822,23 @@ for i in range(100):
 				except: # Fails if the best match is a child of the seed node
 					seed = True
 					current_parent = None
-				tree, array_dict, tree_child_dict = replace_existing_array(
+				results = replace_existing_array(
 					best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
 					)
+				if results == "No_ID":
+					break
+				else:
+					tree, array_dict, tree_child_dict = results
 				node_count += 1
 			if a != addition_order[-1]:
 				score = sum([v.distance for v in array_dict.values()])
 				if score > best_score:
 					break
-
-		score = sum([v.distance for v in array_dict.values()])
-		if score < best_score:
-			best_score = copy.deepcopy(score)
-			best_tree = copy.deepcopy(tree)
+		else:
+			score = sum([v.distance for v in array_dict.values()])
+			if score < best_score:
+				best_score = copy.deepcopy(score)
+				best_tree = copy.deepcopy(tree)
 	except:
 		print('Something went wrong when running with the following array order:')
 		print([i.id for i in addition_order])
