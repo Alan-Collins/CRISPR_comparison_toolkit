@@ -943,20 +943,22 @@ with open(args.array_file, 'r') as fin:
 arrays = [Array(i, array_spacers_dict[i]) for i in args.arrays_to_join]
 all_arrays = [array.spacers for array in arrays]
 labels = args.arrays_to_join
-array_choices = [i for i in permutations(arrays, len(arrays))]
-random.shuffle(array_choices)
 
-array_choices_ids = [[i.id for i in array_entry] for array_entry in array_choices]
+if len(args.arrays_to_join) < 9:
+	array_choices = [i for i in permutations(arrays, len(arrays))]
+	random.shuffle(array_choices)
 
 
-if len(array_choices) > args.replicates:
-	print("There are {} possible trees to check. If you want to check every possible tree then set -r {}".format(len(array_choices), len(array_choices)))
+	if len(array_choices) > args.replicates:
+		print("There are {} possible trees to check. If you want to check every possible tree then set -r {}".format(len(array_choices), len(array_choices)))
 
-elif len(array_choices) < args.replicates:
-	print("There are only {} possible trees to check. You specified a greater number of replicates than there are possible trees. All possible trees will be checked.".format(len(array_choices)))
+	elif len(array_choices) < args.replicates:
+		print("There are only {} possible trees to check. You specified a greater number of replicates than there are possible trees. All possible trees will be checked.".format(len(array_choices)))
 
+	else:
+		print("You specified a number of replicates equal to the number of possible trees. All possible trees will be checked.")
 else:
-	print("You specified a number of replicates equal to the number of possible trees. All possible trees will be checked.")
+	array_choices = [random.sample(arrays, len(arrays)) for i in range(args.replicates)]
 
 taxon_namespace = dendropy.TaxonNamespace(args.arrays_to_join + node_ids)
 
@@ -1060,17 +1062,22 @@ for i in range(min([args.replicates, len(array_choices)])):
 		print(e)
 		print("Error occured on line {}".format(exc_tb.tb_lineno))
 
-# print([i.id for i in best_addition_order])
+order = [i.id for i in best_addition_order]
 
 print("Score of best tree is: {}".format(best_score))
 
-if isinstance(best_tree, list):
-	# plot_tree(best_tree[0], best_arrays[0], "test_data/test.png")
-	print("{} equivelantly parsimonious trees were identified.".format(len(best_tree)))
-	for good_tree in best_tree:
-		print(good_tree.as_ascii_plot(show_internal_node_labels=True))
-# 		print(good_tree.as_string("newick"))
-else:
-	# plot_tree(best_tree, best_arrays, "test_data/test.png")
-	print(best_tree.as_ascii_plot(show_internal_node_labels=True))
-	# print(best_tree.as_string("newick"))#, suppress_leaf_node_labels=False, suppress_annotations=False))
+try:
+
+	if isinstance(best_tree, list):
+		plot_tree(best_tree[0], best_arrays[0], "test_data/test.png")
+		print("{} equivelantly parsimonious trees were identified.".format(len(best_tree)))
+		for good_tree in best_tree:
+			print(good_tree.as_ascii_plot(show_internal_node_labels=True))
+			print(good_tree.as_string("newick"))
+	else:
+		plot_tree(best_tree, best_arrays, "test_data/test.png")
+		print(best_tree.as_ascii_plot(show_internal_node_labels=True))
+		print(best_tree.as_string("newick"))#, suppress_leaf_node_labels=False, suppress_annotations=False))
+except Exception as e:
+	print(e)
+	print(order)
