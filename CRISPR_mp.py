@@ -15,6 +15,7 @@ from collections import Counter
 import dendropy
 import copy
 from itertools import permutations
+import matplotlib.pyplot as plt
 
 
 parser = argparse.ArgumentParser(
@@ -759,6 +760,120 @@ def replace_existing_array(existing_array, new_array, current_parent, tree, all_
 		return tree, array_dict, tree_child_dict
 
 
+def plot_tree(tree, array_dict, filename):
+	"""
+	Args:
+		tree (dendopy Tree class instance): The tree you want to plot.
+		array_dict (dict): Dict of Array class instances with information about the nodes of your tree.
+		filename (str): Path to the file you want created with this plot.
+	"""
+
+	# Find tree dimensions
+	tree_width = max(tree.calc_node_root_distances(return_leaf_distances_only=True))
+	tree_height = len(tree.nodes())
+
+	#Find deepest node so plotting can start at the most distant leaf
+	for node in tree.postorder_node_iter():
+		if node.root_distance == tree_width:
+			start_node = node
+
+	node_locs = {} # Store where each node is located to draw lines to it.
+
+	position = [0.5,0.5]
+	node_locs[start_node.taxon.label] = position
+	dim_x, dim_y = 10, 10
+
+	hscale = (dim_x+1)/tree_width # Factor to scale all branch lengths to fit them in the plot
+	vscale = (dim_y+1)/tree_height
+
+	max_depth = 0.5+tree_width*hscale
+
+	fig, ax = plt.subplots()
+
+	fig.set_size_inches(dim_x, dim_y)
+
+	num_drawn = 0
+	node = start_node
+	highest_y = 0.5
+
+	while num_drawn < len(tree.nodes()):
+
+		try:
+			children = node.parent_node.child_nodes()
+		except AttributeError:
+			break
+
+		print([i.taxon.label for i in children])
+
+		if children[0].taxon.label == node.taxon.label:
+			first_node, second_node = children
+		else:
+			second_node, first_node = children
+
+		node_locs[first_node.taxon.label] = position
+
+		# Draw first branch
+
+		x1 = node_locs[first_node.taxon.label][0]
+		x2 = node_locs[first_node.taxon.label][0] + first_node.edge_length * hscale
+		y1 = node_locs[first_node.taxon.label][1]
+		y2 = node_locs[first_node.taxon.label][1]
+
+		highest_y = max([y1,y2])
+
+		ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1, solid_capstyle="butt")
+		ax.text(x1, y1+0.5*vscale, first_node.taxon.label, ha='right')
+		num_drawn += 1
+		
+		# Draw joining line
+		num_leaves = len(node.leaf_nodes()) # Figure out how much space is needed based on the number of leaves below this node
+		num_internal = len([i for i in node.levelorder_iter(lambda x: x.is_internal())])
+
+		print(num_leaves, num_internal)
+		y2 = y2+3*vscale
+
+
+		ax.plot([x2, x2], [y1, y2],color = 'black', linewidth = 1, solid_capstyle="butt")
+
+		highest_y = max([y1,y2])
+
+		position = [max_depth-second_node.root_distance*hscale ,y2]
+		node_locs[second_node.taxon.label] = position
+
+		#Draw second branch
+
+		x1 = node_locs[second_node.taxon.label][0]
+		x2 = node_locs[second_node.taxon.label][0] + second_node.edge_length * hscale
+		y1 = node_locs[second_node.taxon.label][1]
+		y2 = node_locs[second_node.taxon.label][1]
+
+		ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1, solid_capstyle="butt")
+		ax.text(x1, y1, second_node.taxon.label, ha='right')
+		num_drawn += 1
+
+		node = second_node.parent_node
+
+		position = [max_depth-node.root_distance*hscale ,y2-1.5*vscale]
+	
+	plt.axis('off')
+	plt.savefig(filename)
+
+		
+
+
+
+	# 	
+
+	# 	if child_remaining:
+	# 		for child in node.parent_node.child_node_iter():
+	# 			if child.taxon.label != node.taxon.label:
+	# 				node = child
+
+
+	# plt.savefig(filename)
+
+
+
 event_costs = { 
 				"acquisition" : args.acquisition,
 				"indel" : args.indel,
@@ -801,11 +916,11 @@ taxon_namespace = dendropy.TaxonNamespace(args.arrays_to_join + node_ids)
 
 best_score = 99999999
 
-for i in range(min([args.replicates, len(array_choices)])):
-
-	addition_order = array_choices[i]
+for i in range(1): #range(min([args.replicates, len(array_choices)])):
+	# addition_order = array_choices[i]
 	# addition_order = random.sample(arrays, len(arrays)) # Shuffle array order to build tree.
-	# addition_order = [Array(i, array_spacers_dict[i]) for i in ['21', '1087', '1131', '532', '423']]
+	addition_order = [Array(i, array_spacers_dict[i]) for i in ['433', '1685', '1254', '146', '355', '159', '761', '487']]
+	#['761', '146', '159', '1254', '433', '487', '1685', '355']] #['532', '1131', '1087', '423', '21']]
 	try:
 		tree = dendropy.Tree(taxon_namespace=taxon_namespace)
 
@@ -877,6 +992,7 @@ for i in range(min([args.replicates, len(array_choices)])):
 				best_tree_comparator = dendropy.Tree(tree)
 				best_tree = copy.deepcopy(tree)
 			if score == best_score:
+				# best_addition_order = copy.deepcopy(addition_order)
 				if isinstance(best_tree, list):
 					# Check this tree isn't identical to one that's already been found
 					if not any([
@@ -898,16 +1014,17 @@ for i in range(min([args.replicates, len(array_choices)])):
 		print(e)
 		print("Error occured on line {}".format(exc_tb.tb_lineno))
 
+# print([i.id for i in best_addition_order])
 
 print("Score of best tree is: {}".format(best_score))
 
-
-
 if isinstance(best_tree, list):
-	print("{} equivelantly parsimonious trees were identified.".format(len(best_tree)))
-	for good_tree in best_tree:
-		print(good_tree.as_ascii_plot(show_internal_node_labels=True))
-		print(good_tree.as_string("newick"))
+	plot_tree(best_tree[0], best_arrays[0], "test.png")
+# 	print("{} equivelantly parsimonious trees were identified.".format(len(best_tree)))
+# 	for good_tree in best_tree:
+# 		print(good_tree.as_ascii_plot(show_internal_node_labels=True))
+# 		print(good_tree.as_string("newick"))
 else:
+	plot_tree(best_tree, best_arrays, "test.png")
 	print(best_tree.as_ascii_plot(show_internal_node_labels=True))
 	print(best_tree.as_string("newick"))#, suppress_leaf_node_labels=False, suppress_annotations=False))
