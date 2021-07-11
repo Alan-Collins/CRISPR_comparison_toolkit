@@ -13,6 +13,7 @@ from string import ascii_lowercase
 import random
 from collections import Counter
 import dendropy
+import copy
 
 
 parser = argparse.ArgumentParser(
@@ -64,6 +65,14 @@ class Array():
 
 	def sort_modules(self):
 		self.modules.sort(key=lambda x: int(x.indices[0]))
+
+	def reset(self):
+		self.distance = 0
+		self.events = { 
+						"acquisition" : 0,
+						"indel" : 0,
+						"duplication": 0,
+						}
 
 
 class Spacer_Module():
@@ -617,6 +626,9 @@ def resolve_pairwise_parsimony(array1, array2, all_arrays, node_ids, node_count)
 
 		array1, array2 = find_modules(array1, array2)
 
+		array1.reset() # Make sure the distance and events haven't carried over from a previous usage
+		array2.reset()
+
 		ancestor = infer_ancestor(array1, array2, all_arrays, node_ids, node_count)
 
 		array1 = count_parsimony_events(array1, ancestor)
@@ -658,7 +670,7 @@ def find_closest_array(array, array_dict):
 	return best_match
 
 
-def replace_existing_array(existing_array, new_array, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict):
+def replace_existing_array(existing_array, new_array, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed):
 	"""
 	Given a array already in the tree and an array to be added, finds an ancestral state for the two arrays and replaces the existing array with the following tree structure:
 			   /- existing array
@@ -674,6 +686,7 @@ def replace_existing_array(existing_array, new_array, current_parent, tree, all_
 		node_count (int): The index of the name to use in the node_ids list to name this internal node.
 		array_dict (dict): Dict of arrays in the tree so far.
 		tree_child_dict (dict): Dict of dendopy tree node class instances in the tree.
+		seed (bool): boolean indicating if the parent of the existing array the seed node in the tree.
 	Returns:
 		(tuple) of the following:
 			(dendropy Tree instance) Tree with the existing array replaced with the newly formed node.
@@ -683,13 +696,16 @@ def replace_existing_array(existing_array, new_array, current_parent, tree, all_
 
 	# Make a hypothetical ancestor for the pair of arrays and calculate the distances
 	existing_array, new_array, ancestor = resolve_pairwise_parsimony(existing_array, new_array, all_arrays, node_ids, node_count)
-
-	# Calculate distance from this hypothetical ancestor to its new parent in the tree
-	ancestor = count_parsimony_events(ancestor, current_parent)
-	for k,v in event_costs.items():
-		ancestor.distance += ancestor.events[k] * v
-
 	tree_child_dict[existing_array.id].edge_length = existing_array.distance
+	# If the current parent is not seed then do this
+	if not seed:
+		# Calculate distance from this hypothetical ancestor to its new parent in the tree
+		ancestor.reset()
+		ancestor = count_parsimony_events(ancestor, current_parent)
+		for k,v in event_costs.items():
+			ancestor.distance += ancestor.events[k] * v
+
+	
 
 	for a in [new_array, ancestor]:
 		# Create tree nodes
@@ -697,17 +713,22 @@ def replace_existing_array(existing_array, new_array, current_parent, tree, all_
 		tree_child_dict[a.id].taxon = taxon_namespace.get_taxon(a.id)
 		#Store arrays for further comparisons
 		array_dict[a.id] = a
-
 	# Build new tree node
 	tree_child_dict[ancestor.id].set_child_nodes([tree_child_dict[existing_array.id], tree_child_dict[new_array.id]])
 
-	# figure out which were the existing children of the current_parent
-	for child in tree_child_dict[current_parent.id].child_node_iter():
-		if child.taxon.label != existing_array.id:
-			other_child = child.taxon.label
+	if not seed:
+		# figure out which were the existing children of the current_parent
+		for child in tree_child_dict[current_parent.id].child_node_iter():
+			if child.taxon.label != existing_array.id:
+				other_child = child.taxon.label
+		# Add new node to existing tree as a child of the previous parent of the existing array.
+		tree_child_dict[current_parent.id].set_child_nodes([tree_child_dict[ancestor.id], tree_child_dict[other_child]])
 
-	# Add new node to existing tree as a child of the previous parent of the existing array.
-	tree_child_dict[current_parent.id].set_child_nodes([tree_child_dict[ancestor.id], tree_child_dict[other_child]])
+
+	else:
+		tree.seed_node.set_child_nodes([tree_child_dict[ancestor.id]])
+		
+
 
 	
 
@@ -726,7 +747,7 @@ event_costs = {
 node_ids = ["Internal_" + i for i in ascii_lowercase]
 if len(args.arrays_to_join) > 27: # Maximum internal nodes in tree is n-2 so only need more than 26 if n >= 28
 	node_ids += ["Internal_" + "".join(i) for i in product(ascii_lowercase, repeat = 2)]
-node_count = 0 # Keep track of which internal node ID should be used for each node
+
 
 array_spacers_dict = {}
 with open(args.array_file, 'r') as fin:
@@ -737,77 +758,82 @@ with open(args.array_file, 'r') as fin:
 arrays = [Array(i, array_spacers_dict[i]) for i in args.arrays_to_join]
 all_arrays = [array.spacers for array in arrays]
 labels = args.arrays_to_join
-
-# Set seed for consistent results while getting everything working.
-
-# random.seed(101) # ['1902', '1401', '1245', '1231']
-# random.seed(200) # ['1231', '1245', '1401', '1902']
-
-
-# addition_order = random.sample(arrays, len(arrays)) # Shuffle array order to build tree.
-addition_order = arrays
  
 
 taxon_namespace = dendropy.TaxonNamespace(args.arrays_to_join + node_ids)
-tree = dendropy.Tree(taxon_namespace=taxon_namespace)
 
-array_dict = {}
-tree_child_dict = {}
+best_score = 99999999
 
-# First round
+for i in range(100):
 
-results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count)
-if results != "No_ID":
-	node_count += 1
-	array1, array2, ancestor = results
-else:
-	while results == "No_ID":
-		addition_order = random.sample(arrays, len(arrays)) # Shuffle array order to build tree.
-		results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count)
+	addition_order = random.sample(arrays, len(arrays)) # Shuffle array order to build tree.
+	try:
+		tree = dendropy.Tree(taxon_namespace=taxon_namespace)
+
+		array_dict = {}
+		tree_child_dict = {}
+		node_count = 0 # Keep track of which internal node ID should be used for each node
+
+		results = resolve_pairwise_parsimony(addition_order[0], addition_order[1], all_arrays, node_ids, node_count)
 		if results != "No_ID":
+			node_count += 1
 			array1, array2, ancestor = results
+		else:
+			while results == "No_ID":
+				addition_order = random.sample(arrays, len(arrays)) # Shuffle array order to build tree.
+				results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count)
+				if results != "No_ID":
+					array1, array2, ancestor = results
 
 
-for a in [array1, array2, ancestor]:
-	# Create tree nodes
-	tree_child_dict[a.id] = dendropy.Node(edge_length=a.distance)
-	tree_child_dict[a.id].taxon = taxon_namespace.get_taxon(a.id)
-	#Store arrays for further comparisons
-	array_dict[a.id] = a
+		for a in [array1, array2, ancestor]:
+			# Create tree nodes
+			tree_child_dict[a.id] = dendropy.Node(edge_length=a.distance)
+			tree_child_dict[a.id].taxon = taxon_namespace.get_taxon(a.id)
+			#Store arrays for further comparisons
+			array_dict[a.id] = a
 
-# Add initial relationships to the tree.
-tree.seed_node.add_child(tree_child_dict[ancestor.id])
-tree_child_dict[ancestor.id].add_child(tree_child_dict[array1.id])
-tree_child_dict[ancestor.id].add_child(tree_child_dict[array2.id])
+		# Add initial relationships to the tree.
+		tree.seed_node.add_child(tree_child_dict[ancestor.id])
+		tree_child_dict[ancestor.id].add_child(tree_child_dict[array1.id])
+		tree_child_dict[ancestor.id].add_child(tree_child_dict[array2.id])
+
+		for a in addition_order[2:]: # Already added the first two so now add the rest 1 by 1
+			seed = False # To check if we are modifying the child of the seed node
+
+			# Find the most similar array already in the tree (measured in parsimony score)
+			best_match = find_closest_array(a, array_dict)
+			if best_match.extant: # If the closest match is a array then just join them and replace the existing array with the new node
+				current_parent = array_dict[tree_child_dict[best_match.id].parent_node.taxon.label]
+				tree, array_dict, tree_child_dict = replace_existing_array(
+					best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
+					)
+				node_count += 1
+			else:
+				try:
+					current_parent = array_dict[tree_child_dict[best_match.id].parent_node.taxon.label]
+				except: # Fails if the best match is a child of the seed node
+					seed = True
+					current_parent = None
+				tree, array_dict, tree_child_dict = replace_existing_array(
+					best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
+					)
+				node_count += 1
+			if a != addition_order[-1]:
+				score = sum([v.distance for v in array_dict.values()])
+				if score > best_score:
+					break
+
+		score = sum([v.distance for v in array_dict.values()])
+		if score < best_score:
+			best_score = copy.deepcopy(score)
+			best_tree = copy.deepcopy(tree)
+	except:
+		print('Something went wrong when running with the following array order:')
+		print([i.id for i in addition_order])
 
 
-for a in addition_order[2:]: # Already added the first two so now add the rest 1 by 1
-	# Find the most similar array already in the tree (measured in parsimony score)
-	best_match = find_closest_array(a, array_dict)
-	if best_match.extant: # If the closest match is a array then just join them and replace the existing array with the new node
-		current_parent = array_dict[tree_child_dict[best_match.id].parent_node.taxon.label]
-		tree, array_dict, tree_child_dict = replace_existing_array(
-			best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict
-			)
-		node_count += 1
-	else:
-		current_parent = array_dict[tree_child_dict[best_match.id].parent_node.taxon.label]
-		tree, array_dict, tree_child_dict = replace_existing_array(
-			best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict
-			)
-		node_count += 1
-
-
-
-
-
-
-
-
-
-# print(tree.as_string("newick"))#, suppress_leaf_node_labels=False, suppress_annotations=False))
-
-# print(tree.as_ascii_plot(show_internal_node_labels=True))
-
-
-# print(tree_child_dict[array2.id].parent_node.taxon)
+print('\n\n\n\n')
+print(best_score)
+print(best_tree.as_ascii_plot(show_internal_node_labels=True))
+print(best_tree.as_string("newick"))#, suppress_leaf_node_labels=False, suppress_annotations=False))
