@@ -795,113 +795,128 @@ def plot_tree(tree, array_dict, filename):
 	node = start_node
 	highest_y = 0.5
 
+	nodes_to_revisit = {} # Store nodes with subtrees and the y value to start at for them
+
 	while True: # Keep going until reaching the root triggers a break.
 
 		first_node = node
 		node_locs[first_node.taxon.label] = position
 		if len(node.sibling_nodes())==1:
-			second_node = node.sibling_nodes()[0]
+			if node.taxon.label not in nodes_to_revisit.keys():
+				second_node = node.sibling_nodes()[0]
+			else:
+				del nodes_to_revisit[node.taxon.label] # Remove that from the list as we've finished its tree
+				if len(nodes_to_revisit) == 0:
+					break
+				else:
+					node = tree.find_node_with_label(list(nodes_to_revisit.keys())[0]) # start the next node to revisit
+					first_node = node.leaf_nodes()[0]# start drawing from a random leaf in the subtree
+					highest_y = y2 = nodes_to_revisit[node.taxon.label] # Set the y position reserved for this subtree
+					second_node = first_node.sibling_nodes()[0]
+				
+				
+				
+
+
 		else: # We've reached the root. Draw the last node and exit the loop
 			x1 = node_locs[first_node.taxon.label][0]
 			x2 = node_locs[first_node.taxon.label][0] + first_node.edge_length * hscale
 			y1 = node_locs[first_node.taxon.label][1]
 			y2 = node_locs[first_node.taxon.label][1]
 
-			highest_y = max([y1,y2])
+			highest_y = max([highest_y,y2])
 
 			ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1, solid_capstyle="butt")
 			ax.text(x1, y1+0.5*vscale, first_node.taxon.label, ha='right')
-			break
+
+			if len(nodes_to_revisit) == 0:
+				break
+			else:
+				node = tree.find_node_with_taxon_label(list(nodes_to_revisit.keys())[0]) # start the first node to revisit
+				first_node = node.leaf_nodes()[0] # start drawing from a random leaf in the subtree
+				second_node = first_node.sibling_nodes()[0]
+				highest_y = y2 = nodes_to_revisit[node.taxon.label] # Set the y position reserved for this subtree
+				node_locs[first_node.taxon.label] = [max_depth-first_node.root_distance*hscale,y2]
 		
 
 		# Draw first branch
-
+		
 		x1 = node_locs[first_node.taxon.label][0]
 		x2 = node_locs[first_node.taxon.label][0] + first_node.edge_length * hscale
 		y1 = node_locs[first_node.taxon.label][1]
 		y2 = node_locs[first_node.taxon.label][1]
 
-		highest_y = max([y1,y2])
+		highest_y = max([highest_y,y2])
 
 		ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1, solid_capstyle="butt")
-		ax.text(x1, y1+0.5*vscale, first_node.taxon.label, ha='right')
+		ax.text(x1, y1, first_node.taxon.label, ha='right')
 		
 		# Draw joining line
 		num_leaves = len(second_node.leaf_nodes()) # Figure out how much space is needed based on the number of leaves below this node
 		num_internal = len([i for i in second_node.levelorder_iter(lambda x: x.is_internal())])
 
-		print(num_leaves, num_internal)
-		y2 = max_y+1.5*(num_internal+num_leaves)*vscale+3
+		if num_internal > 0:  # store name of subtree parent
+			num_internal += num_leaves - 1 # Counts self so need to subtract 1.
+
+			y2 = highest_y+((num_internal)*1.5)*vscale
+
+			ax.plot([x2, x2], [y1, highest_y+((num_internal+1)*1.5)*vscale+1.5*vscale],color = 'black', linewidth = 1, solid_capstyle="butt")
 
 
-		ax.plot([x2, x2], [y1, y2],color = 'black', linewidth = 1, solid_capstyle="butt")
+			highest_y = y2
 
-		highest_y = y2
+			position = [max_depth-second_node.root_distance*hscale ,y2]
+			node_locs[second_node.taxon.label] = position
 
-		position = [max_depth-second_node.root_distance*hscale ,y2]
-		node_locs[second_node.taxon.label] = position
+			#Draw second branch
 
-		#Draw second branch
+			x1 = node_locs[second_node.taxon.label][0]
+			x2 = node_locs[second_node.taxon.label][0] + second_node.edge_length * hscale
+			y1 = node_locs[second_node.taxon.label][1]
+			y2 = node_locs[second_node.taxon.label][1]
 
-		x1 = node_locs[second_node.taxon.label][0]
-		x2 = node_locs[second_node.taxon.label][0] + second_node.edge_length * hscale
-		y1 = node_locs[second_node.taxon.label][1]
-		y2 = node_locs[second_node.taxon.label][1]
+			ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1, solid_capstyle="butt")
+			ax.text(x1, y1, second_node.taxon.label, ha='right')
 
-		ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1, solid_capstyle="butt")
-		ax.text(x1, y1, second_node.taxon.label, ha='right')
+			# plt.axis('off')
+			# plt.savefig(filename)
+			# sys.exit()
 
-		if num_internal > 0: # Draw children of second node
-			sub_parent = second_node
-			while num_internal > 0:	
-				first_sub, second_sub = sub_parent.child_nodes()
-				num_internal = len([i for i in first_sub.levelorder_iter(lambda x: x.is_internal())])
-				if num_internal == 0:
-					position = [max_depth-first_sub.root_distance*hscale ,y2-1.5*vscale]
-					node_locs[first_sub.taxon.label] = position
-
-					#Draw leaf
-
-					x1 = node_locs[first_sub.taxon.label][0]
-					x2 = node_locs[first_sub.taxon.label][0] + first_sub.edge_length * hscale
-					y1 = node_locs[first_sub.taxon.label][1]
-					y2 = node_locs[first_sub.taxon.label][1]
-
-					ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1, solid_capstyle="butt")
-					ax.text(x1, y1, first_sub.taxon.label, ha='right')
-
-
+			nodes_to_revisit[second_node.taxon.label] = y2-((num_internal)*1.5)*vscale+1.5*vscale
 			
+			# Make space for the subtree
+			position = [max_depth-second_node.parent_node.root_distance*hscale ,y1+((num_internal-1)*1.5)*vscale+1.5*vscale]
+
+		else:
+			y2 = highest_y+3*vscale
+
+			ax.plot([x2, x2], [y1, y2],color = 'black', linewidth = 1, solid_capstyle="butt")
+
+			highest_y = y2
+
+			position = [max_depth-second_node.root_distance*hscale ,y2]
+			node_locs[second_node.taxon.label] = position
+
+			#Draw second branch
+
+			x1 = node_locs[second_node.taxon.label][0]
+			x2 = node_locs[second_node.taxon.label][0] + second_node.edge_length * hscale
+			y1 = node_locs[second_node.taxon.label][1]
+			y2 = node_locs[second_node.taxon.label][1]
+
+			ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1, solid_capstyle="butt")
+			ax.text(x1, y1, second_node.taxon.label, ha='right')
+
+		
 
 
-
-
+			y1 = node_locs[first_node.taxon.label][1]
+			position = [max_depth-second_node.parent_node.root_distance*hscale ,y2-1.5*vscale]
 		node = second_node.parent_node
-		# Reset the value in case subtrees had to be resolved.
-		y1 = node_locs[first_node.taxon.label][1]
-		position = [max_depth-node.root_distance*hscale ,y2-1.5*vscale]
+
 	
 	plt.axis('off')
 	plt.savefig(filename)
-
-		
-def resolve_subtrees(node, max_y):
-
-	
-		
-			
-
-
-
-	# 	
-
-	# 	if child_remaining:
-	# 		for child in node.parent_node.child_node_iter():
-	# 			if child.taxon.label != node.taxon.label:
-	# 				node = child
-
-
-	# plt.savefig(filename)
 
 
 
@@ -947,10 +962,10 @@ taxon_namespace = dendropy.TaxonNamespace(args.arrays_to_join + node_ids)
 
 best_score = 99999999
 
-for i in range(1): #range(min([args.replicates, len(array_choices)])):
-	# addition_order = array_choices[i]
+for i in range(min([args.replicates, len(array_choices)])):
+	addition_order = array_choices[i]
 	# addition_order = random.sample(arrays, len(arrays)) # Shuffle array order to build tree.
-	addition_order = [Array(i, array_spacers_dict[i]) for i in ['433', '1685', '1254', '146', '355', '159', '761', '487']]
+	# addition_order = [Array(i, array_spacers_dict[i]) for i in ['433', '1685', '1254', '146', '355', '159', '761', '487']]
 	#['761', '146', '159', '1254', '433', '487', '1685', '355']] #['532', '1131', '1087', '423', '21']]
 	try:
 		tree = dendropy.Tree(taxon_namespace=taxon_namespace)
@@ -1050,12 +1065,12 @@ for i in range(1): #range(min([args.replicates, len(array_choices)])):
 print("Score of best tree is: {}".format(best_score))
 
 if isinstance(best_tree, list):
-	plot_tree(best_tree[0], best_arrays[0], "test.png")
-# 	print("{} equivelantly parsimonious trees were identified.".format(len(best_tree)))
-# 	for good_tree in best_tree:
-# 		print(good_tree.as_ascii_plot(show_internal_node_labels=True))
+	# plot_tree(best_tree[0], best_arrays[0], "test_data/test.png")
+	print("{} equivelantly parsimonious trees were identified.".format(len(best_tree)))
+	for good_tree in best_tree:
+		print(good_tree.as_ascii_plot(show_internal_node_labels=True))
 # 		print(good_tree.as_string("newick"))
 else:
-	plot_tree(best_tree, best_arrays, "test.png")
+	# plot_tree(best_tree, best_arrays, "test_data/test.png")
 	print(best_tree.as_ascii_plot(show_internal_node_labels=True))
-	print(best_tree.as_string("newick"))#, suppress_leaf_node_labels=False, suppress_annotations=False))
+	# print(best_tree.as_string("newick"))#, suppress_leaf_node_labels=False, suppress_annotations=False))
