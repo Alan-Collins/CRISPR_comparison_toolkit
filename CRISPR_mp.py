@@ -14,6 +14,7 @@ import random
 from collections import Counter
 import dendropy
 import copy
+from itertools import permutations
 
 
 parser = argparse.ArgumentParser(
@@ -26,6 +27,10 @@ parser.add_argument(
 parser.add_argument(
 	"-p", dest="print_tree", action='store_true',  
 	help="Print a graphical representation of the tree using ascii characters (required ete3 to be installed)."
+	)
+parser.add_argument(
+	"-r",  dest="replicates", type=int, nargs="?", default = 100,
+		help="Specify number of replicates of tree building to perform. The more replicates, the greater the chance that a better tree will be found. Default: 100"
 	)
 parser.add_argument(
 	"arrays_to_join", nargs="+",  
@@ -764,13 +769,15 @@ with open(args.array_file, 'r') as fin:
 arrays = [Array(i, array_spacers_dict[i]) for i in args.arrays_to_join]
 all_arrays = [array.spacers for array in arrays]
 labels = args.arrays_to_join
- 
+array_choices = [i for i in permutations(arrays, len(arrays))]
+
+print("There are {} possible trees to check. If you want to check every possible tree then set -r {}".format(len(array_choices), len(array_choices)))
 
 taxon_namespace = dendropy.TaxonNamespace(args.arrays_to_join + node_ids)
 
 best_score = 99999999
 
-for i in range(100):
+for i in range(args.replicates):
 
 	addition_order = random.sample(arrays, len(arrays)) # Shuffle array order to build tree.
 	# addition_order = [Array(i, array_spacers_dict[i]) for i in ['355', '433', '761', '1685', '1254', '159', '146', '487']]
