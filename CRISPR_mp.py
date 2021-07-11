@@ -783,16 +783,25 @@ arrays = [Array(i, array_spacers_dict[i]) for i in args.arrays_to_join]
 all_arrays = [array.spacers for array in arrays]
 labels = args.arrays_to_join
 array_choices = [i for i in permutations(arrays, len(arrays))]
+random.shuffle(array_choices)
 
-print("There are {} possible trees to check. If you want to check every possible tree then set -r {}".format(len(array_choices), len(array_choices)))
+if len(array_choices) > args.replicates:
+	print("There are {} possible trees to check. If you want to check every possible tree then set -r {}".format(len(array_choices), len(array_choices)))
+
+elif len(array_choices) < args.replicates:
+	print("There are only {} possible trees to check. You specified a greater number of replicates than there are possible trees. All possible trees will be checked.".format(len(array_choices)))
+
+else:
+	print("You specified a number of replicates equal to the number of possible trees. All possible trees will be checked.")
 
 taxon_namespace = dendropy.TaxonNamespace(args.arrays_to_join + node_ids)
 
 best_score = 99999999
 
-for i in range(args.replicates):
+for i in range(min([args.replicates, len(array_choices)])):
 
-	addition_order = random.sample(arrays, len(arrays)) # Shuffle array order to build tree.
+	addition_order = array_choices[i]
+	# addition_order = random.sample(arrays, len(arrays)) # Shuffle array order to build tree.
 	# addition_order = [Array(i, array_spacers_dict[i]) for i in ['355', '433', '761', '1685', '1254', '159', '146', '487']]
 	try:
 		tree = dendropy.Tree(taxon_namespace=taxon_namespace)
@@ -857,14 +866,38 @@ for i in range(args.replicates):
 		else:
 			score = sum([v.distance for v in array_dict.values()])
 			if score < best_score:
+				best_arrays = copy.deepcopy(array_dict) # Keep inferred ancestral states and information
 				best_score = copy.deepcopy(score)
-				best_tree = copy.deepcopy(tree)
+				best_tree = dendropy.Tree(tree)
+			if score == best_score:
+				if isinstance(best_tree, list):
+					# Check this tree isn't identical to one that's already been found
+					if not any([
+						dendropy.calculate.treecompare.weighted_robinson_foulds_distance(good_tree, tree) == 0. for good_tree in best_tree
+						]):
+						best_tree.append([best_tree, dendropy.Tree(tree)])
+						best_arrays.append(copy.deepcopy(array_dict))
+				else:
+					# Check this tree isn't identical to the one that's already been found
+					if dendropy.calculate.treecompare.weighted_robinson_foulds_distance(best_tree, tree) != 0.:
+						best_tree = [best_tree, dendropy.Tree(tree)]
+						best_arrays = [best_arrays, copy.deepcopy(array_dict)]
 	except:
 		print('Something went wrong when running with the following array order:')
 		print([i.id for i in addition_order])
 
 
-print('\n\n\n\n')
-print(best_score)
-print(best_tree.as_ascii_plot(show_internal_node_labels=True))
-print(best_tree.as_string("newick"))#, suppress_leaf_node_labels=False, suppress_annotations=False))
+print("Score of best tree is: {}".format(best_score))
+
+
+
+if isinstance(best_tree, list):
+	print("{} equivelantly parsimonious trees were identified.".format(len(best_tree)))
+	print(dendropy.calculate.treecompare.symmetric_difference(best_tree[0], best_tree[1]))
+	print(dendropy.calculate.treecompare.weighted_robinson_foulds_distance(best_tree[0], best_tree[1]))
+	for good_tree in best_tree:
+		print(good_tree.as_ascii_plot(show_internal_node_labels=True))
+		print(good_tree.as_string("newick"))
+else:
+	print(best_tree.as_ascii_plot(show_internal_node_labels=True))
+	print(best_tree.as_string("newick"))#, suppress_leaf_node_labels=False, suppress_annotations=False))
