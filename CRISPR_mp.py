@@ -1050,6 +1050,11 @@ taxon_namespace = dendropy.TaxonNamespace(labels + node_ids)
 
 best_score = 99999999
 
+# Keep track of how many times no common spacers are found.
+# If no common spacers are ever found then print an error message saying so
+
+no_id_count = 0 
+
 for i in range(min([args.replicates, len(array_choices)])):
 	if args.fix_order:
 		if not args.arrays_to_join:
@@ -1070,6 +1075,7 @@ for i in range(min([args.replicates, len(array_choices)])):
 			node_count += 1
 			array1, array2, ancestor = results
 		else:
+			no_id_count += 1
 			continue
 
 
@@ -1095,6 +1101,7 @@ for i in range(min([args.replicates, len(array_choices)])):
 					best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
 					)
 				if results == "No_ID":
+					no_id_count += 1
 					break
 				else:
 					tree, array_dict, tree_child_dict = results
@@ -1109,6 +1116,7 @@ for i in range(min([args.replicates, len(array_choices)])):
 					best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
 					)
 				if results == "No_ID":
+					no_id_count += 1
 					break
 				else:
 					tree, array_dict, tree_child_dict = results
@@ -1154,7 +1162,19 @@ for i in range(min([args.replicates, len(array_choices)])):
 		print("Error occured on line {}".format(exc_tb.tb_lineno))
 
 
+if no_id_count == min([args.replicates, len(array_choices)]):
+	print("\nERROR:\n\nUnable to construct any trees as at least one specified array\
+shares no spacers with any other array already in the tree. \n\
+If you have arrays sharing very few spacers and did not use enough replicates\
+to explore all tree space, then consider retrying with more replicates.\n\
+Otherwise, check that you didn't mistype the array IDs to align.\n\
+If not one of these then that may indicate a problem with the program. \
+Please send the data that led to this error to Alan so he can try to figure it out.\n\n")
+	sys.exit()
+
+
 print("\nScore of best tree is: {}\n".format(best_score))
+
 
 # First check how many spacers will need to be coloured
 
