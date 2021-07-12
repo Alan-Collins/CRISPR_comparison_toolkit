@@ -519,6 +519,7 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 							new_mod = Spacer_Module()
 							new_mod.spacers = mod1.spacers + mod2.spacers
 							ancestor.modules.append(new_mod)
+							idx = mod1.indices[-1] + 1
 						elif " ".join(mod2.spacers + mod1.spacers) in " ".join(found_array):
 							new_mod = Spacer_Module()
 							new_mod.spacers = mod2.spacers + mod1.spacers
@@ -882,7 +883,7 @@ def plot_tree(tree, array_dict, filename):
 
 			highest_y = max([highest_y,y2])
 
-			ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1*vscale, solid_capstyle="butt")
+			ax.plot([x1, x2], [y1, y2], color='black', linewidth=1*vscale, solid_capstyle="butt")
 			ax.text(x1, y1, first_node.taxon.label, ha='right', fontsize=10*vscale)
 
 			if len(nodes_to_revisit) == 0:
