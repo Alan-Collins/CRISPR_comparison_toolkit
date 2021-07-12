@@ -54,8 +54,8 @@ parser.add_argument(
 	help="Specify filename for the graphical representation of your tree with hypothetical intermediate arrays as a png."
 	)
 parser.add_argument(
-	"arrays_to_join", nargs="+",  
-	help="Specify the IDs of the arrays you want to join. **Must come at the end of your command after all other arguments.**"
+	"arrays_to_join", nargs="*",  
+	help="Specify the IDs of the arrays you want to join. If none provided, joins all arrays in the provided array representatives file. **If given, must come at the end of your command after all other arguments.**"
 	)
 
 
@@ -975,11 +975,17 @@ with open(args.array_file, 'r') as fin:
 		bits = line.split()
 		array_spacers_dict[bits[0]] = bits[2:]
 
-arrays = [Array(i, array_spacers_dict[i]) for i in args.arrays_to_join]
-all_arrays = [array.spacers for array in arrays]
-labels = args.arrays_to_join
+if args.arrays_to_join:
+	arrays = [Array(i, array_spacers_dict[i]) for i in args.arrays_to_join]
+	labels = args.arrays_to_join
+else:
+	arrays = [Array(i, array_spacers_dict[i]) for i in array_spacers_dict.keys()]
+	labels = list(array_spacers_dict.keys())
 
-if len(args.arrays_to_join) < 9:
+all_arrays = [array.spacers for array in arrays]
+
+
+if len(labels) < 9:
 	array_choices = [i for i in permutations(arrays, len(arrays))]
 	random.shuffle(array_choices)
 
@@ -995,12 +1001,15 @@ if len(args.arrays_to_join) < 9:
 else:
 	array_choices = [random.sample(arrays, len(arrays)) for i in range(args.replicates)]
 
-taxon_namespace = dendropy.TaxonNamespace(args.arrays_to_join + node_ids)
+taxon_namespace = dendropy.TaxonNamespace(labels + node_ids)
 
 best_score = 99999999
 
 for i in range(min([args.replicates, len(array_choices)])):
 	if args.fix_order:
+		if not args.arrays_to_join:
+			print("You must provide the order you want to fix when using the fixed order option!\n\nABORTING.")
+			sys.exit()
 		addition_order = [Array(i, array_spacers_dict[i]) for i in args.arrays_to_join]
 	else:
 		addition_order = array_choices[i]
