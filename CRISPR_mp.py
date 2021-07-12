@@ -825,6 +825,7 @@ def plot_tree(tree, array_dict, filename):
 
 
 		else: # We've reached the root. Draw the last node and exit the loop
+
 			x1 = node_locs[first_node.taxon.label][0]
 			x2 = node_locs[first_node.taxon.label][0] + first_node.edge_length * hscale
 			y1 = node_locs[first_node.taxon.label][1]
@@ -884,15 +885,12 @@ def plot_tree(tree, array_dict, filename):
 			ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1*vscale, solid_capstyle="butt")
 			ax.text(x1, y1, second_node.taxon.label, ha='right', fontsize=10*vscale)
 
-			# plt.axis('off')
-			# plt.savefig(filename)
-			# sys.exit()
+
 
 			nodes_to_revisit[second_node.taxon.label] = y2-((num_internal)*1.5)*vscale+1.5*vscale
-			
 			# Make space for the subtree
-			# position = [max_depth-second_node.parent_node.root_distance*hscale ,y1+((num_internal-1)*1.5)*vscale+1.5*vscale]
 			position = [max_depth-second_node.parent_node.root_distance*hscale ,y1+3*vscale]
+
 
 		else:
 			y2 = highest_y+3*vscale
@@ -902,7 +900,8 @@ def plot_tree(tree, array_dict, filename):
 			highest_y = y2
 
 			position = [max_depth-second_node.root_distance*hscale ,y2]
-			node_locs[second_node.taxon.label] = position
+			if second_node.taxon.label not in node_locs.keys():
+				node_locs[second_node.taxon.label] = position
 
 			#Draw second branch
 
@@ -922,29 +921,7 @@ def plot_tree(tree, array_dict, filename):
 		node = second_node.parent_node
 
 	# Add cartoon arrays to show hypothetical ancestral states
-
-	# First check how many spacers will need to be coloured
-
-	all_spacers = []
-	for array in array_dict.values():
-		all_spacers += array.spacers
-	non_singleton_spacers = [spacer for spacer, count in Counter(all_spacers).items() if count >1]
-	if len(non_singleton_spacers) > 27:
-		if len(non_singleton_spacers) > 40:
-			print("Get a new colour scheme. Don't have enough colours.")
-		else:
-			colours = Cols_hex_40
-	else:
-		colours = Cols_hex_27
-
-
-	# Then build a dictionary with colours assigned to each spacer.
-	spacer_cols_dict  = {}
-
-	for i, spacer in enumerate(non_singleton_spacers):
-		spacer_cols_dict[spacer] = colours[i]
-
-	# Then plot each array using the coordinates of the array label on the plotted tree.
+	# plot each array using the coordinates of the array label on the plotted tree.
 
 	for array, location in node_locs.items():
 		spacers = array_dict[array].spacers
@@ -1021,7 +998,7 @@ best_score = 99999999
 for i in range(min([args.replicates, len(array_choices)])):
 	addition_order = array_choices[i]
 	# addition_order = random.sample(arrays, len(arrays)) # Shuffle array order to build tree.
-	# addition_order = [Array(i, array_spacers_dict[i]) for i in ['1221', '999', '361', '996', '598']]
+	# addition_order = [Array(i, array_spacers_dict[i]) for i in ['487', '355', '1254', '1685', '146', '159', '433', '761']]
 	try:
 		tree = dendropy.Tree(taxon_namespace=taxon_namespace)
 
@@ -1116,8 +1093,28 @@ for i in range(min([args.replicates, len(array_choices)])):
 		print("Error occured on line {}".format(exc_tb.tb_lineno))
 
 order = [i.id for i in best_addition_order]
-
+print(order)
 print("Score of best tree is: {}".format(best_score))
+
+# First check how many spacers will need to be coloured
+
+all_spacers = []
+for array in array_choices[0]:
+	all_spacers += array.spacers
+non_singleton_spacers = [spacer for spacer, count in Counter(all_spacers).items() if count >1]
+if len(non_singleton_spacers) > 27:
+	if len(non_singleton_spacers) > 40:
+		print("Get a new colour scheme. Don't have enough colours.")
+	else:
+		colours = Cols_hex_40
+else:
+	colours = Cols_hex_27
+
+# build a dictionary with colours assigned to each spacer.
+spacer_cols_dict  = {}
+
+for i, spacer in enumerate(non_singleton_spacers):
+	spacer_cols_dict[spacer] = colours[i]
 
 try:
 
