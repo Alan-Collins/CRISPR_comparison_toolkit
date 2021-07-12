@@ -1144,7 +1144,8 @@ try:
 			print(good_tree.as_string("newick"))
 			print('\n\n')
 			if args.output_tree:
-				filename = "{}_{}.png".format(args.output_tree[:-4], n)
+				filename = "{}_{}.png".format(args.output_tree[:-4], n+1)
+				print("Saving image of tree with array diagrams to {}\n".format(filename))
 				plot_tree(good_tree, best_arrays[n], filename)
 	else:
 		order = [i.id for i in best_addition_order]
@@ -1153,6 +1154,7 @@ try:
 			print(best_tree.as_ascii_plot(show_internal_node_labels=True))
 		print(best_tree.as_string("newick"))#, suppress_leaf_node_labels=False, suppress_annotations=False))
 		if args.output_tree:
+			print("Saving image of tree with array diagrams to {}\n".format(args.output_tree))
 			plot_tree(best_tree, best_arrays, args.output_tree)
 except Exception as e:
 	exc_type, exc_obj, exc_tb = sys.exc_info()
