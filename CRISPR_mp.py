@@ -884,7 +884,6 @@ def plot_tree(tree, array_dict, filename):
 			highest_y = max([highest_y,y2])
 
 			ax.plot([x1, x2], [y1, y2], color='black', linewidth=1*vscale, solid_capstyle="butt")
-			ax.text(x1, y1, first_node.taxon.label, ha='right', fontsize=10*vscale)
 
 			if len(nodes_to_revisit) == 0:
 				break
@@ -906,7 +905,6 @@ def plot_tree(tree, array_dict, filename):
 		highest_y = max([highest_y,y2])
 
 		ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1*vscale, solid_capstyle="butt")
-		ax.text(x1, y1, first_node.taxon.label, ha='right', fontsize=10*vscale)
 		
 		# Draw joining line
 		num_leaves = len(second_node.leaf_nodes()) # Figure out how much space is needed based on the number of leaves below this node
@@ -932,8 +930,8 @@ def plot_tree(tree, array_dict, filename):
 			y1 = node_locs[second_node.taxon.label][1]
 			y2 = node_locs[second_node.taxon.label][1]
 
+
 			ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1*vscale, solid_capstyle="butt")
-			ax.text(x1, y1, second_node.taxon.label, ha='right', fontsize=10*vscale)
 
 
 
@@ -961,7 +959,6 @@ def plot_tree(tree, array_dict, filename):
 			y2 = node_locs[second_node.taxon.label][1]
 
 			ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1*vscale, solid_capstyle="butt")
-			ax.text(x1, y1, second_node.taxon.label, ha='right', fontsize=10*vscale)
 
 		
 
@@ -974,23 +971,27 @@ def plot_tree(tree, array_dict, filename):
 	# plot each array using the coordinates of the array label on the plotted tree.
 
 	for array, location in node_locs.items():
+		# Add label first
+		x ,y = location
+		ax.text(x-0.05*hscale, y, array, ha='right', fontsize=15*vscale)
+		# Then add spacers
 		spacers = array_dict[array].spacers
 		start_pos_x = location[0]-5*hscale # Start a bit to the left to leave room for the label
 		start_pos_y = location[1] 
 		for n, spacer in enumerate(reversed(spacers)): # work backwards through the array plotting from right to left
 			if spacer in spacer_cols_dict.keys():
 				spcolour = spacer_cols_dict[spacer]
-				line_width = 5*vscale
+				line_width = 10*vscale
 			else:
 				spcolour = "#000000" #black
-				line_width = 2*vscale
-			ax.plot([start_pos_x-1*n*hscale, start_pos_x-1*n*hscale-1*hscale],[start_pos_y, start_pos_y], color=spcolour, linewidth=line_width, solid_capstyle="butt")
+				line_width = 4*vscale
+			ax.plot([start_pos_x-2*n*hscale, start_pos_x-2*n*hscale-2*hscale],[start_pos_y, start_pos_y], color=spcolour, linewidth=line_width, solid_capstyle="butt")
 
 
 
 	
 	plt.axis('off')
-	plt.savefig(filename)
+	plt.savefig(filename, dpi=600)
 
 
 
@@ -1010,9 +1011,9 @@ Cols_hex_40 = ["#696969","#556b2f","#a0522d","#800000","#006400","#808000","#483
 
 # Generate strings to assign as internal node_IDs (This makes 702)
 
-node_ids = ["Internal_" + i for i in ascii_lowercase]
+node_ids = ["Int_" + i for i in ascii_lowercase]
 if len(args.arrays_to_join) > 27: # Maximum internal nodes in tree is n-2 so only need more than 26 if n >= 28
-	node_ids += ["Internal_" + "".join(i) for i in product(ascii_lowercase, repeat = 2)]
+	node_ids += ["Int_" + "".join(i) for i in product(ascii_lowercase, repeat = 2)]
 
 
 array_spacers_dict = {}
