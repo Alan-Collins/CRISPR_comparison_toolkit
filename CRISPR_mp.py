@@ -826,7 +826,7 @@ def plot_tree(tree, array_dict, filename):
 
 			highest_y = max([highest_y,y2])
 
-			ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1, solid_capstyle="butt")
+			ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1*vscale, solid_capstyle="butt")
 			ax.text(x1, y1+0.5*vscale, first_node.taxon.label, ha='right')
 
 			if len(nodes_to_revisit) == 0:
@@ -848,7 +848,7 @@ def plot_tree(tree, array_dict, filename):
 
 		highest_y = max([highest_y,y2])
 
-		ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1, solid_capstyle="butt")
+		ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1*vscale, solid_capstyle="butt")
 		ax.text(x1, y1, first_node.taxon.label, ha='right')
 		
 		# Draw joining line
@@ -860,7 +860,7 @@ def plot_tree(tree, array_dict, filename):
 
 			y2 = highest_y+((num_internal)*1.5)*vscale
 
-			ax.plot([x2, x2], [y1, highest_y+((num_internal+1)*1.5)*vscale+1.5*vscale],color = 'black', linewidth = 1, solid_capstyle="butt")
+			ax.plot([x2, x2], [y1, highest_y+((num_internal+1)*1.5)*vscale+1.5*vscale],color = 'black', linewidth = 1*vscale, solid_capstyle="butt")
 
 
 			highest_y = y2
@@ -875,7 +875,7 @@ def plot_tree(tree, array_dict, filename):
 			y1 = node_locs[second_node.taxon.label][1]
 			y2 = node_locs[second_node.taxon.label][1]
 
-			ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1, solid_capstyle="butt")
+			ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1*vscale, solid_capstyle="butt")
 			ax.text(x1, y1, second_node.taxon.label, ha='right')
 
 			# plt.axis('off')
@@ -890,7 +890,7 @@ def plot_tree(tree, array_dict, filename):
 		else:
 			y2 = highest_y+3*vscale
 
-			ax.plot([x2, x2], [y1, y2],color = 'black', linewidth = 1, solid_capstyle="butt")
+			ax.plot([x2, x2], [y1, y2],color = 'black', linewidth = 1*vscale, solid_capstyle="butt")
 
 			highest_y = y2
 
@@ -904,7 +904,7 @@ def plot_tree(tree, array_dict, filename):
 			y1 = node_locs[second_node.taxon.label][1]
 			y2 = node_locs[second_node.taxon.label][1]
 
-			ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1, solid_capstyle="butt")
+			ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1*vscale, solid_capstyle="butt")
 			ax.text(x1, y1, second_node.taxon.label, ha='right')
 
 		
@@ -915,6 +915,43 @@ def plot_tree(tree, array_dict, filename):
 		node = second_node.parent_node
 
 	# Add cartoon arrays to show hypothetical ancestral states
+
+	# First check how many spacers will need to be coloured
+
+	all_spacers = []
+	for array in array_dict.values():
+		all_spacers += array.spacers
+	non_singleton_spacers = [spacer for spacer, count in Counter(all_spacers).items() if count >1]
+	if len(non_singleton_spacers) > 27:
+		if len(non_singleton_spacers) > 40:
+			print("Get a new colour scheme. Don't have enough colours.")
+		else:
+			colours = Cols_hex_40
+	else:
+		colours = Cols_hex_27
+
+
+	# Then build a dictionary with colours assigned to each spacer.
+	spacer_cols_dict  = {}
+
+	for i, spacer in enumerate(non_singleton_spacers):
+		spacer_cols_dict[spacer] = colours[i]
+
+	# Then plot each array using the coordinates of the array label on the plotted tree.
+
+	for array, location in node_locs.items():
+		spacers = array_dict[array].spacers
+		start_pos_x = location[0]-5*hscale # Start a bit to the left to leave room for the label
+		start_pos_y = location[1] 
+		for n, spacer in enumerate(reversed(spacers)): # work backwards through the array plotting from right to left
+			if spacer in spacer_cols_dict.keys():
+				spcolour = spacer_cols_dict[spacer]
+				line_width = 5*vscale
+			else:
+				spcolour = "#000000" #black
+				line_width = 2*vscale
+			ax.plot([start_pos_x-1*n*hscale, start_pos_x-1*n*hscale-1*hscale],[start_pos_y, start_pos_y], color=spcolour, linewidth=line_width, solid_capstyle="butt")
+
 
 
 	
@@ -1078,10 +1115,10 @@ print("Score of best tree is: {}".format(best_score))
 try:
 
 	if isinstance(best_tree, list):
-		print("{} equivelantly parsimonious trees were identified.".format(len(best_tree)))
-		for good_tree in best_tree:
-			print(good_tree.as_ascii_plot(show_internal_node_labels=True))
-			print(good_tree.as_string("newick"))
+		# print("{} equivelantly parsimonious trees were identified.".format(len(best_tree)))
+		# for good_tree in best_tree:
+			# print(good_tree.as_ascii_plot(show_internal_node_labels=True))
+			# print(good_tree.as_string("newick"))
 		plot_tree(best_tree[0], best_arrays[0], "test_data/test.png")
 	else:
 		print(best_tree.as_ascii_plot(show_internal_node_labels=True))
