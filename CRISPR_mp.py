@@ -914,6 +914,9 @@ def plot_tree(tree, array_dict, filename):
 			position = [max_depth-second_node.parent_node.root_distance*hscale ,y2-1.5*vscale]
 		node = second_node.parent_node
 
+	# Add cartoon arrays to show hypothetical ancestral states
+
+
 	
 	plt.axis('off')
 	plt.savefig(filename)
@@ -926,6 +929,13 @@ event_costs = {
 				"duplication": args.duplication,
 				}
 
+# hex values from this website http://phrogz.net/css/distinct-colors.html
+
+Cols_hex_27 = ['#fd5925', '#dbc58e', '#008d40', '#304865', '#934270', '#f7b8a2', '#907500', '#45deb2', '#1f4195', '#d67381', '#8e7166', '#afb200', '#005746', '#a598ff', '#8f0f1b', '#b96000', '#667f42', '#00c7ce', '#9650f0', '#614017', '#59c300', '#1a8298', '#b5a6bd', '#ea9b00', '#bbcbb3', '#00b0ff', '#cd6ec6']
+
+#hex values from https://mokole.com/palette.html
+
+Cols_hex_40 = ["#696969","#556b2f","#a0522d","#800000","#006400","#808000","#483d8b","#3cb371","#008080","#bdb76b","#4682b4","#000080","#9acd32","#32cd32","#daa520","#7f007f","#ff4500","#00ced1","#ff8c00","#c71585","#0000cd","#00ff00","#9400d3","#dc143c","#00bfff","#f4a460","#adff2f","#da70d6","#ff00ff","#1e90ff","#db7093","#fa8072","#ffff54","#dda0dd","#7b68ee","#afeeee","#98fb98","#7fffd4","#ffe4c4","#ffc0cb"]
 
 # Generate strings to assign as internal node_IDs (This makes 702)
 
@@ -964,10 +974,10 @@ taxon_namespace = dendropy.TaxonNamespace(args.arrays_to_join + node_ids)
 
 best_score = 99999999
 
-for i in range(1): #range(min([args.replicates, len(array_choices)])):
-	# addition_order = array_choices[i]
+for i in range(min([args.replicates, len(array_choices)])):
+	addition_order = array_choices[i]
 	# addition_order = random.sample(arrays, len(arrays)) # Shuffle array order to build tree.
-	addition_order = [Array(i, array_spacers_dict[i]) for i in ['1221', '999', '361', '996', '598']]
+	# addition_order = [Array(i, array_spacers_dict[i]) for i in ['1221', '999', '361', '996', '598']]
 	try:
 		tree = dendropy.Tree(taxon_namespace=taxon_namespace)
 
