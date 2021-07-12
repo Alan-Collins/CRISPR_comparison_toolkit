@@ -46,6 +46,10 @@ parser.add_argument(
 		help="Specify the parsimony cost of a duplication event involving one or more spacers. Default: 1"
 	)
 parser.add_argument(
+	"-o", dest="output_tree", required = False,
+	help="Specify filename for the graphical representation of your tree with hypothetical intermediate arrays as a png."
+	)
+parser.add_argument(
 	"arrays_to_join", nargs="+",  
 	help="Specify the IDs of the arrays you want to join. **Must come at the end of your command after all other arguments.**"
 	)
@@ -1119,14 +1123,17 @@ try:
 
 	if isinstance(best_tree, list):
 		print("{} equivalantly parsimonious trees were identified.".format(len(best_tree)))
-		for good_tree in best_tree:
+		for n, good_tree in enumerate(best_tree):
 			print(good_tree.as_ascii_plot(show_internal_node_labels=True))
 			print(good_tree.as_string("newick"))
-		plot_tree(best_tree[0], best_arrays[0], "test_data/test.png")
+			if args.output_tree:
+				filename = "{}_{}.png".format(args.output_tree[:-4], n)
+				plot_tree(good_tree, best_arrays[n], filename)
 	else:
 		print(best_tree.as_ascii_plot(show_internal_node_labels=True))
 		print(best_tree.as_string("newick"))#, suppress_leaf_node_labels=False, suppress_annotations=False))
-		plot_tree(best_tree, best_arrays, "test_data/test.png")
+		if args.output_tree:
+			plot_tree(best_tree, best_arrays, args.output_tree)
 except Exception as e:
 	exc_type, exc_obj, exc_tb = sys.exc_info()
 	exc_tb.print_exception()
