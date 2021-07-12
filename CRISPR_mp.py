@@ -829,7 +829,7 @@ def plot_tree(tree, array_dict, filename):
 			highest_y = max([highest_y,y2])
 
 			ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1*vscale, solid_capstyle="butt")
-			ax.text(x1, y1+0.5*vscale, first_node.taxon.label, ha='right')
+			ax.text(x1, y1+0.5*vscale, first_node.taxon.label, ha='right', fontsize=10*vscale)
 
 			if len(nodes_to_revisit) == 0:
 				break
@@ -851,7 +851,7 @@ def plot_tree(tree, array_dict, filename):
 		highest_y = max([highest_y,y2])
 
 		ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1*vscale, solid_capstyle="butt")
-		ax.text(x1, y1, first_node.taxon.label, ha='right')
+		ax.text(x1, y1, first_node.taxon.label, ha='right', fontsize=10*vscale)
 		
 		# Draw joining line
 		num_leaves = len(second_node.leaf_nodes()) # Figure out how much space is needed based on the number of leaves below this node
@@ -878,7 +878,7 @@ def plot_tree(tree, array_dict, filename):
 			y2 = node_locs[second_node.taxon.label][1]
 
 			ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1*vscale, solid_capstyle="butt")
-			ax.text(x1, y1, second_node.taxon.label, ha='right')
+			ax.text(x1, y1, second_node.taxon.label, ha='right', fontsize=10*vscale)
 
 			# plt.axis('off')
 			# plt.savefig(filename)
@@ -908,7 +908,7 @@ def plot_tree(tree, array_dict, filename):
 			y2 = node_locs[second_node.taxon.label][1]
 
 			ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1*vscale, solid_capstyle="butt")
-			ax.text(x1, y1, second_node.taxon.label, ha='right')
+			ax.text(x1, y1, second_node.taxon.label, ha='right', fontsize=10*vscale)
 
 		
 
