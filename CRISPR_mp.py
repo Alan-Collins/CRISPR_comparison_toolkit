@@ -338,24 +338,64 @@ def find_modules(array1, array2):
 				module2.indices.append(n)
 				module2.spacers.append(b)
 			else:
-				# Module1 processing for indel module
-				if module1.type != "indel" and module1.type != "":
-					array1.modules.append(module1)
-					for k in module1.indices:
-						array1.module_lookup[k] = module1
-					module1 = Spacer_Module()
-				module1.type = "indel"
-				module1.indices.append(n)
-				module1.spacers.append(a)
-				# Module2 processing for indel module
-				if module2.type != "indel" and module2.type != "":
-					array2.modules.append(module2)
-					for k in module2.indices:
-						array2.module_lookup[k] = module2
-					module2 = Spacer_Module()
-				module2.type = "indel"
-				module2.indices.append(n)
-				module2.spacers.append(b)
+				# Check if duplication
+				if a != b and Counter(array2.aligned)[b] > 1:
+					# If this spacer is in multiple copies and aligns with a gap it means the comparator array has no or fewer copies of this spacer.
+					if module2.type != "duplication" and module2.type != "":
+						array2.modules.append(module2)
+						for k in module2.indices:
+							array2.module_lookup[k] = module2
+						module2 = Spacer_Module()
+					module2.type = "duplication"
+					module2.indices.append(n)
+					module2.spacers.append(b)
+
+					if module1.type != "duplication" and module1.type != "":
+						array1.modules.append(module1)
+						for k in module1.indices:
+							array1.module_lookup[k] = module1
+						module1 = Spacer_Module()
+					module1.type = "duplication"
+					module1.indices.append(n)
+					module1.spacers.append(a)
+				elif a != b and Counter(array1.aligned)[a] > 1:
+					if module1.type != "duplication" and module1.type != "":
+						array1.modules.append(module1)
+						for k in module1.indices:
+							array1.module_lookup[k] = module1
+						module1 = Spacer_Module()
+					module1.type = "duplication"
+					module1.indices.append(n)
+					module1.spacers.append(a)
+
+					if module2.type != "duplication" and module2.type != "":
+						array2.modules.append(module2)
+						for k in module2.indices:
+							array2.module_lookup[k] = module2
+						module2 = Spacer_Module()
+					module2.type = "duplication"
+					module2.indices.append(n)
+					module2.spacers.append(b)
+
+				else:
+					# Module1 processing for indel module
+					if module1.type != "indel" and module1.type != "":
+						array1.modules.append(module1)
+						for k in module1.indices:
+							array1.module_lookup[k] = module1
+						module1 = Spacer_Module()
+					module1.type = "indel"
+					module1.indices.append(n)
+					module1.spacers.append(a)
+					# Module2 processing for indel module
+					if module2.type != "indel" and module2.type != "":
+						array2.modules.append(module2)
+						for k in module2.indices:
+							array2.module_lookup[k] = module2
+						module2 = Spacer_Module()
+					module2.type = "indel"
+					module2.indices.append(n)
+					module2.spacers.append(b)
 
 
 	if module1.type != "":
@@ -404,6 +444,10 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 				# If spacers are shared in these they are assumed to have been in the ancestor.
 				ancestor.modules.append(mod1)
 				idx = mod1.indices[-1] + 1
+				continue
+			elif mod1.type == "duplication":
+				# If one has duplicated spacers but the other doesn't then he ancestral state likely didn't have them
+				idx = max([mod1.indices[-1], mod2.indices[-1]]) + 1 # Skip the rest of this module.
 				continue
 			elif mod1.type == "indel":
 				# If one array has just spacers and the other just gaps in the indel then pick the spacers as ancestral unless those spacers are singletons.
@@ -482,7 +526,7 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 							idx = mod1.indices[-1] + 1
 						else:
 							# Something else has happened. For now don't put these spacers in the ancestral array. May revisit.
-							pass
+							idx = mod1.indices[-1] + 1
 					else: # Not all the spacers were found in a single array. Is either set found in another array?
 						spacers1_found = False
 						spacers2_found = False
@@ -516,6 +560,7 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 							# Neither was found.
 							idx = mod2.indices[-1] + 1
 							
+			
 
 
 
