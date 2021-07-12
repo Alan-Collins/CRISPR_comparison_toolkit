@@ -27,11 +27,15 @@ parser.add_argument(
 	)
 parser.add_argument(
 	"-p", dest="print_tree", action='store_true',  
-	help="Print a graphical representation of the tree using ascii characters (required ete3 to be installed)."
+	help="Print a graphical representation of the tree using ascii characters."
 	)
 parser.add_argument(
-	"-r",  dest="replicates", type=int, nargs="?", default = 100,
-		help="Specify number of replicates of tree building to perform. The more replicates, the greater the chance that a better tree will be found. Default: 100"
+	"-x", dest="fix_order", action='store_true',  
+	help="Only build one tree using the provided order of arrays. Good for recreating previously found trees."
+	)
+parser.add_argument(
+	"-r",  dest="replicates", type=int, nargs="?", default = 1,
+		help="Specify number of replicates of tree building to perform. The more replicates, the greater the chance that a better tree will be found. Default: 1"
 	)
 parser.add_argument(
 	"-q",  dest="acquisition", type=int, nargs="?", default = 1,
@@ -981,13 +985,13 @@ if len(args.arrays_to_join) < 9:
 
 
 	if len(array_choices) > args.replicates:
-		print("There are {} possible trees to check. If you want to check every possible tree then set -r {}".format(len(array_choices), len(array_choices)))
+		print("\nThere are {} possible trees to check. If you want to check every possible tree then set -r {}\n".format(len(array_choices), len(array_choices)))
 
 	elif len(array_choices) < args.replicates:
-		print("There are only {} possible trees to check. You specified a greater number of replicates than there are possible trees. All possible trees will be checked.".format(len(array_choices)))
+		print("\nThere are only {} possible trees to check. You specified a greater number of replicates than there are possible trees. All possible trees will be checked.\n".format(len(array_choices)))
 
 	else:
-		print("You specified a number of replicates equal to the number of possible trees. All possible trees will be checked.")
+		print("\nYou specified a number of replicates equal to the number of possible trees. All possible trees will be checked.\n")
 else:
 	array_choices = [random.sample(arrays, len(arrays)) for i in range(args.replicates)]
 
@@ -996,9 +1000,10 @@ taxon_namespace = dendropy.TaxonNamespace(args.arrays_to_join + node_ids)
 best_score = 99999999
 
 for i in range(min([args.replicates, len(array_choices)])):
-	addition_order = array_choices[i]
-	# addition_order = random.sample(arrays, len(arrays)) # Shuffle array order to build tree.
-	# addition_order = [Array(i, array_spacers_dict[i]) for i in ['487', '355', '1254', '1685', '146', '159', '433', '761']]
+	if args.fix_order:
+		addition_order = [Array(i, array_spacers_dict[i]) for i in args.arrays_to_join]
+	else:
+		addition_order = array_choices[i]
 	try:
 		tree = dendropy.Tree(taxon_namespace=taxon_namespace)
 
@@ -1065,12 +1070,12 @@ for i in range(min([args.replicates, len(array_choices)])):
 			if score < best_score:
 				best_arrays = copy.deepcopy(array_dict) # Keep inferred ancestral states and information
 				best_score = copy.deepcopy(score)
+				best_addition_order = copy.deepcopy(addition_order)
 
 				# Keep one copy for comparisons as copy.deepcopy makes a new taxon namespace which breaks comparisons.
 				best_tree_comparator = dendropy.Tree(tree)
 				best_tree = copy.deepcopy(tree)
 			if score == best_score:
-				best_addition_order = copy.deepcopy(addition_order)
 				if isinstance(best_tree, list):
 					# Check this tree isn't identical to one that's already been found
 					if not any([
@@ -1079,12 +1084,14 @@ for i in range(min([args.replicates, len(array_choices)])):
 						best_tree_comparator.append(dendropy.Tree(tree))
 						best_tree.append(copy.deepcopy(tree))
 						best_arrays.append(copy.deepcopy(array_dict))
+						best_addition_order.append(copy.deepcopy(addition_order))
 				else:
 					# Check this tree isn't identical to the one that's already been found
 					if dendropy.calculate.treecompare.weighted_robinson_foulds_distance(best_tree_comparator, tree) != 0.:
 						best_tree_comparator = [best_tree_comparator, dendropy.Tree(tree)]
 						best_tree = [best_tree, copy.deepcopy(tree)]
 						best_arrays = [best_arrays, copy.deepcopy(array_dict)]
+						best_addition_order = [best_addition_order, copy.deepcopy(addition_order)]
 	except Exception as e:
 		exc_type, exc_obj, exc_tb = sys.exc_info()
 		print('Something went wrong when running with the following array order:')
@@ -1092,9 +1099,8 @@ for i in range(min([args.replicates, len(array_choices)])):
 		print(e)
 		print("Error occured on line {}".format(exc_tb.tb_lineno))
 
-order = [i.id for i in best_addition_order]
-print(order)
-print("Score of best tree is: {}".format(best_score))
+
+print("\nScore of best tree is: {}\n".format(best_score))
 
 # First check how many spacers will need to be coloured
 
@@ -1121,13 +1127,21 @@ try:
 	if isinstance(best_tree, list):
 		print("{} equivalantly parsimonious trees were identified.".format(len(best_tree)))
 		for n, good_tree in enumerate(best_tree):
-			print(good_tree.as_ascii_plot(show_internal_node_labels=True))
+			order = [i.id for i in best_addition_order[n]]
+			print("\nThe addition order to make the following tree was: {}\n".format(" ".join(order)))
+			if args.print_tree:
+				print(good_tree.as_ascii_plot(show_internal_node_labels=True))
+				print('\n\n')
 			print(good_tree.as_string("newick"))
+			print('\n\n')
 			if args.output_tree:
 				filename = "{}_{}.png".format(args.output_tree[:-4], n)
 				plot_tree(good_tree, best_arrays[n], filename)
 	else:
-		print(best_tree.as_ascii_plot(show_internal_node_labels=True))
+		order = [i.id for i in best_addition_order]
+		print("\nThe addition order to make the best tree was: {}\n\n".format(" ".join(order)))
+		if args.print_tree:
+			print(best_tree.as_ascii_plot(show_internal_node_labels=True))
 		print(best_tree.as_string("newick"))#, suppress_leaf_node_labels=False, suppress_annotations=False))
 		if args.output_tree:
 			plot_tree(best_tree, best_arrays, args.output_tree)
