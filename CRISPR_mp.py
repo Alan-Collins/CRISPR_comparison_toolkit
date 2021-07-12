@@ -883,7 +883,7 @@ def plot_tree(tree, array_dict, filename):
 			highest_y = max([highest_y,y2])
 
 			ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1*vscale, solid_capstyle="butt")
-			ax.text(x1, y1+0.5*vscale, first_node.taxon.label, ha='right', fontsize=10*vscale)
+			ax.text(x1, y1, first_node.taxon.label, ha='right', fontsize=10*vscale)
 
 			if len(nodes_to_revisit) == 0:
 				break
