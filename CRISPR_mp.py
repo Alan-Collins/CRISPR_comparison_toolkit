@@ -811,8 +811,10 @@ def plot_tree(tree, array_dict, filename):
 				else:
 					node = tree.find_node_with_taxon_label(list(nodes_to_revisit.keys())[0]) # start the next node to revisit
 					first_node = node.leaf_nodes()[0]# start drawing from a random leaf in the subtree
+					second_node = first_node.sibling_nodes()[0]
 					highest_y = y2 = nodes_to_revisit[node.taxon.label] # Set the y position reserved for this subtree
 					second_node = first_node.sibling_nodes()[0]
+					node_locs[first_node.taxon.label] = [max_depth-first_node.root_distance*hscale,y2]
 				
 				
 				
@@ -885,7 +887,8 @@ def plot_tree(tree, array_dict, filename):
 			nodes_to_revisit[second_node.taxon.label] = y2-((num_internal)*1.5)*vscale+1.5*vscale
 			
 			# Make space for the subtree
-			position = [max_depth-second_node.parent_node.root_distance*hscale ,y1+((num_internal-1)*1.5)*vscale+1.5*vscale]
+			# position = [max_depth-second_node.parent_node.root_distance*hscale ,y1+((num_internal-1)*1.5)*vscale+1.5*vscale]
+			position = [max_depth-second_node.parent_node.root_distance*hscale ,y1+3*vscale]
 
 		else:
 			y2 = highest_y+3*vscale
@@ -1115,15 +1118,16 @@ print("Score of best tree is: {}".format(best_score))
 try:
 
 	if isinstance(best_tree, list):
-		# print("{} equivelantly parsimonious trees were identified.".format(len(best_tree)))
-		# for good_tree in best_tree:
-			# print(good_tree.as_ascii_plot(show_internal_node_labels=True))
-			# print(good_tree.as_string("newick"))
+		print("{} equivalantly parsimonious trees were identified.".format(len(best_tree)))
+		for good_tree in best_tree:
+			print(good_tree.as_ascii_plot(show_internal_node_labels=True))
+			print(good_tree.as_string("newick"))
 		plot_tree(best_tree[0], best_arrays[0], "test_data/test.png")
 	else:
 		print(best_tree.as_ascii_plot(show_internal_node_labels=True))
 		print(best_tree.as_string("newick"))#, suppress_leaf_node_labels=False, suppress_annotations=False))
 		plot_tree(best_tree, best_arrays, "test_data/test.png")
 except Exception as e:
-	print(e)
-	print(order)
+	exc_type, exc_obj, exc_tb = sys.exc_info()
+	exc_tb.print_exception()
+
