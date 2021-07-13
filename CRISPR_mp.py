@@ -854,7 +854,8 @@ def plot_tree(tree, array_dict, filename):
 	while True: # Keep going until reaching the root triggers a break.
 
 		first_node = node
-		node_locs[first_node.taxon.label] = position
+		if not first_node.taxon.label in node_locs.keys():
+			node_locs[first_node.taxon.label] = position
 		if len(node.sibling_nodes())==1:
 			if node.taxon.label not in nodes_to_revisit.keys():
 				second_node = node.sibling_nodes()[0]
@@ -889,7 +890,7 @@ def plot_tree(tree, array_dict, filename):
 				break
 			else:
 				node = tree.find_node_with_taxon_label(list(nodes_to_revisit.keys())[0]) # start the first node to revisit
-				first_node = node.leaf_nodes()[0] # start drawing from a random leaf in the subtree
+				first_node = node.child_nodes()[0].leaf_nodes()[0] # start drawing from a random leaf in the subtree
 				second_node = first_node.sibling_nodes()[0]
 				highest_y = y2 = nodes_to_revisit[node.taxon.label] # Set the y position reserved for this subtree
 				node_locs[first_node.taxon.label] = [max_depth-first_node.root_distance*hscale,y2]
@@ -911,17 +912,38 @@ def plot_tree(tree, array_dict, filename):
 		num_internal = len([i for i in second_node.levelorder_iter(lambda x: x.is_internal())])
 
 		if num_internal > 0:  # store name of subtree parent
-			num_internal += num_leaves - 1 # Counts self so need to subtract 1.
+			num_internal += num_leaves # - 1 # Counts self so need to subtract 1.
 
-			y2 = highest_y+((num_internal)*1.5)*vscale
+			# Find how much space to leave for descendents on left branch of child
+			# num_children_right = len(second_node.child_nodes()[1].leaf_nodes()) 
+			# + len([i for i in second_node.child_nodes()[1].levelorder_iter(lambda x: x.is_internal())])
+			# if second_node.child_nodes()[1].is_internal():
+			# 	num_children_right -= 1
 
-			ax.plot([x2, x2], [y1, highest_y+((num_internal+1)*1.5)*vscale+1.5*vscale],color = 'black', linewidth = 1*vscale, solid_capstyle="butt")
+			num_children_left = len(second_node.child_nodes()[0].leaf_nodes()) 
+			+ len([i for i in second_node.child_nodes()[0].levelorder_iter(lambda x: x.is_internal())])
+			if second_node.child_nodes()[0].is_internal():
+				num_children_left -= 1
+
+			# Set location for parent node
+
+			node_locs[second_node.parent_node.taxon.label] = [
+			max_depth-second_node.parent_node.root_distance*hscale,
+			y1+(1.5*num_children_left)*vscale
+			]
+
+			y2 = highest_y+num_internal*1.5*vscale
+
+			ax.plot([x2, x2], [y1, y2],color = 'black', linewidth = 1*vscale, solid_capstyle="butt")
 
 
-			highest_y = y2
+			# Leave space for subtree
+			highest_y = highest_y+(num_internal+1)*1.5*vscale
+			
 
 			position = [max_depth-second_node.root_distance*hscale ,y2]
-			node_locs[second_node.taxon.label] = position
+			if second_node.taxon.label not in node_locs.keys():
+				node_locs[second_node.taxon.label] = position
 
 			#Draw second branch
 
@@ -931,13 +953,12 @@ def plot_tree(tree, array_dict, filename):
 			y2 = node_locs[second_node.taxon.label][1]
 
 
+
 			ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1*vscale, solid_capstyle="butt")
 
 
-
-			nodes_to_revisit[second_node.taxon.label] = y2-((num_internal)*1.5)*vscale+1.5*vscale
-			# Make space for the subtree
-			position = [max_depth-second_node.parent_node.root_distance*hscale ,y1+3*vscale]
+			nodes_to_revisit[second_node.taxon.label] = y2-((num_internal-1)*1.5)*vscale+1.5*vscale
+			print(nodes_to_revisit)
 
 
 		else:
@@ -988,9 +1009,9 @@ def plot_tree(tree, array_dict, filename):
 			ax.plot([start_pos_x-2*n*hscale, start_pos_x-2*n*hscale-2*hscale],[start_pos_y, start_pos_y], color=spcolour, linewidth=line_width, solid_capstyle="butt")
 
 
-
+	print(node_locs['Int_c'])
 	
-	plt.axis('off')
+	# plt.axis('off')
 	plt.savefig(filename, dpi=600)
 
 
