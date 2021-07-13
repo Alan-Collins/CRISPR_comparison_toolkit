@@ -833,8 +833,8 @@ def plot_tree(tree, array_dict, filename):
 
 	node_locs = {} # Store where each node is located to draw lines to it.
 
-	position = [0.5,0.5]
-	node_locs[start_node.taxon.label] = position
+	start_position = [0.5,0.5]
+	node_locs[start_node.taxon.label] = start_position
 	dim_x, dim_y = 10, 10
 
 	hscale = (dim_x+1)/tree_width # Factor to scale all branch lengths to fit them in the plot
@@ -898,19 +898,12 @@ def plot_tree(tree, array_dict, filename):
 		num_leaves = len(second_node.leaf_nodes()) # Figure out how much space is needed based on the number of leaves below this node
 		num_internal = len([i for i in second_node.levelorder_iter(lambda x: x.is_internal())])
 
-		if num_internal > 0:  # store name of subtree parent
+		if num_internal > 0:  
 			num_internal += num_leaves # - 1 # Counts self so need to subtract 1.
-
-			num_children_left = len(second_node.child_nodes()[0].leaf_nodes()) 
-			+ len([i for i in second_node.child_nodes()[0].levelorder_iter(lambda x: x.is_internal())])
-			if second_node.child_nodes()[0].is_internal():
-				num_children_left -= 1
-
-			# Set location for parent node
 
 			node_locs[second_node.parent_node.taxon.label] = [
 			max_depth-second_node.parent_node.root_distance*hscale,
-			y1+(1.5*num_children_left)*vscale
+			highest_y+1.5*vscale
 			]
 
 			y2 = highest_y+num_internal*1.5*vscale
@@ -930,7 +923,7 @@ def plot_tree(tree, array_dict, filename):
 			y1 = node_locs[second_node.taxon.label][1]
 			y2 = node_locs[second_node.taxon.label][1]
 
-			nodes_to_revisit[second_node.taxon.label] = y2-((num_internal-1)*1.5)*vscale+1.5*vscale
+			nodes_to_revisit[second_node.taxon.label] = y2-((num_internal-1)*1.5)*vscale+1.5*vscale # store name of subtree parent and position to start drawing subtree
 
 
 		else:
@@ -948,9 +941,6 @@ def plot_tree(tree, array_dict, filename):
 			x2 = node_locs[second_node.taxon.label][0] + second_node.edge_length * hscale
 			y1 = node_locs[second_node.taxon.label][1]
 			y2 = node_locs[second_node.taxon.label][1]
-
-
-		
 
 
 			y1 = node_locs[first_node.taxon.label][1]
@@ -1007,8 +997,6 @@ def plot_tree(tree, array_dict, filename):
 				spcolour = "#000000" #black
 				line_width = 4*vscale
 			ax.plot([start_pos_x-2*n*hscale, start_pos_x-2*n*hscale-2*hscale],[start_pos_y, start_pos_y], color=spcolour, linewidth=line_width, solid_capstyle="butt")
-
-
 	
 	plt.axis('off')
 	plt.savefig(filename, dpi=600)
