@@ -339,7 +339,7 @@ def find_modules(array1, array2):
 				module2.spacers.append(b)
 			else:
 				# Check if duplication
-				if a != b and Counter(array2.aligned)[b] > 1:
+				if a != b and Counter(array2.aligned)[b] > 1 and b != '-':
 					# If this spacer is in multiple copies and aligns with a gap it means the comparator array has no or fewer copies of this spacer.
 					if module2.type != "duplication" and module2.type != "":
 						array2.modules.append(module2)
@@ -358,7 +358,7 @@ def find_modules(array1, array2):
 					module1.type = "duplication"
 					module1.indices.append(n)
 					module1.spacers.append(a)
-				elif a != b and Counter(array1.aligned)[a] > 1:
+				elif a != b and Counter(array1.aligned)[a] > 1  and a != '-':
 					if module1.type != "duplication" and module1.type != "":
 						array1.modules.append(module1)
 						for k in module1.indices:
@@ -671,6 +671,9 @@ def count_parsimony_events(child, ancestor):
 		if mod.type == 'indel':
 			child.events['indel'] += 1
 			idx = mod.indices[-1] + 1 # Skip the rest of this module.
+		if mod.type == 'duplication':
+			child.events['duplication'] += 1
+			idx = mod.indices[-1] + 1 # Skip the rest of this module.
 		else:
 			idx += 1
 
@@ -708,7 +711,7 @@ def resolve_pairwise_parsimony(array1, array2, all_arrays, node_ids, node_count)
 		array1 = count_parsimony_events(array1, ancestor)
 
 		array2 = count_parsimony_events(array2, ancestor)
-		
+
 
 		for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
 			array1.distance += array1.events[k] * v
@@ -772,9 +775,9 @@ def replace_existing_array(existing_array, new_array, current_parent, tree, all_
 
 	# Make a hypothetical ancestor for the pair of arrays and calculate the distances
 	results = resolve_pairwise_parsimony(existing_array, new_array, all_arrays, node_ids, node_count)
+	
 	if results == "No_ID":
 		return results
-
 
 	else:
 		existing_array, new_array, ancestor = results
@@ -1164,6 +1167,8 @@ for i in range(min([args.replicates, len(array_choices)])):
 						best_tree = [best_tree, copy.deepcopy(tree)]
 						best_arrays = [best_arrays, copy.deepcopy(array_dict)]
 						best_addition_order = [best_addition_order, copy.deepcopy(addition_order)]
+		if args.fix_order:
+			break
 	except Exception as e:
 		exc_type, exc_obj, exc_tb = sys.exc_info()
 		print('Something went wrong when running with the following array order:')
