@@ -380,6 +380,6 @@ tree = str(labels)[1:-1].replace('[','(').replace(']',')').replace("'","")+';'
 print(tree)
 
 if args.print_tree:
-	import dendopy
-	dtree = Tree.get(data=tree, schema="newick")
-	print(Tree.as_ascii_plot())
+	import dendropy
+	dtree = dendropy.Tree.get(data=tree, schema="newick")
+	print(dtree.as_ascii_plot())
