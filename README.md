@@ -18,18 +18,18 @@ Given the below cartooned alignments of CRISPR arrays, where:
 
 ![Alignment of CRISPR arrays](https://github.com/Alan-Collins/CRISPR_tree/blob/master/images/alignment.png)
 
-The CRISPR_nj.py script produces the following tree in newick format as well as an optional graphical representation produced by ete3:
+The CRISPR_nj.py script produces the following unrooted tree in newick format as well as an optional graphical representation produced by dendopy:
 
 ```
 (((A:7.0, B:1.0):2.0, C:3.0), D);
 
-         /-A
-      /-|
-   /-|   \-B
-  |  |
---|   \-C
-  |
-   \-D
+             /-----A
+       /-----|
+ /-----|     \-----B
+ |     |
+-|     \-----------C
+ |
+ \-----------------D
 ```
 
 N.B. While the representation produced by ete3 appears rooted, the trees produced by this approach are unrooted. The newick representation of this tree can  be given to software such as iToL to examine it in an unrooted format such as that in the below image:
