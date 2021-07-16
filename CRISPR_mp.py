@@ -1289,7 +1289,7 @@ else:
 # build a dictionary with colours assigned to each spacer.
 spacer_cols_dict  = {}
 
-for i, spacer in enumerate(non_singleton_spacers):
+for i, spacer in enumerate(sorted(non_singleton_spacers)):
 	spacer_cols_dict[spacer] = colours[i]
 
 try:
