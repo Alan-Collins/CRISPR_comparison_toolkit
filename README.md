@@ -8,6 +8,8 @@ CRISPR_mp.py uses a branch-and-bound maximum parsimony approach to find an appro
 
 ## Input file format
 
+N.B. All arrays must be properly oriented with leader-end spacers at the start of the list in order for the parsimony model to function properly. If you do not know the correct orientation of your arrays then the output tree may be meaningless.
+
 Both CRISPR_nj.py and CRISPR_mp.py take the same input: A tab-delimited text file description of Array IDs followed by a column that is not used and can contain descriptive information if you like, followed by a tab-delimited list of either spacer IDs or sequences. The arrays are compared by string comparisons of each spacer so it doesn't matter what the spacers are represented by as long as the representation is consistent between arrays. An example of an input file is:
 
 ```
@@ -114,3 +116,11 @@ Inferred ancestral arrays are assigned node names prefixed with "Int_" to indica
 The below image shows the representation of the arrays used to infer the "best" tree for the example data
 
 ![Rooted MP tree with ancestral and extant array cartoons](https://github.com/Alan-Collins/CRISPR_tree/blob/master/images/mp_tree_annotations.png)
+
+In addition to showing the cartooned CRISPR arrays of extant and hypothetical ancestor arrays, the events that were predicted to have occured between these states can also be shown. The below image shows the same tree with each event that has occured in an array since its hypothetical ancestor (the array of the parent node in the tree). 3 predicted event types are shown:
+
+1. A large "X" indicates a region has been deleted.
+2. A box around a run of spacers indicates these spacers have been acquired through extopic acquisition or recombination
+3. A squiggly line under a run of spacers indicated these spacers have been added to the leader end of the array.
+
+![Rooted MP tree with ancestral and extant array cartoons plus highlighted events](https://github.com/Alan-Collins/CRISPR_tree/blob/master/images/mp_tree_annotations_highlight.png)
