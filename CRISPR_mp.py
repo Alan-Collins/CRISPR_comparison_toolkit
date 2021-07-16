@@ -999,6 +999,7 @@ def plot_tree(tree, array_dict, filename):
 			start_pos_x = location[0]-5*hscale # Start a bit to the left to leave room for the label
 			start_pos_y = location[1]
 			spacer_count = 0 # How many spacers have been plotted?
+			reshift_loc = 1000
 			for n, diff_type in reversed(child.module_lookup.items()):
 				spacer = child.aligned[n]
 
@@ -1010,7 +1011,25 @@ def plot_tree(tree, array_dict, filename):
 							if spacer == '-':
 								ax.fill_between([start_pos_x-2*spacer_count*hscale-0.5*hscale, start_pos_x-2*spacer_count*hscale],start_pos_y+0.5*vscale, start_pos_y-0.5*vscale, color="#58A6A6", edgecolor='none')
 								start_pos_x-=0.5*hscale # Shift future spacers a bit to make spacer for this line.
+							else:
+								nspacers = len(diff_type.indices)
+								# First bar
+								# ax.fill_between([start_pos_x-2*spacer_count*hscale-0.5*hscale, start_pos_x-2*spacer_count*hscale],start_pos_y+0.5*vscale, start_pos_y-0.5*vscale, color="#EFA355", edgecolor='none')
+								# Second bar
+								# print(start_pos_x-2*spacer_count*hscale-0.5*hscale-0.5*hscale)
+								# print(start_pos_x-2*(spacer_count+nspacers)*hscale-0.5*hscale)
+								# ax.fill_between([start_pos_x-2*(spacer_count+nspacers)*hscale-0.5*hscale, start_pos_x-2*(spacer_count+nspacers)*hscale-0.5*hscale], start_pos_y+0.5*vscale, start_pos_y-0.5*vscale, color="#000000", edgecolor='none')
+								# # Top bar
+								# ax.fill_between([start_pos_x-2*(spacer_count+nspacers)*hscale-0.5*hscale, start_pos_x-2*spacer_count*hscale], start_pos_y+0.5*vscale, start_pos_y-0.5*vscale, color="#000000", edgecolor='none')
+								# Bottom bar
 
+
+								start_pos_x-=0.5*hscale # Shift future spacers a bit to make spacer for this line.
+								# Shift again after the indel region
+								reshift_loc = diff_type.indices[0]-1
+
+				if n == reshift_loc and reshift_loc:
+					start_pos_x-=0.5*hscale # Shift future spacers to make space for line
 
 				# Plot spacer cartoon
 				if spacer != '-':
