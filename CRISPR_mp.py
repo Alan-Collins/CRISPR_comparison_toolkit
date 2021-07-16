@@ -608,7 +608,6 @@ def find_dupes(child, ancestor):
 		group = [min([x for y in dupe_indices for x in y])] # Start with the first duplicated spacer
 
 		x = 0
-		# while sum([len(i) for i in dupe_groups]) < total_spacers:
 		while all([_ != [] for _ in dupe_indices]):
 			for n, spacer in enumerate(dupe_indices):
 				if spacer != [] and n not in included_spacers[0] and n not in checked_spacers:
@@ -1013,7 +1012,6 @@ def plot_tree(tree, array_dict, filename):
 						if diff_type.type != 'shared':
 							if diff_type.type == 'indel':
 								if spacer == '-':
-									# ax.fill_between([start_pos_x-2*spacer_count*hscale-0.5*hscale, start_pos_x-2*spacer_count*hscale],start_pos_y+0.5*vscale, start_pos_y-0.5*vscale, color="#666666", edgecolor='none')
 									ax.plot([start_pos_x-1.8*spacer_count*hscale, start_pos_x-1.8*spacer_count*hscale-1.8*hscale],[start_pos_y+0.3*vscale, start_pos_y-0.3*vscale], color="#666666", linewidth=3*vscale, solid_capstyle="butt")
 									ax.plot([start_pos_x-1.8*spacer_count*hscale, start_pos_x-1.8*spacer_count*hscale-1.8*hscale],[start_pos_y-0.3*vscale, start_pos_y+0.3*vscale], color="#666666", linewidth=3*vscale, solid_capstyle="butt")
 									start_pos_x-=2*hscale # Shift future spacers a bit to make spacer for this line.
@@ -1035,11 +1033,9 @@ def plot_tree(tree, array_dict, filename):
 							elif diff_type.type == "acquisition":
 								nspacers = len(diff_type.indices)
 
-								# ax.fill_between([start_pos_x-2*(spacer_count+nspacers)*hscale, start_pos_x-2*spacer_count*hscale], start_pos_y-0.3*vscale+0.3/(hscale*vscale), start_pos_y-0.3*vscale, color="#666666", edgecolor='none')
 								rcParams['path.sketch'] = (20, 100, 1)
 								ax.plot(np.linspace(start_pos_x-2*(spacer_count+nspacers)*hscale,start_pos_x-2*spacer_count*hscale,3),[start_pos_y-0.4*vscale+0.2/(hscale*vscale)]*3,color="#666666", linewidth=3*vscale, solid_capstyle="butt")
 								rcParams['path.sketch'] = (0, 0, 0)
-								#ax.plot([start_pos_x-2*(spacer_count+nspacers)*hscale, start_pos_x-2*spacer_count*hscale],[start_pos_y-0.3*vscale+0.25/(hscale*vscale), start_pos_y-0.3*vscale+0.25/(hscale*vscale)], linestyle='dotted', color="#666666", linewidth=5*vscale, solid_capstyle="butt")
 
 					if n == reshift_loc and reshift_loc:
 						start_pos_x-=0.3*hscale # Shift future spacers to make space for line
@@ -1225,7 +1221,6 @@ for i in range(min([args.replicates, len(array_choices)])):
 				if score > best_score:
 					break
 		else:
-			# score = sum([v.distance for v in array_dict.values()])
 			tree.reroot_at_node(tree.seed_node, update_bipartitions=False) # Need to reroot at the seed so that RF distance works
 			score = tree.length()
 			if score < best_score:
