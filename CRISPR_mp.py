@@ -1016,7 +1016,7 @@ def plot_tree(tree, array_dict, filename):
 									ax.plot([start_pos_x-2*spacer_count*hscale, start_pos_x-2*spacer_count*hscale-2*hscale],[start_pos_y-0.3*vscale, start_pos_y+0.3*vscale], color="#666666", linewidth=3*vscale, solid_capstyle="butt")
 									spacer_count+=1 # Shift future spacers a bit to make spacer for this line.
 								else:
-									nspacers = len(diff_type.indices)
+									nspacers = len([child.aligned[i] for i in diff_type.indices if child.aligned[i] != '-'])
 									# First bar
 									ax.fill_between([start_pos_x-2*spacer_count*hscale-0.5*hscale, start_pos_x-2*spacer_count*hscale],start_pos_y+0.5*vscale, start_pos_y-0.5*vscale, color="#666666", edgecolor='none')
 									# Second bar
@@ -1037,7 +1037,7 @@ def plot_tree(tree, array_dict, filename):
 								ax.plot(np.linspace(start_pos_x-2*(spacer_count+nspacers)*hscale,start_pos_x-2*spacer_count*hscale,3),[start_pos_y-0.5*vscale]*3,color="#666666", linewidth=3*vscale, solid_capstyle="butt")
 								rcParams['path.sketch'] = (0, 0, 0)
 
-					if n == reshift_loc and reshift_loc:
+					if n == reshift_loc:
 						start_pos_x-=0.5*hscale # Shift future spacers to make space for line
 
 					# Plot spacer cartoon
@@ -1082,7 +1082,8 @@ def plot_tree(tree, array_dict, filename):
 					line_width = 4*vscale
 				ax.plot([start_pos_x-2*n*hscale, start_pos_x-2*n*hscale-2*hscale],[start_pos_y, start_pos_y], color=spcolour, linewidth=line_width, solid_capstyle="butt")
 
-	
+	print(array_dict['667'].aligned)
+	print([(i.type, i.indices) for i in array_dict['667'].modules])
 	plt.axis('off')
 	plt.savefig(filename, dpi=600)
 
