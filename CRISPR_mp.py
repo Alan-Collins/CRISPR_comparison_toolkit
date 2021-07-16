@@ -1009,20 +1009,20 @@ def plot_tree(tree, array_dict, filename):
 					if diff_type.type != 'shared':
 						if diff_type.type == 'indel':
 							if spacer == '-':
-								ax.fill_between([start_pos_x-2*spacer_count*hscale-0.5*hscale, start_pos_x-2*spacer_count*hscale],start_pos_y+0.5*vscale, start_pos_y-0.5*vscale, color="#58A6A6", edgecolor='none')
-								start_pos_x-=0.5*hscale # Shift future spacers a bit to make spacer for this line.
+								# ax.fill_between([start_pos_x-2*spacer_count*hscale-0.5*hscale, start_pos_x-2*spacer_count*hscale],start_pos_y+0.5*vscale, start_pos_y-0.5*vscale, color="#666666", edgecolor='none')
+								ax.plot([start_pos_x-2*spacer_count*hscale, start_pos_x-2*spacer_count*hscale-2*hscale],[start_pos_y+0.3*vscale, start_pos_y-0.3*vscale], color="#666666", linewidth=4*vscale, solid_capstyle="butt")
+								ax.plot([start_pos_x-2*spacer_count*hscale, start_pos_x-2*spacer_count*hscale-2*hscale],[start_pos_y-0.3*vscale, start_pos_y+0.3*vscale], color="#666666", linewidth=4*vscale, solid_capstyle="butt")
+								start_pos_x-=2*hscale # Shift future spacers a bit to make spacer for this line.
 							else:
 								nspacers = len(diff_type.indices)
 								# First bar
-								# ax.fill_between([start_pos_x-2*spacer_count*hscale-0.5*hscale, start_pos_x-2*spacer_count*hscale],start_pos_y+0.5*vscale, start_pos_y-0.5*vscale, color="#EFA355", edgecolor='none')
+								ax.fill_between([start_pos_x-2*spacer_count*hscale-0.5*hscale, start_pos_x-2*spacer_count*hscale],start_pos_y+0.5*vscale, start_pos_y-0.5*vscale, color="#666666", edgecolor='none')
 								# Second bar
-								# print(start_pos_x-2*spacer_count*hscale-0.5*hscale-0.5*hscale)
-								# print(start_pos_x-2*(spacer_count+nspacers)*hscale-0.5*hscale)
-								# ax.fill_between([start_pos_x-2*(spacer_count+nspacers)*hscale-0.5*hscale, start_pos_x-2*(spacer_count+nspacers)*hscale-0.5*hscale], start_pos_y+0.5*vscale, start_pos_y-0.5*vscale, color="#000000", edgecolor='none')
-								# # Top bar
-								# ax.fill_between([start_pos_x-2*(spacer_count+nspacers)*hscale-0.5*hscale, start_pos_x-2*spacer_count*hscale], start_pos_y+0.5*vscale, start_pos_y-0.5*vscale, color="#000000", edgecolor='none')
+								ax.fill_between([start_pos_x-2*(spacer_count+nspacers)*hscale-0.5*hscale-0.5*hscale, start_pos_x-2*(spacer_count+nspacers)*hscale-0.5*hscale], start_pos_y+0.5*vscale, start_pos_y-0.5*vscale, color="#666666", edgecolor='none')
+								# Top bar
+								ax.fill_between([start_pos_x-2*(spacer_count+nspacers)*hscale-0.5*hscale-0.5*hscale, start_pos_x-2*spacer_count*hscale], start_pos_y+0.5*vscale-0.5/(hscale*vscale), start_pos_y+0.5*vscale, color="#666666", edgecolor='none')
 								# Bottom bar
-
+								ax.fill_between([start_pos_x-2*(spacer_count+nspacers)*hscale-0.5*hscale-0.5*hscale, start_pos_x-2*spacer_count*hscale], start_pos_y-0.5*vscale+0.5/(hscale*vscale), start_pos_y-0.5*vscale, color="#666666", edgecolor='none')
 
 								start_pos_x-=0.5*hscale # Shift future spacers a bit to make spacer for this line.
 								# Shift again after the indel region
