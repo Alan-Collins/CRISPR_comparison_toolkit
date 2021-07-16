@@ -1028,6 +1028,12 @@ def plot_tree(tree, array_dict, filename):
 								# Shift again after the indel region
 								reshift_loc = diff_type.indices[0]-1
 
+						elif diff_type.type == "acquisition":
+							nspacers = len(diff_type.indices)
+
+							# ax.fill_between([start_pos_x-2*(spacer_count+nspacers)*hscale, start_pos_x-2*spacer_count*hscale], start_pos_y-0.5*vscale+0.5/(hscale*vscale), start_pos_y-0.5*vscale, color="#666666", edgecolor='none')
+							ax.plot([start_pos_x-2*(spacer_count+nspacers)*hscale, start_pos_x-2*spacer_count*hscale],[start_pos_y-0.5*vscale+0.25/(hscale*vscale), start_pos_y-0.5*vscale+0.25/(hscale*vscale)], linestyle='dotted', color="#666666", linewidth=5*vscale, solid_capstyle="butt")
+
 				if n == reshift_loc and reshift_loc:
 					start_pos_x-=0.5*hscale # Shift future spacers to make space for line
 
