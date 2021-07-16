@@ -383,24 +383,44 @@ def find_modules(array1, array2):
 					module2.spacers.append(b)
 
 				else:
-					# Module1 processing for indel module
-					if module1.type != "indel" and module1.type != "":
-						array1.modules.append(module1)
-						for k in module1.indices:
-							array1.module_lookup[k] = module1
-						module1 = Spacer_Module()
-					module1.type = "indel"
-					module1.indices.append(n)
-					module1.spacers.append(a)
-					# Module2 processing for indel module
-					if module2.type != "indel" and module2.type != "":
-						array2.modules.append(module2)
-						for k in module2.indices:
-							array2.module_lookup[k] = module2
-						module2 = Spacer_Module()
-					module2.type = "indel"
-					module2.indices.append(n)
-					module2.spacers.append(b)
+					if a != '-' and b != '-':
+						# Module1 processing for indel module where mismatched
+						if module1.type != "indel_mm" and module1.type != "":
+							array1.modules.append(module1)
+							for k in module1.indices:
+								array1.module_lookup[k] = module1
+							module1 = Spacer_Module()
+						module1.type = "indel_mm"
+						module1.indices.append(n)
+						module1.spacers.append(a)
+						# Module2 processing for indel module where mismatched
+						if module2.type != "indel_mm" and module2.type != "":
+							array2.modules.append(module2)
+							for k in module2.indices:
+								array2.module_lookup[k] = module2
+							module2 = Spacer_Module()
+						module2.type = "indel_mm"
+						module2.indices.append(n)
+						module2.spacers.append(b)
+					else:
+						# Module1 processing for indel module where one is gap
+						if module1.type != "indel_gap" and module1.type != "":
+							array1.modules.append(module1)
+							for k in module1.indices:
+								array1.module_lookup[k] = module1
+							module1 = Spacer_Module()
+						module1.type = "indel_gap"
+						module1.indices.append(n)
+						module1.spacers.append(a)
+						# Module2 processing for indel module where one is gap
+						if module2.type != "indel_gap" and module2.type != "":
+							array2.modules.append(module2)
+							for k in module2.indices:
+								array2.module_lookup[k] = module2
+							module2 = Spacer_Module()
+						module2.type = "indel_gap"
+						module2.indices.append(n)
+						module2.spacers.append(b)
 
 
 	if module1.type != "":
@@ -454,7 +474,7 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 				# If one has duplicated spacers but the other doesn't then he ancestral state likely didn't have them
 				idx = max([mod1.indices[-1], mod2.indices[-1]]) + 1 # Skip the rest of this module.
 				continue
-			elif mod1.type == "indel":
+			elif mod1.type == "indel_gap" or mod1.type == "indel_mm":
 				# If one array has just spacers and the other just gaps in the indel then pick the spacers as ancestral unless those spacers are singletons.
 				if all([i == '-' for i in mod1.spacers]) or all([i == '-' for i in mod2.spacers]):
 					# Figure out which one is all gaps and store the other one if it isn't singletons.
@@ -672,7 +692,7 @@ def count_parsimony_events(child, ancestor):
 			child.events['acquisition'] += len(mod.indices)
 			idx = mod.indices[-1] + 1 # Skip the rest of this module.
 			continue
-		if mod.type == 'indel':
+		if mod.type == 'indel_gap' or mod.type == "indel_mm":
 			child.events['indel'] += 1
 			idx = mod.indices[-1] + 1 # Skip the rest of this module.
 		if mod.type == 'duplication':
@@ -1010,7 +1030,7 @@ def plot_tree(tree, array_dict, filename):
 
 					if n == diff_type.indices[-1]:
 						if diff_type.type != 'shared':
-							if diff_type.type == 'indel':
+							if diff_type.type == 'indel_gap' or diff_type.type == 'indel_mm':
 								if spacer == '-':
 									ax.plot([start_pos_x-2*spacer_count*hscale, start_pos_x-2*spacer_count*hscale-2*hscale],[start_pos_y+0.3*vscale, start_pos_y-0.3*vscale], color="#666666", linewidth=3*vscale, solid_capstyle="butt")
 									ax.plot([start_pos_x-2*spacer_count*hscale, start_pos_x-2*spacer_count*hscale-2*hscale],[start_pos_y-0.3*vscale, start_pos_y+0.3*vscale], color="#666666", linewidth=3*vscale, solid_capstyle="butt")
@@ -1082,8 +1102,6 @@ def plot_tree(tree, array_dict, filename):
 					line_width = 4*vscale
 				ax.plot([start_pos_x-2*n*hscale, start_pos_x-2*n*hscale-2*hscale],[start_pos_y, start_pos_y], color=spcolour, linewidth=line_width, solid_capstyle="butt")
 
-	print(array_dict['667'].aligned)
-	print([(i.type, i.indices) for i in array_dict['667'].modules])
 	plt.axis('off')
 	plt.savefig(filename, dpi=600)
 
