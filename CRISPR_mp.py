@@ -988,20 +988,58 @@ def plot_tree(tree, array_dict, filename):
 
 			ax.plot([x2, x2], [y1, y2],color = 'black', linewidth = 1*vscale, solid_capstyle="butt")
 
-		# Then add spacers
-		spacers = array_dict[array].spacers
-		start_pos_x = location[0]-5*hscale # Start a bit to the left to leave room for the label
-		start_pos_y = location[1] 
-		for n, spacer in enumerate(reversed(spacers)): # work backwards through the array plotting from right to left
-			if spacer in spacer_cols_dict.keys():
-				spcolour = spacer_cols_dict[spacer]
-				line_width = 10*vscale
-			else:
-				spcolour = "#000000" #black
-				line_width = 4*vscale
-			ax.plot([start_pos_x-2*n*hscale, start_pos_x-2*n*hscale-2*hscale],[start_pos_y, start_pos_y], color=spcolour, linewidth=line_width, solid_capstyle="butt")
+			# Then add spacers and highligh differences
+
+			ancestor = 	array_dict[first_node.parent_node.taxon.label]
+			child = array_dict[array]
+			child = count_parsimony_events(child, ancestor)
+			# print([(i.type, i.indices) for i in child.modules])
+			# print(child.module_lookup)
+			# sys.exit()
+			start_pos_x = location[0]-5*hscale # Start a bit to the left to leave room for the label
+			start_pos_y = location[1]
+			spacer_count = 0 # How many spacers have been plotted?
+			for n, diff_type in reversed(child.module_lookup.items()):
+				spacer = child.aligned[n]
+
+				# Add change info
+
+				if n == diff_type.indices[-1]:
+					if diff_type.type != 'shared':
+						if diff_type.type == 'indel':
+							if spacer == '-':
+								ax.fill_between([start_pos_x-2*spacer_count*hscale-0.5*hscale, start_pos_x-2*spacer_count*hscale],start_pos_y+0.5*vscale, start_pos_y-0.5*vscale, color="#58A6A6", edgecolor='none')
+								start_pos_x-=0.5*hscale # Shift future spacers a bit to make spacer for this line.
+
+
+				# Plot spacer cartoon
+				if spacer != '-':
+					if spacer in spacer_cols_dict.keys():
+						spcolour = spacer_cols_dict[spacer]
+						line_width = 10*vscale
+					else:
+						spcolour = "#000000" #black
+						line_width = 4*vscale
+					ax.plot([start_pos_x-2*spacer_count*hscale, start_pos_x-2*spacer_count*hscale-2*hscale],[start_pos_y, start_pos_y], color=spcolour, linewidth=line_width, solid_capstyle="butt")
+					spacer_count += 1
+
+
+
+		else: # Draw root ancestral array
+			# Then add spacers
+			spacers = array_dict[array].spacers
+			start_pos_x = location[0]-5*hscale # Start a bit to the left to leave room for the label
+			start_pos_y = location[1] 
+			for n, spacer in enumerate(reversed(spacers)): # work backwards through the array plotting from right to left
+				if spacer in spacer_cols_dict.keys():
+					spcolour = spacer_cols_dict[spacer]
+					line_width = 10*vscale
+				else:
+					spcolour = "#000000" #black
+					line_width = 4*vscale
+				ax.plot([start_pos_x-2*n*hscale, start_pos_x-2*n*hscale-2*hscale],[start_pos_y, start_pos_y], color=spcolour, linewidth=line_width, solid_capstyle="butt")
 	
-	plt.axis('off')
+	# plt.axis('off')
 	plt.savefig(filename, dpi=600)
 
 
