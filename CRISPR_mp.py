@@ -35,6 +35,10 @@ parser.add_argument(
 	help="Only build one tree using the provided order of arrays. Good for recreating previously found trees."
 	)
 parser.add_argument(
+	"-e", dest="emphasize_diffs", action='store_true',  
+	help="When plotting a representation of the tree with cartooned arrays, emphasize locations where arrays differ from their hypothetical ancestor."
+	)
+parser.add_argument(
 	"-r",  dest="replicates", type=int, nargs="?", default = 1,
 		help="Specify number of replicates of tree building to perform. The more replicates, the greater the chance that a better tree will be found. Default: 1"
 	)
@@ -994,67 +998,81 @@ def plot_tree(tree, array_dict, filename):
 			ancestor = 	array_dict[first_node.parent_node.taxon.label]
 			child = array_dict[array]
 			child = count_parsimony_events(child, ancestor)
-			# print([(i.type, i.indices) for i in child.modules])
-			# print(child.module_lookup)
-			# sys.exit()
-			start_pos_x = location[0]-5*hscale # Start a bit to the left to leave room for the label
-			start_pos_y = location[1]
-			spacer_count = 0 # How many spacers have been plotted?
-			reshift_loc = 1000
-			for n, diff_type in reversed(child.module_lookup.items()):
-				spacer = child.aligned[n]
 
-				# Add change info
+			if args.emphasize_diffs:
+				start_pos_x = location[0]-5*hscale # Start a bit to the left to leave room for the label
+				start_pos_y = location[1]
+				spacer_count = 0 # How many spacers have been plotted?
+				reshift_loc = 1000
+				for n, diff_type in reversed(child.module_lookup.items()):
+					spacer = child.aligned[n]
 
-				if n == diff_type.indices[-1]:
-					if diff_type.type != 'shared':
-						if diff_type.type == 'indel':
-							if spacer == '-':
-								# ax.fill_between([start_pos_x-2*spacer_count*hscale-0.5*hscale, start_pos_x-2*spacer_count*hscale],start_pos_y+0.5*vscale, start_pos_y-0.5*vscale, color="#666666", edgecolor='none')
-								ax.plot([start_pos_x-1.8*spacer_count*hscale, start_pos_x-1.8*spacer_count*hscale-1.8*hscale],[start_pos_y+0.3*vscale, start_pos_y-0.3*vscale], color="#666666", linewidth=3*vscale, solid_capstyle="butt")
-								ax.plot([start_pos_x-1.8*spacer_count*hscale, start_pos_x-1.8*spacer_count*hscale-1.8*hscale],[start_pos_y-0.3*vscale, start_pos_y+0.3*vscale], color="#666666", linewidth=3*vscale, solid_capstyle="butt")
-								start_pos_x-=2*hscale # Shift future spacers a bit to make spacer for this line.
-							else:
+					# Add change info
+
+					if n == diff_type.indices[-1]:
+						if diff_type.type != 'shared':
+							if diff_type.type == 'indel':
+								if spacer == '-':
+									# ax.fill_between([start_pos_x-2*spacer_count*hscale-0.5*hscale, start_pos_x-2*spacer_count*hscale],start_pos_y+0.5*vscale, start_pos_y-0.5*vscale, color="#666666", edgecolor='none')
+									ax.plot([start_pos_x-1.8*spacer_count*hscale, start_pos_x-1.8*spacer_count*hscale-1.8*hscale],[start_pos_y+0.3*vscale, start_pos_y-0.3*vscale], color="#666666", linewidth=3*vscale, solid_capstyle="butt")
+									ax.plot([start_pos_x-1.8*spacer_count*hscale, start_pos_x-1.8*spacer_count*hscale-1.8*hscale],[start_pos_y-0.3*vscale, start_pos_y+0.3*vscale], color="#666666", linewidth=3*vscale, solid_capstyle="butt")
+									start_pos_x-=2*hscale # Shift future spacers a bit to make spacer for this line.
+								else:
+									nspacers = len(diff_type.indices)
+									# First bar
+									ax.fill_between([start_pos_x-2*spacer_count*hscale-0.3*hscale, start_pos_x-2*spacer_count*hscale],start_pos_y+0.4*vscale, start_pos_y-0.4*vscale, color="#666666", edgecolor='none')
+									# Second bar
+									ax.fill_between([start_pos_x-2*(spacer_count+nspacers)*hscale-0.3*hscale-0.3*hscale, start_pos_x-2*(spacer_count+nspacers)*hscale-0.3*hscale], start_pos_y+0.4*vscale, start_pos_y-0.4*vscale, color="#666666", edgecolor='none')
+									# Top bar
+									ax.fill_between([start_pos_x-2*(spacer_count+nspacers)*hscale-0.3*hscale-0.3*hscale, start_pos_x-2*spacer_count*hscale], start_pos_y+0.4*vscale-0.3/(hscale*vscale), start_pos_y+0.4*vscale, color="#666666", edgecolor='none')
+									# Bottom bar
+									ax.fill_between([start_pos_x-2*(spacer_count+nspacers)*hscale-0.3*hscale-0.3*hscale, start_pos_x-2*spacer_count*hscale], start_pos_y-0.4*vscale+0.3/(hscale*vscale), start_pos_y-0.4*vscale, color="#666666", edgecolor='none')
+
+									start_pos_x-=0.3*hscale # Shift future spacers a bit to make spacer for this line.
+									# Shift again after the indel region
+									reshift_loc = diff_type.indices[0]-1
+
+							elif diff_type.type == "acquisition":
 								nspacers = len(diff_type.indices)
-								# First bar
-								ax.fill_between([start_pos_x-2*spacer_count*hscale-0.3*hscale, start_pos_x-2*spacer_count*hscale],start_pos_y+0.4*vscale, start_pos_y-0.4*vscale, color="#666666", edgecolor='none')
-								# Second bar
-								ax.fill_between([start_pos_x-2*(spacer_count+nspacers)*hscale-0.3*hscale-0.3*hscale, start_pos_x-2*(spacer_count+nspacers)*hscale-0.3*hscale], start_pos_y+0.4*vscale, start_pos_y-0.4*vscale, color="#666666", edgecolor='none')
-								# Top bar
-								ax.fill_between([start_pos_x-2*(spacer_count+nspacers)*hscale-0.3*hscale-0.3*hscale, start_pos_x-2*spacer_count*hscale], start_pos_y+0.4*vscale-0.3/(hscale*vscale), start_pos_y+0.4*vscale, color="#666666", edgecolor='none')
-								# Bottom bar
-								ax.fill_between([start_pos_x-2*(spacer_count+nspacers)*hscale-0.3*hscale-0.3*hscale, start_pos_x-2*spacer_count*hscale], start_pos_y-0.4*vscale+0.3/(hscale*vscale), start_pos_y-0.4*vscale, color="#666666", edgecolor='none')
 
-								start_pos_x-=0.3*hscale # Shift future spacers a bit to make spacer for this line.
-								# Shift again after the indel region
-								reshift_loc = diff_type.indices[0]-1
+								# ax.fill_between([start_pos_x-2*(spacer_count+nspacers)*hscale, start_pos_x-2*spacer_count*hscale], start_pos_y-0.3*vscale+0.3/(hscale*vscale), start_pos_y-0.3*vscale, color="#666666", edgecolor='none')
+								rcParams['path.sketch'] = (20, 100, 1)
+								ax.plot(np.linspace(start_pos_x-2*(spacer_count+nspacers)*hscale,start_pos_x-2*spacer_count*hscale,3),[start_pos_y-0.4*vscale+0.2/(hscale*vscale)]*3,color="#666666", linewidth=3*vscale, solid_capstyle="butt")
+								rcParams['path.sketch'] = (0, 0, 0)
+								#ax.plot([start_pos_x-2*(spacer_count+nspacers)*hscale, start_pos_x-2*spacer_count*hscale],[start_pos_y-0.3*vscale+0.25/(hscale*vscale), start_pos_y-0.3*vscale+0.25/(hscale*vscale)], linestyle='dotted', color="#666666", linewidth=5*vscale, solid_capstyle="butt")
 
-						elif diff_type.type == "acquisition":
-							nspacers = len(diff_type.indices)
+					if n == reshift_loc and reshift_loc:
+						start_pos_x-=0.3*hscale # Shift future spacers to make space for line
 
-							# ax.fill_between([start_pos_x-2*(spacer_count+nspacers)*hscale, start_pos_x-2*spacer_count*hscale], start_pos_y-0.3*vscale+0.3/(hscale*vscale), start_pos_y-0.3*vscale, color="#666666", edgecolor='none')
-							rcParams['path.sketch'] = (20, 100, 1)
-							ax.plot(np.linspace(start_pos_x-2*(spacer_count+nspacers)*hscale,start_pos_x-2*spacer_count*hscale,3),[start_pos_y-0.4*vscale+0.2/(hscale*vscale)]*3,color="#666666", linewidth=3*vscale, solid_capstyle="butt")
-							rcParams['path.sketch'] = (0, 0, 0)
-							#ax.plot([start_pos_x-2*(spacer_count+nspacers)*hscale, start_pos_x-2*spacer_count*hscale],[start_pos_y-0.3*vscale+0.25/(hscale*vscale), start_pos_y-0.3*vscale+0.25/(hscale*vscale)], linestyle='dotted', color="#666666", linewidth=5*vscale, solid_capstyle="butt")
+					# Plot spacer cartoon
+					if spacer != '-':
+						if spacer in spacer_cols_dict.keys():
+							spcolour = spacer_cols_dict[spacer]
+							line_width = 10*vscale
+						else:
+							spcolour = "#000000" #black
+							line_width = 4*vscale
+						ax.plot([start_pos_x-2*spacer_count*hscale, start_pos_x-2*spacer_count*hscale-2*hscale],[start_pos_y, start_pos_y], color=spcolour, linewidth=line_width, solid_capstyle="butt")
+						spacer_count += 1
 
-				if n == reshift_loc and reshift_loc:
-					start_pos_x-=0.3*hscale # Shift future spacers to make space for line
 
-				# Plot spacer cartoon
-				if spacer != '-':
+
+		else: # Draw root ancestral array
+			if args.emphasize_diffs:
+			# Then add spacers
+				spacers = array_dict[array].spacers
+				start_pos_x = location[0]-5*hscale # Start a bit to the left to leave room for the label
+				start_pos_y = location[1] 
+				for n, spacer in enumerate(reversed(spacers)): # work backwards through the array plotting from right to left
 					if spacer in spacer_cols_dict.keys():
 						spcolour = spacer_cols_dict[spacer]
 						line_width = 10*vscale
 					else:
 						spcolour = "#000000" #black
 						line_width = 4*vscale
-					ax.plot([start_pos_x-2*spacer_count*hscale, start_pos_x-2*spacer_count*hscale-2*hscale],[start_pos_y, start_pos_y], color=spcolour, linewidth=line_width, solid_capstyle="butt")
-					spacer_count += 1
+					ax.plot([start_pos_x-2*n*hscale, start_pos_x-2*n*hscale-2*hscale],[start_pos_y, start_pos_y], color=spcolour, linewidth=line_width, solid_capstyle="butt")
 
-
-
-		else: # Draw root ancestral array
+		if not args.emphasize_diffs:
 			# Then add spacers
 			spacers = array_dict[array].spacers
 			start_pos_x = location[0]-5*hscale # Start a bit to the left to leave room for the label
@@ -1067,8 +1085,9 @@ def plot_tree(tree, array_dict, filename):
 					spcolour = "#000000" #black
 					line_width = 4*vscale
 				ax.plot([start_pos_x-2*n*hscale, start_pos_x-2*n*hscale-2*hscale],[start_pos_y, start_pos_y], color=spcolour, linewidth=line_width, solid_capstyle="butt")
+
 	
-	# plt.axis('off')
+	plt.axis('off')
 	plt.savefig(filename, dpi=600)
 
 
