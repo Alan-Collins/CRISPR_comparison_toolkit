@@ -1027,6 +1027,8 @@ def plot_tree(tree, array_dict, filename):
 					spacer = child.aligned[n]
 
 					# Add change info
+					if n == reshift_loc:
+						start_pos_x-=0.5*hscale # Shift future spacers to make space for line
 
 					if n == diff_type.indices[-1]:
 						if diff_type.type != 'shared':
@@ -1056,9 +1058,6 @@ def plot_tree(tree, array_dict, filename):
 								rcParams['path.sketch'] = (20*vscale, 100, 1)
 								ax.plot(np.linspace(start_pos_x-2*(spacer_count+nspacers)*hscale,start_pos_x-2*spacer_count*hscale,3),[start_pos_y-0.5*vscale]*3,color="#666666", linewidth=3*vscale, solid_capstyle="butt")
 								rcParams['path.sketch'] = (0, 0, 0)
-
-					if n == reshift_loc:
-						start_pos_x-=0.5*hscale # Shift future spacers to make space for line
 
 					# Plot spacer cartoon
 					if spacer != '-':
