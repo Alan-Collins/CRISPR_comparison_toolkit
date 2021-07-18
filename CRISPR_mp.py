@@ -1019,7 +1019,7 @@ def plot_tree(tree, array_dict, filename):
 			child = count_parsimony_events(child, ancestor)
 
 			if args.emphasize_diffs:
-				start_pos_x = location[0]-8*hscale # Start a bit to the left to leave room for the label
+				start_pos_x = location[0]-5*vscale # Start a bit to the left to leave room for the label
 				start_pos_y = location[1]
 				spacer_count = 0 # How many spacers have been plotted?
 				reshift_loc = 1000
@@ -1055,7 +1055,7 @@ def plot_tree(tree, array_dict, filename):
 							elif diff_type.type == "acquisition":
 								nspacers = len(diff_type.indices)
 
-								rcParams['path.sketch'] = (20*vscale, 100, 1)
+								rcParams['path.sketch'] = (20*vscale, 100*hscale, 1)
 								ax.plot(np.linspace(start_pos_x-2*(spacer_count+nspacers)*hscale,start_pos_x-2*spacer_count*hscale,3),[start_pos_y-0.5*vscale]*3,color="#666666", linewidth=3*vscale, solid_capstyle="butt")
 								rcParams['path.sketch'] = (0, 0, 0)
 
@@ -1106,6 +1106,7 @@ def plot_tree(tree, array_dict, filename):
 				ax.fill_between([start_pos_x-(2*n+0.03)*hscale, start_pos_x-(2*n+0.03)*hscale-1.97*hscale], start_pos_y-line_width*vscale, start_pos_y+line_width*vscale, color=spcolour[0], edgecolor=spcolour[1], linewidth=1.5*hscale)
 
 	plt.axis('off')
+	plt.tight_layout()
 	plt.savefig(filename, dpi=600)
 
 
@@ -1123,6 +1124,10 @@ Cols_hex_27 = ['#fd5925', '#dbc58e', '#008d40', '#304865', '#934270', '#f7b8a2',
 #hex values from https://mokole.com/palette.html
 
 Cols_hex_40 = ["#696969","#556b2f","#a0522d","#800000","#006400","#808000","#483d8b","#3cb371","#008080","#bdb76b","#4682b4","#000080","#9acd32","#32cd32","#daa520","#7f007f","#ff4500","#00ced1","#ff8c00","#c71585","#0000cd","#00ff00","#9400d3","#dc143c","#00bfff","#f4a460","#adff2f","#da70d6","#ff00ff","#1e90ff","#db7093","#fa8072","#ffff54","#dda0dd","#7b68ee","#afeeee","#98fb98","#7fffd4","#ffe4c4","#ffc0cb"]
+
+Cols_tol = ["#332288", "#117733", "#44AA99", "#88CCEE", "#DDCC77", "#CC6677", "#AA4499", "#882255"]
+
+Cols_hex_12 = ["#07001c", "#14d625", "#4c62ff", "#92ffa9", "#810087", "#bcffe6", "#490046", "#00c8ee", "#b53900", "#ff8cf7", "#5b5800", "#ff6f8d"]
 
 # Generate strings to assign as internal node_IDs (This makes 702)
 
@@ -1300,18 +1305,29 @@ all_spacers = []
 for array in array_choices[0]:
 	all_spacers += array.spacers
 non_singleton_spacers = [spacer for spacer, count in Counter(all_spacers).items() if count >1]
-if len(non_singleton_spacers) > 27:
-	if len(non_singleton_spacers) > 40:
-		print("Get a new colour scheme if you want to be able to tell apart spacers. Don't have enough colours.")
-		colours = []
-		for i in range(1+len(non_singleton_spacers)//40): # Repeat the same colour scheme.
-			for j in Cols_hex_40:
-				colours += [(j, Cols_hex_40[i])]
+if len(non_singleton_spacers) > 8:
+	if len(non_singleton_spacers) > 12: 
+		if len(non_singleton_spacers) > 27:
+			if len(non_singleton_spacers) > 40:
+				print("{} spacers found in multiple arrays. Using fill and outline colour combinations to distinguish spacers.".format(non_singleton_spacers))
+				if len(non_singleton_spacers) < 82:
+					col_scheme = Cols_tol
+				elif len(non_singleton_spacers) < 145:
+					col_scheme = Cols_hex_12
+				else:
+					col_scheme = Cols_hex_27
+				colours = []
+				for i in range(1+len(non_singleton_spacers)//len(col_scheme)): # Repeat the same colour scheme.
+					for j in col_scheme:
+						colours += [(j, col_scheme[i])]
+			else:
+				colours = [(i, "#000000") for i in Cols_hex_40]
+		else:
+			colours = [(i, "#000000") for i in Cols_hex_27]
 	else:
-		colours = [(i, "#000000") for i in Cols_hex_40]
+		colours = [(i, "#000000") for i in Cols_hex_12]
 else:
-	colours = [(i, "#000000") for i in Cols_hex_27]
-
+	colours = [(i, "#000000") for i in Cols_tol]
 # build a dictionary with colours assigned to each spacer.
 spacer_cols_dict  = {}
 
