@@ -1053,7 +1053,7 @@ def plot_tree(tree, array_dict, filename):
 							elif diff_type.type == "acquisition":
 								nspacers = len(diff_type.indices)
 
-								rcParams['path.sketch'] = (20, 100, 1)
+								rcParams['path.sketch'] = (20*vscale, 100, 1)
 								ax.plot(np.linspace(start_pos_x-2*(spacer_count+nspacers)*hscale,start_pos_x-2*spacer_count*hscale,3),[start_pos_y-0.5*vscale]*3,color="#666666", linewidth=3*vscale, solid_capstyle="butt")
 								rcParams['path.sketch'] = (0, 0, 0)
 
@@ -1299,7 +1299,10 @@ for array in array_choices[0]:
 non_singleton_spacers = [spacer for spacer, count in Counter(all_spacers).items() if count >1]
 if len(non_singleton_spacers) > 27:
 	if len(non_singleton_spacers) > 40:
-		print("Get a new colour scheme. Don't have enough colours.")
+		print("Get a new colour scheme if you want to be able to tell apart spacers. Don't have enough colours.")
+		colours = []
+		for i in range(1+len(non_singleton_spacers)//40): # Repeat the same colour scheme.
+			colours+=Cols_hex_40
 	else:
 		colours = Cols_hex_40
 else:
