@@ -1063,11 +1063,12 @@ def plot_tree(tree, array_dict, filename):
 					if spacer != '-':
 						if spacer in spacer_cols_dict.keys():
 							spcolour = spacer_cols_dict[spacer]
-							line_width = 10*vscale
+							line_width = 0.1
 						else:
-							spcolour = "#000000" #black
-							line_width = 4*vscale
-						ax.plot([start_pos_x-2*spacer_count*hscale, start_pos_x-2*spacer_count*hscale-2*hscale],[start_pos_y, start_pos_y], color=spcolour, linewidth=line_width, solid_capstyle="butt")
+							spcolour = ("#000000", "#000000") #black
+							line_width = 0.04
+						# ax.plot([start_pos_x-2*spacer_count*hscale, start_pos_x-2*spacer_count*hscale-2*hscale],[start_pos_y, start_pos_y], color=spcolour, linewidth=line_width, solid_capstyle="butt")
+						ax.fill_between([start_pos_x-(2*spacer_count+0.03)*hscale, start_pos_x-(2*spacer_count+0.03)*hscale-1.97*hscale], start_pos_y-line_width*vscale, start_pos_y+line_width*vscale, color=spcolour[0], edgecolor=spcolour[1], linewidth=1.5*hscale)
 						spacer_count += 1
 
 
@@ -1081,11 +1082,13 @@ def plot_tree(tree, array_dict, filename):
 				for n, spacer in enumerate(reversed(spacers)): # work backwards through the array plotting from right to left
 					if spacer in spacer_cols_dict.keys():
 						spcolour = spacer_cols_dict[spacer]
-						line_width = 10*vscale
+						line_width = 0.1
 					else:
-						spcolour = "#000000" #black
-						line_width = 4*vscale
-					ax.plot([start_pos_x-2*n*hscale, start_pos_x-2*n*hscale-2*hscale],[start_pos_y, start_pos_y], color=spcolour, linewidth=line_width, solid_capstyle="butt")
+						spcolour = ("#000000", "#000000") #black
+						line_width = 0.04
+					# ax.plot([start_pos_x-2*n*hscale, start_pos_x-2*n*hscale-2*hscale],[start_pos_y, start_pos_y], color=spcolour, linewidth=line_width, solid_capstyle="butt")
+					ax.fill_between([start_pos_x-(2*n+0.03)*hscale, start_pos_x-(2*n+0.03)*hscale-1.97*hscale], start_pos_y-line_width*vscale, start_pos_y+line_width*vscale, color=spcolour[0], edgecolor=spcolour[1], linewidth=1.5*hscale)
+
 
 		if not args.emphasize_diffs:
 			# Then add spacers
@@ -1095,11 +1098,12 @@ def plot_tree(tree, array_dict, filename):
 			for n, spacer in enumerate(reversed(spacers)): # work backwards through the array plotting from right to left
 				if spacer in spacer_cols_dict.keys():
 					spcolour = spacer_cols_dict[spacer]
-					line_width = 10*vscale
+					line_width = 0.1 # 10*vscale
 				else:
-					spcolour = "#000000" #black
-					line_width = 4*vscale
-				ax.plot([start_pos_x-2*n*hscale, start_pos_x-2*n*hscale-2*hscale],[start_pos_y, start_pos_y], color=spcolour, linewidth=line_width, solid_capstyle="butt")
+					spcolour = ("#000000", "#000000") #black
+					line_width = 0.04 # 4*vscale
+				# ax.plot([start_pos_x-2*n*hscale, start_pos_x-2*n*hscale-2*hscale],[start_pos_y, start_pos_y], color=spcolour, linewidth=line_width, solid_capstyle="butt")
+				ax.fill_between([start_pos_x-(2*n+0.03)*hscale, start_pos_x-(2*n+0.03)*hscale-1.97*hscale], start_pos_y-line_width*vscale, start_pos_y+line_width*vscale, color=spcolour[0], edgecolor=spcolour[1], linewidth=1.5*hscale)
 
 	plt.axis('off')
 	plt.savefig(filename, dpi=600)
@@ -1301,11 +1305,12 @@ if len(non_singleton_spacers) > 27:
 		print("Get a new colour scheme if you want to be able to tell apart spacers. Don't have enough colours.")
 		colours = []
 		for i in range(1+len(non_singleton_spacers)//40): # Repeat the same colour scheme.
-			colours+=Cols_hex_40
+			for j in Cols_hex_40:
+				colours += [(j, Cols_hex_40[i])]
 	else:
-		colours = Cols_hex_40
+		colours = [(i, "#000000") for i in Cols_hex_40]
 else:
-	colours = Cols_hex_27
+	colours = [(i, "#000000") for i in Cols_hex_27]
 
 # build a dictionary with colours assigned to each spacer.
 spacer_cols_dict  = {}
