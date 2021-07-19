@@ -1060,7 +1060,7 @@ def plot_tree(tree, array_dict, filename):
 							elif diff_type.type == "acquisition":
 								nspacers = len(diff_type.indices)
 
-								rcParams['path.sketch'] = (100*hscale, 80*vscale, 1)
+								rcParams['path.sketch'] = (80*vscale, 5/hscale, 1)
 								ax.plot(np.linspace(start_pos_x-2*(spacer_count+nspacers)*hscale,start_pos_x-2*spacer_count*hscale,3),[start_pos_y-0.5*vscale]*3,color="#666666", linewidth=3*vscale, solid_capstyle="butt")
 								rcParams['path.sketch'] = (0, 0, 0)
 
