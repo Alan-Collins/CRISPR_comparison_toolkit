@@ -18,9 +18,7 @@ from itertools import permutations
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import multiprocessing
-import time
 
-start = time.time()
 
 parser = argparse.ArgumentParser(
 	description="Perform maximum parsimony analysis on CRISPR arrays to infer a tree representing their evolutionary relationship."
@@ -1415,30 +1413,36 @@ else:
 	pool.close()
 	pool.join()
 
+	all_tree_comparators = dendropy.TreeList()
 	for array_dict, tree, addition_order in tree_list:
 		if array_dict:
+			all_tree_comparators.read(data=tree.as_string("newick"), schema="newick")
 			score = tree.length()
 			if score < best_score:
 				best_arrays = copy.deepcopy(array_dict) # Keep inferred ancestral states and information
 				best_score = copy.deepcopy(score)
 				best_addition_order = copy.deepcopy(addition_order)
 				# Keep one copy for comparisons as copy.deepcopy makes a new taxon namespace which breaks comparisons.
-				best_tree_comparator = dendropy.Tree(tree)
+				best_tree_comparator = all_tree_comparators[-1:]
+				# best_tree_comparator = dendropy.Tree(tree)
 				best_tree = copy.deepcopy(tree)
 			elif score == best_score:
 				if isinstance(best_tree, list):
 					# Check this tree isn't identical to one that's already been found
 					if not any([
-						dendropy.calculate.treecompare.weighted_robinson_foulds_distance(good_tree, tree) == 0. for good_tree in best_tree_comparator
+						dendropy.calculate.treecompare.weighted_robinson_foulds_distance(good_tree, all_tree_comparators[-1]) == 0. for good_tree in best_tree_comparator
 						]):
-						best_tree_comparator.append(dendropy.Tree(tree))
+						best_tree_comparator.append(all_tree_comparators[-1])
+						# best_tree_comparator.append(dendropy.Tree(tree))
 						best_tree.append(copy.deepcopy(tree))
 						best_arrays.append(copy.deepcopy(array_dict))
 						best_addition_order.append(copy.deepcopy(addition_order))
 				else:
 					# Check this tree isn't identical to the one that's already been found
-					if dendropy.calculate.treecompare.weighted_robinson_foulds_distance(best_tree_comparator, tree) != 0.:
-						best_tree_comparator = [best_tree_comparator, dendropy.Tree(tree)]
+					if dendropy.calculate.treecompare.weighted_robinson_foulds_distance(best_tree_comparator[0], all_tree_comparators[-1]) != 0.:
+						best_tree_comparator.append(all_tree_comparators[-1])
+						# best_tree_comparator.read(data=tree.as_string("newick"), schema="newick", taxon_namespace=taxon_namespace)
+						# best_tree_comparator = [best_tree_comparator, dendropy.Tree(tree)]
 						best_tree = [best_tree, copy.deepcopy(tree)]
 						best_arrays = [best_arrays, copy.deepcopy(array_dict)]
 						best_addition_order = [best_addition_order, copy.deepcopy(addition_order)]
@@ -1523,4 +1527,3 @@ except Exception as e:
 	exc_type, exc_obj, exc_tb = sys.exc_info()
 	exc_tb.print_exception()
 
-print(time.time() - start)
