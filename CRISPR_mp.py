@@ -1310,7 +1310,7 @@ if len(non_singleton_spacers) > 8:
 		if len(non_singleton_spacers) > 27:
 			if len(non_singleton_spacers) > 40:
 				print("{} spacers found in multiple arrays. Using fill and outline colour combinations to distinguish spacers.".format(non_singleton_spacers))
-				if len(non_singleton_spacers) < 82:
+				if len(non_singleton_spacers) < 65:
 					col_scheme = Cols_tol
 				elif len(non_singleton_spacers) < 145:
 					col_scheme = Cols_hex_12
@@ -1320,6 +1320,7 @@ if len(non_singleton_spacers) > 8:
 				for i in range(1+len(non_singleton_spacers)//len(col_scheme)): # Repeat the same colour scheme.
 					for j in col_scheme:
 						colours += [(j, col_scheme[i])]
+
 			else:
 				colours = [(i, "#000000") for i in Cols_hex_40]
 		else:
