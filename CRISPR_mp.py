@@ -1055,7 +1055,7 @@ def plot_tree(tree, array_dict, filename):
 							elif diff_type.type == "acquisition":
 								nspacers = len(diff_type.indices)
 
-								rcParams['path.sketch'] = (20*vscale, 100*hscale, 1)
+								rcParams['path.sketch'] = (100*hscale, 80*vscale, 1)
 								ax.plot(np.linspace(start_pos_x-2*(spacer_count+nspacers)*hscale,start_pos_x-2*spacer_count*hscale,3),[start_pos_y-0.5*vscale]*3,color="#666666", linewidth=3*vscale, solid_capstyle="butt")
 								rcParams['path.sketch'] = (0, 0, 0)
 
@@ -1134,7 +1134,6 @@ def build_tree_single(arrays, tree_namespace, score):
 		node_count += 1
 		array1, array2, ancestor = results
 	else:
-		no_id_count += 1
 		return (False, False)
 
 
@@ -1160,7 +1159,6 @@ def build_tree_single(arrays, tree_namespace, score):
 				best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
 				)
 			if results == "No_ID":
-				no_id_count += 1
 				return (False, False)
 
 
@@ -1177,7 +1175,6 @@ def build_tree_single(arrays, tree_namespace, score):
 				best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
 				)
 			if results == "No_ID":
-				no_id_count += 1
 				return (False, False)
 
 				
@@ -1314,6 +1311,8 @@ for i in range(min([args.replicates, len(array_choices)])):
 					best_addition_order = [best_addition_order, copy.deepcopy(addition_order)]
 		if args.fix_order:
 			break
+	else:
+		no_id_count += 1
 # 	except Exception as e:
 # 		exc_type, exc_obj, exc_tb = sys.exc_info()
 # 		print('Something went wrong when running with the following array order:')
