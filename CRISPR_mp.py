@@ -1111,6 +1111,92 @@ def plot_tree(tree, array_dict, filename):
 
 
 
+def build_tree_single(arrays, tree_namespace, score):
+	"""
+	Search treespace for most parsimonious tree using single process.
+	Args:
+		arrays (list): Ordered list of Array class instances of the arrays to analyse. Will be added to the tree in the provided order.
+		tree_namespace (dendropy.TaxonNamespace): Namespace for taxa to add to the tree.
+		score (int): The score to beat. If at any point during tree construction the tree has total branch lengths above this score construction will be aborted
+	
+	Returns:
+		(tuple) Returns array_dict and dendropy.tree object if the tree beats or equals the provide score. Else retuns tuple of (False, False).
+	"""
+
+	tree = dendropy.Tree(taxon_namespace=taxon_namespace)
+
+	array_dict = {}
+	tree_child_dict = {}
+	node_count = 0 # Keep track of which internal node ID should be used for each node
+
+	results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count)
+	if results != "No_ID":
+		node_count += 1
+		array1, array2, ancestor = results
+	else:
+		no_id_count += 1
+		return (False, False)
+
+
+	for a in [array1, array2, ancestor]:
+		# Create tree nodes
+		tree_child_dict[a.id] = dendropy.Node(edge_length=a.distance)
+		tree_child_dict[a.id].taxon = taxon_namespace.get_taxon(a.id)
+		#Store arrays for further comparisons
+		array_dict[a.id] = a
+
+	# Add initial relationships to the tree.
+	tree.seed_node.add_child(tree_child_dict[ancestor.id])
+	tree_child_dict[ancestor.id].add_child(tree_child_dict[array1.id])
+	tree_child_dict[ancestor.id].add_child(tree_child_dict[array2.id])
+	for a in arrays[2:]: # Already added the first two so now add the rest 1 by 1
+		seed = False # To check if we are modifying the child of the seed node
+
+		# Find the most similar array already in the tree (measured in parsimony score)
+		best_match = find_closest_array(a, array_dict)
+		if best_match.extant: # If the closest match is a array then just join them and replace the existing array with the new node
+			current_parent = array_dict[tree_child_dict[best_match.id].parent_node.taxon.label]
+			results = replace_existing_array(
+				best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
+				)
+			if results == "No_ID":
+				no_id_count += 1
+				return (False, False)
+
+
+			else:
+				tree, array_dict, tree_child_dict = results
+			node_count += 1
+		else:
+			try:
+				current_parent = array_dict[tree_child_dict[best_match.id].parent_node.taxon.label]
+			except: # Fails if the best match is a child of the seed node
+				seed = True
+				current_parent = None
+			results = replace_existing_array(
+				best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
+				)
+			if results == "No_ID":
+				no_id_count += 1
+				return (False, False)
+
+				
+			else:
+				tree, array_dict, tree_child_dict = results
+			node_count += 1
+	
+		brlen = tree.length()
+		if brlen > score:
+			return (False, False)
+
+				
+		if a == arrays[-1]:
+			tree.reroot_at_node(tree.seed_node, update_bipartitions=False) # Need to reroot at the seed so that RF distance works
+			return (array_dict, tree)
+
+
+
+
 event_costs = { 
 				"acquisition" : args.acquisition,
 				"indel" : args.indel,
@@ -1177,6 +1263,18 @@ best_score = 99999999
 
 no_id_count = 0 
 
+if args.fix_order:
+	if not args.arrays_to_join:
+		print("You must provide the order you want to fix when using the fixed order option!\n\nABORTING.")
+		sys.exit()
+	addition_order = [Array(i, array_spacers_dict[i]) for i in args.arrays_to_join]
+else:
+	addition_order = array_choices[i]
+
+
+
+
+
 for i in range(min([args.replicates, len(array_choices)])):
 	if args.fix_order:
 		if not args.arrays_to_join:
@@ -1185,104 +1283,43 @@ for i in range(min([args.replicates, len(array_choices)])):
 		addition_order = [Array(i, array_spacers_dict[i]) for i in args.arrays_to_join]
 	else:
 		addition_order = array_choices[i]
-	try:
-		tree = dendropy.Tree(taxon_namespace=taxon_namespace)
 
-		array_dict = {}
-		tree_child_dict = {}
-		node_count = 0 # Keep track of which internal node ID should be used for each node
+	array_dict, tree = build_tree_single(addition_order, taxon_namespace, best_score)
 
-		results = resolve_pairwise_parsimony(addition_order[0], addition_order[1], all_arrays, node_ids, node_count)
-		if results != "No_ID":
-			node_count += 1
-			array1, array2, ancestor = results
-		else:
-			no_id_count += 1
-			continue
-
-
-		for a in [array1, array2, ancestor]:
-			# Create tree nodes
-			tree_child_dict[a.id] = dendropy.Node(edge_length=a.distance)
-			tree_child_dict[a.id].taxon = taxon_namespace.get_taxon(a.id)
-			#Store arrays for further comparisons
-			array_dict[a.id] = a
-
-		# Add initial relationships to the tree.
-		tree.seed_node.add_child(tree_child_dict[ancestor.id])
-		tree_child_dict[ancestor.id].add_child(tree_child_dict[array1.id])
-		tree_child_dict[ancestor.id].add_child(tree_child_dict[array2.id])
-		for a in addition_order[2:]: # Already added the first two so now add the rest 1 by 1
-			seed = False # To check if we are modifying the child of the seed node
-
-			# Find the most similar array already in the tree (measured in parsimony score)
-			best_match = find_closest_array(a, array_dict)
-			if best_match.extant: # If the closest match is a array then just join them and replace the existing array with the new node
-				current_parent = array_dict[tree_child_dict[best_match.id].parent_node.taxon.label]
-				results = replace_existing_array(
-					best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
-					)
-				if results == "No_ID":
-					no_id_count += 1
-					break
-				else:
-					tree, array_dict, tree_child_dict = results
-				node_count += 1
+	if array_dict:
+		score = tree.length()
+		if score < best_score:
+			best_arrays = copy.deepcopy(array_dict) # Keep inferred ancestral states and information
+			best_score = copy.deepcopy(score)
+			best_addition_order = copy.deepcopy(addition_order)
+			# Keep one copy for comparisons as copy.deepcopy makes a new taxon namespace which breaks comparisons.
+			best_tree_comparator = dendropy.Tree(tree)
+			best_tree = copy.deepcopy(tree)
+		elif score == best_score:
+			if isinstance(best_tree, list):
+				# Check this tree isn't identical to one that's already been found
+				if not any([
+					dendropy.calculate.treecompare.weighted_robinson_foulds_distance(good_tree, tree) == 0. for good_tree in best_tree_comparator
+					]):
+					best_tree_comparator.append(dendropy.Tree(tree))
+					best_tree.append(copy.deepcopy(tree))
+					best_arrays.append(copy.deepcopy(array_dict))
+					best_addition_order.append(copy.deepcopy(addition_order))
 			else:
-				try:
-					current_parent = array_dict[tree_child_dict[best_match.id].parent_node.taxon.label]
-				except: # Fails if the best match is a child of the seed node
-					seed = True
-					current_parent = None
-				results = replace_existing_array(
-					best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
-					)
-				if results == "No_ID":
-					no_id_count += 1
-					break
-				else:
-					tree, array_dict, tree_child_dict = results
-				node_count += 1
-			if a != addition_order[-1]:
-				score = score = tree.length()
-				if score > best_score:
-					break
-		else:
-			tree.reroot_at_node(tree.seed_node, update_bipartitions=False) # Need to reroot at the seed so that RF distance works
-			score = tree.length()
-			if score < best_score:
-				best_arrays = copy.deepcopy(array_dict) # Keep inferred ancestral states and information
-				best_score = copy.deepcopy(score)
-				best_addition_order = copy.deepcopy(addition_order)
-
-				# Keep one copy for comparisons as copy.deepcopy makes a new taxon namespace which breaks comparisons.
-				best_tree_comparator = dendropy.Tree(tree)
-				best_tree = copy.deepcopy(tree)
-			if score == best_score:
-				if isinstance(best_tree, list):
-					# Check this tree isn't identical to one that's already been found
-					if not any([
-						dendropy.calculate.treecompare.weighted_robinson_foulds_distance(good_tree, tree) == 0. for good_tree in best_tree_comparator
-						]):
-						best_tree_comparator.append(dendropy.Tree(tree))
-						best_tree.append(copy.deepcopy(tree))
-						best_arrays.append(copy.deepcopy(array_dict))
-						best_addition_order.append(copy.deepcopy(addition_order))
-				else:
-					# Check this tree isn't identical to the one that's already been found
-					if dendropy.calculate.treecompare.weighted_robinson_foulds_distance(best_tree_comparator, tree) != 0.:
-						best_tree_comparator = [best_tree_comparator, dendropy.Tree(tree)]
-						best_tree = [best_tree, copy.deepcopy(tree)]
-						best_arrays = [best_arrays, copy.deepcopy(array_dict)]
-						best_addition_order = [best_addition_order, copy.deepcopy(addition_order)]
+				# Check this tree isn't identical to the one that's already been found
+				if dendropy.calculate.treecompare.weighted_robinson_foulds_distance(best_tree_comparator, tree) != 0.:
+					best_tree_comparator = [best_tree_comparator, dendropy.Tree(tree)]
+					best_tree = [best_tree, copy.deepcopy(tree)]
+					best_arrays = [best_arrays, copy.deepcopy(array_dict)]
+					best_addition_order = [best_addition_order, copy.deepcopy(addition_order)]
 		if args.fix_order:
 			break
-	except Exception as e:
-		exc_type, exc_obj, exc_tb = sys.exc_info()
-		print('Something went wrong when running with the following array order:')
-		print([i.id for i in addition_order])
-		print(e)
-		print("Error occured on line {}".format(exc_tb.tb_lineno))
+# 	except Exception as e:
+# 		exc_type, exc_obj, exc_tb = sys.exc_info()
+# 		print('Something went wrong when running with the following array order:')
+# 		print([i.id for i in addition_order])
+# 		print(e)
+# 		print("Error occured on line {}".format(exc_tb.tb_lineno))
 
 
 if no_id_count == min([args.replicates, len(array_choices)]):
