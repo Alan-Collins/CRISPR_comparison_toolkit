@@ -1396,16 +1396,9 @@ if num_threads == 1:
 				break
 		else:
 			no_id_count += 1
-# 	except Exception as e:
-# 		exc_type, exc_obj, exc_tb = sys.exc_info()
-# 		print('Something went wrong when running with the following array order:')
-# 		print([i.id for i in addition_order])
-# 		print(e)
-# 		print("Error occured on line {}".format(exc_tb.tb_lineno))
 
 
 else:
-	# tree_list = multiprocessing.Manager().list()
 	pool = multiprocessing.Pool(processes=num_threads)
 	chunksize = args.replicates//num_threads
 	options = [(array_list, taxon_namespace) for array_list in array_choices]
@@ -1424,7 +1417,6 @@ else:
 				best_addition_order = copy.deepcopy(addition_order)
 				# Keep one copy for comparisons as copy.deepcopy makes a new taxon namespace which breaks comparisons.
 				best_tree_comparator = all_tree_comparators[-1:]
-				# best_tree_comparator = dendropy.Tree(tree)
 				best_tree = copy.deepcopy(tree)
 			elif score == best_score:
 				if isinstance(best_tree, list):
@@ -1433,7 +1425,6 @@ else:
 						dendropy.calculate.treecompare.weighted_robinson_foulds_distance(good_tree, all_tree_comparators[-1]) == 0. for good_tree in best_tree_comparator
 						]):
 						best_tree_comparator.append(all_tree_comparators[-1])
-						# best_tree_comparator.append(dendropy.Tree(tree))
 						best_tree.append(copy.deepcopy(tree))
 						best_arrays.append(copy.deepcopy(array_dict))
 						best_addition_order.append(copy.deepcopy(addition_order))
@@ -1441,8 +1432,6 @@ else:
 					# Check this tree isn't identical to the one that's already been found
 					if dendropy.calculate.treecompare.weighted_robinson_foulds_distance(best_tree_comparator[0], all_tree_comparators[-1]) != 0.:
 						best_tree_comparator.append(all_tree_comparators[-1])
-						# best_tree_comparator.read(data=tree.as_string("newick"), schema="newick", taxon_namespace=taxon_namespace)
-						# best_tree_comparator = [best_tree_comparator, dendropy.Tree(tree)]
 						best_tree = [best_tree, copy.deepcopy(tree)]
 						best_arrays = [best_arrays, copy.deepcopy(array_dict)]
 						best_addition_order = [best_addition_order, copy.deepcopy(addition_order)]
@@ -1519,7 +1508,7 @@ try:
 		print("\nThe addition order to make the best tree was: {}\n\n".format(" ".join(order)))
 		if args.print_tree:
 			print(best_tree.as_ascii_plot(show_internal_node_labels=True))
-		print(best_tree.as_string("newick"))#, suppress_leaf_node_labels=False, suppress_annotations=False))
+		print(best_tree.as_string("newick"))
 		if args.output_tree:
 			print("Saving image of tree with array diagrams to {}\n".format(args.output_tree))
 			plot_tree(best_tree, best_arrays, args.output_tree)
