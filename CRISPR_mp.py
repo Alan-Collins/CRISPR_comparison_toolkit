@@ -1461,7 +1461,7 @@ if len(non_singleton_spacers) > 8:
 	if len(non_singleton_spacers) > 12: 
 		if len(non_singleton_spacers) > 27:
 			if len(non_singleton_spacers) > 40:
-				print("{} spacers found in multiple arrays. Using fill and outline colour combinations to distinguish spacers.".format(non_singleton_spacers))
+				print("{} spacers found in multiple arrays. Using fill and outline colour combinations to distinguish spacers.".format(len(non_singleton_spacers)))
 				if len(non_singleton_spacers) < 65:
 					col_scheme = Cols_tol
 				elif len(non_singleton_spacers) < 145:
