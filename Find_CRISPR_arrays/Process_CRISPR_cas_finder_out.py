@@ -23,7 +23,7 @@ parser.add_argument(
 	help="Specify input directories containing output files that were produced by CRISPR-cas finder."
 	)
 parser.add_argument(
-	"-o",  dest="outdir", required = False,
+	"-o",  dest="outdir", required = False, default="./",
 	help="Specify output directory into which you want the script to place its output files. Default is to output in the current working directory"
 	)
 parser.add_argument(
