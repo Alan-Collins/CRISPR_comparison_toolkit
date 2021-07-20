@@ -8,16 +8,13 @@
 import sys
 import argparse
 import json
-import os
-import xml.etree.ElementTree as Et
 
 
 
 
 
 parser = argparse.ArgumentParser(
-	description="Script to process json files output by CRISPR-cas finder and summarize them in various human-readable files.",
-	formatter_class=LineWrapRawTextHelpFormatter)
+	description="Script to process json files output by CRISPR-cas finder and summarize them in various human-readable files.")
 parser.add_argument(
 	"-i",  dest="indirs", required = False, nargs="+",
 	help="Specify input directories containing output files that were produced by CRISPR-cas finder."
@@ -130,23 +127,6 @@ else:
 
 ### Read in CRISPR system Cas protein specifications (stolen from Macsyfinder packaged with CRISPRCasFinder) Files must be stored in ./Data_files/CRISPR_system_defs/ relative to this script's location.
 
-Cas_dict = {}
-
-path_prefix = '/'.join(os.path.realpath(__file__).split('/')[:-1]) + '/'
-definitions_path = path_prefix + "Data_files/CRISPR_system_defs/"
-
-for file in os.listdir(definitions_path):
-	CR_type = file.strip('.xml')
-	Cas_dict[CR_type] = {'n_mandatory' : 0}
-
-	tree = Et.parse(definitions_path + file)
-	root = tree.getroot()
-
-	for child in root:
-		Cas_dict[CR_type][child.attrib["name"]] =  child.attrib["presence"]
-		if child.attrib["presence"] == 'mandatory':
-			Cas_dict[CR_type]['n_mandatory'] += 1
-
 
 results = {}
 Cas_results = {}
@@ -177,8 +157,7 @@ for indir in args.indirs:
 				if int(j['Evidence_Level']) > 1:
 					array_num += 1
 					results[isolate_id][array_num] = {
-						'Contig' : "_".join(j["Name"].split("_")[:-1]), 
-						'Location' : str(str(j["Start"]) + " : " + str(j["End"])), 
+						'Location' : "{} {} : {}".format("_".join(j["Name"].split("_")[:-1]),str(j["Start"]), str(j["End"])), 
 						'Number_Spacers' : j["Spacers"], 
 						'DR_Consensus' : j["DR_Consensus"], 
 						'DR_Type' : get_repeat_info(CRISPR_types_dict, j["DR_Consensus"])[0],
@@ -228,48 +207,9 @@ for indir in args.indirs:
 						arrays_encoded[" ".join(results[isolate_id][array_num]['Spacer_encoded'])] = str(narrays_seen)
 						results[isolate_id][array_num]["Array_encoded"] = str(narrays_seen)
 						narrays_seen += 1
-	Cas_results[isolate_id] = {
-		'Cas_found' : "FALSE",
-		'Cas_types' : [],
-		'Cas_completeness' : {},
-		'Cas_completeness_binary' : '1', # Will be set to 0 if any identified CRISPR subtypes don't have all mandatory genes.
-		'Cas_list' : {}
-		}
-	Cas_headers = fasta_to_dict(incas).keys()
-	if len(Cas_headers) > 0:
-		Cas_results[isolate_id]['Cas_found'] = "TRUE"
-		for header in Cas_headers:
-			elements = header.split('|')
-			CR_type = elements[2]
-			gene = elements[3].split()[0]
-			if CR_type not in Cas_results[isolate_id]['Cas_types']:
-				Cas_results[isolate_id]['Cas_types'].append(CR_type)
-				if CR_type != "CAS":
-					Cas_results[isolate_id]['Cas_completeness'][CR_type] = [0, Cas_dict[CR_type]['n_mandatory']]
-					if Cas_dict[CR_type][gene] == 'mandatory':
-						Cas_results[isolate_id]['Cas_completeness'][CR_type][0] += 1
-
-				Cas_results[isolate_id]['Cas_list'][CR_type] = [gene]
-			else:
-				if CR_type != "CAS":
-					if gene not in Cas_results[isolate_id]['Cas_list'][CR_type] and Cas_dict[CR_type][gene] == 'mandatory':
-						Cas_results[isolate_id]['Cas_completeness'][CR_type][0] += 1
-				Cas_results[isolate_id]['Cas_list'][CR_type].append(gene)
-		for v in Cas_results[isolate_id]['Cas_completeness'].values():
-			if v[0] < v[1]:
-				Cas_results[isolate_id]['Cas_completeness_binary'] = '0'
-
-for k,v in Cas_results.items():
-	print(k,v)
-
-		
-
-		
 
 
-
-
-CRISPR_sum_to_write = [["Strain,Has_CRISPR,Array_count,Spacers,Spacers_encoded,Array_IDs,Array_locations,Array_sizes,Repeat_sequences,Array_CRISPR_types,Repeat_scores, Leader, Cas_found, Cas_types, Cas_completeness, Cas_list"]]
+CRISPR_sum_to_write = [["Strain,Has_CRISPR,Array_count,Spacers,Spacers_encoded,Array_IDs,Array_locations,Array_sizes,Repeat_sequences,Array_CRISPR_types,Repeat_scores, Leader"]]
 
 for k,v in results.items():
 	if len(v) == 0:
@@ -291,7 +231,7 @@ for k,v in results.items():
 			Spacers.append(str(array_num) + ": " + " ".join(feature_dict['Spacer']))
 			Spacers_encoded.append(str(array_num) + ": " + " ".join(feature_dict['Spacer_encoded']))
 			Array_ids.append("'" + str(array_num) + ": " + str(feature_dict['Array_encoded']) + "'")
-			Array_locations.append(str(array_num) + ": " + " ".join(feature_dict['Location']))
+			Array_locations.append(str(array_num) + ": " + feature_dict['Location'])
 			Array_sizes.append("'" + str(array_num) + ": " + str(feature_dict['Number_Spacers']) +"'")
 			Repeat_sequences.append(str(array_num) + ": " + feature_dict['DR_Consensus'])
 			Array_types.append(str(array_num) + ": " + feature_dict['DR_Type'])
@@ -306,19 +246,27 @@ for k,v in results.items():
 		Array_types = "\t".join(Array_types)
 		Repeat_scores = "\t".join(Repeat_scores)
 		Leaders = "\t".join(Leaders)
-		Cas_found = Cas_results[isolate_id]['Cas_found']
-		Cas_types = " ".join(Cas_results[isolate_id]['Cas_types'])
-		Cas_completeness = []
-		Cas_list = []
-		for crtype,feature in Cas_results[isolate_id]['Cas_completeness'].items():
-			Cas_completeness.append(crtype + ': ' + str(feature[0]) + '/' + str(feature[1])) 
-			Cas_list.append(crtype + ': ' + " ".join(Cas_results[isolate_id]['Cas_list'][crtype]))
-		Cas_completeness = '\t'.join(Cas_completeness)
-		Cas_completeness_binary = Cas_results[isolate_id]['Cas_completeness_binary']
-		Cas_list = '\t'.join(Cas_list)
-		CRISPR_sum_to_write.append([Strain,Has_CRISPR,Array_count,Spacers,Spacers_encoded,Array_ids, Array_locations,Array_sizes,Repeat_sequences,Array_types,Repeat_scores, Leaders, Cas_found, Cas_types, Cas_completeness, Cas_completeness_binary, Cas_list])
+		CRISPR_sum_to_write.append([Strain,Has_CRISPR,Array_count,Spacers,Spacers_encoded,Array_ids, Array_locations,Array_sizes,Repeat_sequences,Array_types,Repeat_scores, Leaders])
 
 
-# with open(outdir + "CRISPR_summary_table.csv", 'w+') as fout:
-# 	fout.write("\n".join([','.join(line) for line in CRISPR_sum_to_write]))
+with open(outdir + "CRISPR_summary_table.csv", 'w') as fout:
+	fout.write("\n".join([','.join(line) for line in CRISPR_sum_to_write]))
+
+with open(outdir + "CRISPR_spacers.fasta", 'w') as fout:
+	write_string = ''
+	for spacer, num in spacers.items():
+		write_string += ">{}\n{}\n".format(num,spacer)
+	fout.write(write_string)
+
+with open(outdir + "Array_spacer_ids.txt", 'w') as fout:
+	write_string = ''
+	for spacer_id_list, num in arrays_encoded.items():
+		write_string += "{}\tArray_IDs\t{}\n".format(num,spacer_id_list)
+	fout.write(write_string)
+
+with open(outdir + "Array_spacer_seqs.txt", 'w') as fout:
+	write_string = ''
+	for spacer_seq_list, num in arrays.items():
+		write_string += "{}\tSpacer_sequences\t{}\n".format(num,spacer_seq_list)
+	fout.write(write_string)
 
