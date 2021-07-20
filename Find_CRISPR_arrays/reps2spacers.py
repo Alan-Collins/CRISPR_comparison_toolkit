@@ -5,32 +5,7 @@
 # VERSION       :    v2
 # DATE          :    2021-5-5
 # DESCRIPTION   :    Given fasta CRISPR repeats and a blast db of genomes, pulls out spacer arrays of >= 2 spacers
-# CHANGELOG
-# V1.1 
-#   Added contig information to array location column in .csv output file. 
-#   Contig information is taken from the sseqid of the blast result.
-# V1.1
-#   Removed print commands that I had forgotten to get rid of.
-# v1.2
-#   Fixed mistake where the wrong array_class attribute was being used for storing array ends points for 3'-5' arrays.
-#   added trailing newlines to the end of output files.
-# v1.3
-#   Fixed issue where the end of an array was not found properly if there was only one array in one genome.
-#   Removed btop from blast as it was unused
-#   Added stderr catching and error printing for blastn and blastdbcmd run in case it fails.
-# v1.3.1
-#   Fixed issue handling large blastdbs that are split over multiple .nhr files.
-# v2
-#   Added e-value cutoff and max_target_seqs options to the blastn step so that blast doesn't stop looking for repeats prematurely with large databases.
-#   Added argparse options to control thread count, evalue, and max_target_seqs blast options
-#   Added multithreading to the spacer finding function to the blastdbcmd step that finds spacer sequences as this is the slowest part.
-#   Added user provided option to control type of regex used for grep against database files.
-#   Changed search for genome names from grepping the database files. Now uses blastdbcmd to return all sequence headers and greps for unique regex matches in those.
-#   Relaxed array blast hit parameters to catch repeats that have up to 20% mismatches over 90% length.
-#   Added option to define expected interval between repeats.
-#   Improved documentation with docstrings for functions and classes and stated defaults for command-line help message.
-#   Added a check to abort if no arrays are found in the blastdb
-#   Removed unused functions and os import
+
 
 import sys
 import argparse
