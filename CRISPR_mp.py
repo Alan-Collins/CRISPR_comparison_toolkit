@@ -414,10 +414,18 @@ def find_modules(array1, array2):
 						module2.indices.append(n)
 						module2.spacers.append(b)
 					else:
-						if n == len(array1.aligned): # If this is the last spacer, call it trailer loss
+						if n == len(array1.aligned)-1: # If this is the last spacer, call it trailer loss
+							array1.modules.append(module1)
+							for k in module1.indices:
+								array1.module_lookup[k] = module1
+							module1 = Spacer_Module()
 							module1.type = "trailer_loss"
 							module1.indices.append(n)
 							module1.spacers.append(a)
+							array2.modules.append(module2)
+							for k in module2.indices:
+								array2.module_lookup[k] = module2
+							module2 = Spacer_Module()
 							module2.type = "trailer_loss"
 							module2.indices.append(n)
 							module2.spacers.append(b)
@@ -492,6 +500,14 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 			elif mod1.type == "duplication":
 				# If one has duplicated spacers but the other doesn't then he ancestral state likely didn't have them
 				idx = max([mod1.indices[-1], mod2.indices[-1]]) + 1 # Skip the rest of this module.
+				continue
+			elif mod1.type == "trailer_loss":
+				# If one lost a trailer end spacer then the ancestor had it.
+				if not '-' in mod1.spacers: # Figure out which module has actual spacers.
+					ancestor.modules.append(mod1)
+				else:
+					ancestor.modules.append(mod2)
+				idx += 1
 				continue
 			elif mod1.type == "indel_gap" or mod1.type == "indel_mm":
 				# If one array has just spacers and the other just gaps in the indel then pick the spacers as ancestral unless those spacers are singletons.
@@ -790,8 +806,11 @@ def find_closest_array(array, array_dict):
 			if comparator_array.distance < best_score:
 				best_score = comparator_array.distance
 				best_match = comparator_array
+	if not best_match:
+		return "No_ID"
 
-	if not any([i.type == "shared" for i in best_match.modules]) or not best_match:
+
+	if not any([i.type == "shared" for i in best_match.modules]):
 		return "No_ID"
 
 
@@ -1045,7 +1064,7 @@ def plot_tree(tree, array_dict, filename):
 			child = count_parsimony_events(child, ancestor)
 
 			if args.emphasize_diffs:
-				start_pos_x = location[0]-1*vscale # Start a bit to the left to leave room for the label
+				start_pos_x = location[0]-2*vscale # Start a bit to the left to leave room for the label
 				start_pos_y = location[1]
 				spacer_count = 0 # How many spacers have been plotted?
 				reshift_loc = 1000
@@ -1058,7 +1077,7 @@ def plot_tree(tree, array_dict, filename):
 
 					if n == diff_type.indices[-1]:
 						if diff_type.type != 'shared':
-							if diff_type.type == 'indel_gap' or diff_type.type == 'indel_mm':
+							if diff_type.type == 'indel_gap' or diff_type.type == 'indel_mm': # or diff_type.type == 'trailer_loss':
 								if spacer == '-':
 									ax.plot([start_pos_x-2*spacer_count*hscale, start_pos_x-2*spacer_count*hscale-2*hscale],[start_pos_y+0.3*vscale, start_pos_y-0.3*vscale], color="#666666", linewidth=3*vscale, solid_capstyle="butt")
 									ax.plot([start_pos_x-2*spacer_count*hscale, start_pos_x-2*spacer_count*hscale-2*hscale],[start_pos_y-0.3*vscale, start_pos_y+0.3*vscale], color="#666666", linewidth=3*vscale, solid_capstyle="butt")
@@ -1085,6 +1104,12 @@ def plot_tree(tree, array_dict, filename):
 								ax.plot(np.linspace(start_pos_x-2*(spacer_count+nspacers)*hscale,start_pos_x-2*spacer_count*hscale,3),[start_pos_y-0.5*vscale]*3,color="#666666", linewidth=3*vscale, solid_capstyle="butt")
 								rcParams['path.sketch'] = (0, 0, 0)
 
+							elif diff_type.type == "trailer_loss":
+								if spacer == '-': # Draw a single sloped line
+									ax.plot([start_pos_x-2*spacer_count*hscale, start_pos_x-2*spacer_count*hscale-2*hscale],[start_pos_y+0.3*vscale, start_pos_y-0.3*vscale], color="#666666", linewidth=3*vscale, solid_capstyle="butt")
+									spacer_count+=1 # Shift future spacers a bit to make spacer for this line.
+
+
 					# Plot spacer cartoon
 					if spacer != '-':
 						if spacer in spacer_cols_dict.keys():
@@ -1095,7 +1120,8 @@ def plot_tree(tree, array_dict, filename):
 							line_width = 0.04
 						# ax.plot([start_pos_x-2*spacer_count*hscale, start_pos_x-2*spacer_count*hscale-2*hscale],[start_pos_y, start_pos_y], color=spcolour, linewidth=line_width, solid_capstyle="butt")
 						ax.fill_between([start_pos_x-(2*spacer_count+0.03)*hscale, start_pos_x-(2*spacer_count+0.03)*hscale-1.97*hscale], start_pos_y-line_width*vscale, start_pos_y+line_width*vscale, color=spcolour[0], edgecolor=spcolour[1], linewidth=1.5*hscale)
-						spacer_count += 1
+						spacer_count+=1
+
 
 
 
@@ -1103,7 +1129,7 @@ def plot_tree(tree, array_dict, filename):
 			if args.emphasize_diffs:
 			# Then add spacers
 				spacers = array_dict[array].spacers
-				start_pos_x = location[0]-10*hscale # Start a bit to the left to leave room for the label
+				start_pos_x = location[0]-5*hscale # Start a bit to the left to leave room for the label
 				start_pos_y = location[1] 
 				for n, spacer in enumerate(reversed(spacers)): # work backwards through the array plotting from right to left
 					if spacer in spacer_cols_dict.keys():
@@ -1119,7 +1145,7 @@ def plot_tree(tree, array_dict, filename):
 		if not args.emphasize_diffs:
 			# Then add spacers
 			spacers = array_dict[array].spacers
-			start_pos_x = location[0]-8*hscale # Start a bit to the left to leave room for the label
+			start_pos_x = location[0]-4*hscale # Start a bit to the left to leave room for the label
 			start_pos_y = location[1] 
 			for n, spacer in enumerate(reversed(spacers)): # work backwards through the array plotting from right to left
 				if spacer in spacer_cols_dict.keys():
@@ -1134,7 +1160,6 @@ def plot_tree(tree, array_dict, filename):
 	plt.axis('off')
 	plt.tight_layout()
 	plt.savefig(filename, dpi=600)
-
 
 
 def build_tree_single(arrays, tree_namespace, score):
