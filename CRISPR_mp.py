@@ -56,6 +56,10 @@ parser.add_argument(
 		help="Specify the parsimony cost of a duplication event involving one or more spacers. Default: 1"
 	)
 parser.add_argument(
+	"-l",  dest="trailer_loss", type=int, nargs="?", default = 1,
+		help="Specify the parsimony cost of the loss of a spacer from the trailer end of the array. Default: 1"
+	)
+parser.add_argument(
 	"-o", dest="output_tree", required = False,
 	help="Specify filename for the graphical representation of your tree with hypothetical intermediate arrays as a png."
 	)
@@ -98,6 +102,7 @@ class Array():
 						"acquisition" : 0,
 						"indel" : 0,
 						"duplication": 0,
+						"trailer_loss": 0
 						}
 
 	def sort_modules(self):
@@ -109,6 +114,7 @@ class Array():
 						"acquisition" : 0,
 						"indel" : 0,
 						"duplication": 0,
+						"trailer_loss": 0
 						}
 
 
@@ -408,24 +414,32 @@ def find_modules(array1, array2):
 						module2.indices.append(n)
 						module2.spacers.append(b)
 					else:
-						# Module1 processing for indel module where one is gap
-						if module1.type != "indel_gap" and module1.type != "":
-							array1.modules.append(module1)
-							for k in module1.indices:
-								array1.module_lookup[k] = module1
-							module1 = Spacer_Module()
-						module1.type = "indel_gap"
-						module1.indices.append(n)
-						module1.spacers.append(a)
-						# Module2 processing for indel module where one is gap
-						if module2.type != "indel_gap" and module2.type != "":
-							array2.modules.append(module2)
-							for k in module2.indices:
-								array2.module_lookup[k] = module2
-							module2 = Spacer_Module()
-						module2.type = "indel_gap"
-						module2.indices.append(n)
-						module2.spacers.append(b)
+						if n == len(array1.aligned): # If this is the last spacer, call it trailer loss
+							module1.type = "trailer_loss"
+							module1.indices.append(n)
+							module1.spacers.append(a)
+							module2.type = "trailer_loss"
+							module2.indices.append(n)
+							module2.spacers.append(b)
+						else:
+							# Module1 processing for indel module where one is gap
+							if module1.type != "indel_gap" and module1.type != "":
+								array1.modules.append(module1)
+								for k in module1.indices:
+									array1.module_lookup[k] = module1
+								module1 = Spacer_Module()
+							module1.type = "indel_gap"
+							module1.indices.append(n)
+							module1.spacers.append(a)
+							# Module2 processing for indel module where one is gap
+							if module2.type != "indel_gap" and module2.type != "":
+								array2.modules.append(module2)
+								for k in module2.indices:
+									array2.module_lookup[k] = module2
+								module2 = Spacer_Module()
+							module2.type = "indel_gap"
+							module2.indices.append(n)
+							module2.spacers.append(b)
 
 
 	if module1.type != "":
@@ -1288,6 +1302,7 @@ event_costs = {
 				"acquisition" : args.acquisition,
 				"indel" : args.indel,
 				"duplication": args.duplication,
+				"trailer_loss": args.trailer_loss
 				}
 
 # hex values from this website http://phrogz.net/css/distinct-colors.html
