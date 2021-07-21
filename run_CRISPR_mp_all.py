@@ -30,6 +30,10 @@ parser.add_argument(
 		help="Specify number of threads to use for building trees. Using multiple threads will speed up the search for trees when performing many replicates with the -r option. Default: 1"
 	)
 parser.add_argument(
+	"-m",  dest="min_shared", type=int, nargs="?", default = 1,
+		help="Specify Minimum number of spacers that must be shared between two arrays for them to be joined into a cluster to be plotted. Default: 1"
+	)
+parser.add_argument(
 	"-p", dest="CRISPR_mp_py_path", required = False, default = "CRISPR_mp.py",
 	help="Specify the path to CRISPR_mp.py if it isn't in your system PATH. Default behaviour is to run CRISPR_mp.py as if it were executable and in your PATH."
 	)
@@ -97,7 +101,7 @@ with open(infile, 'r') as fin:
 		bits = line.split()
 		array_dict[bits[0]] = bits[2:]
 
-array_network_dict, array_network_list = build_network(array_dict, 1)
+array_network_dict, array_network_list = build_network(array_dict, args.min_shared)
 
 for k,v in list(array_network_dict.items()):
 	if len(v) > 2:
