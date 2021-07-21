@@ -1135,15 +1135,12 @@ def build_tree_single(arrays, tree_namespace, score):
 	node_count = 0 # Keep track of which internal node ID should be used for each node
 
 	results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count)
-	if results != "No_ID":
-		node_count += 1
-		array1, array2, ancestor = results
-	else:
-		while results == "No_ID":
-			arrays.append(arrays[1])
-			del arrays[1]
-			results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count)
-		#return (False, False)
+	while results == "No_ID":
+		arrays.append(arrays[1])
+		del arrays[1]
+		results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count)
+	node_count += 1
+	array1, array2, ancestor = results
 
 
 	for a in [array1, array2, ancestor]:
@@ -1170,19 +1167,19 @@ def build_tree_single(arrays, tree_namespace, score):
 				results = replace_existing_array(
 					best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
 					)
-				if results == "No_ID":
-					while results == "No_ID":
-						arrays.append(arrays[i])
-						del arrays[i]
-						a = arrays[i]
-						results = replace_existing_array(
-							best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
-							)
-						#return (False, False)
+				while results == "No_ID":
+					arrays.append(arrays[i])
+					del arrays[i]
+					print(a.id)
+					a = arrays[i]
+					print(a.id)
+					print([i.id for i in arrays])
+					sys.exit()
+					results = replace_existing_array(
+						best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
+						)
 
-
-				else:
-					tree, array_dict, tree_child_dict = results
+				tree, array_dict, tree_child_dict = results
 				node_count += 1
 			else:
 				try:
@@ -1193,18 +1190,14 @@ def build_tree_single(arrays, tree_namespace, score):
 				results = replace_existing_array(
 					best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
 					)
-				if results == "No_ID":
-					while results == "No_ID":
-						arrays.append(arrays[i])
-						del arrays[i]
-						a = arrays[i]
-						results = replace_existing_array(
-							best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
-							)
-						#return (False, False)
+				while results == "No_ID":
+					arrays.append(arrays[i])
+					del arrays[i]
+					a = arrays[i]
+					results = replace_existing_array(
+						best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
+						)
 
-					
-				else:
 					tree, array_dict, tree_child_dict = results
 				node_count += 1
 		
