@@ -1139,7 +1139,11 @@ def build_tree_single(arrays, tree_namespace, score):
 		node_count += 1
 		array1, array2, ancestor = results
 	else:
-		return (False, False)
+		while results == "No_ID":
+			arrays.append(arrays[1])
+			del arrays[1]
+			results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count)
+		#return (False, False)
 
 
 	for a in [array1, array2, ancestor]:
@@ -1155,7 +1159,8 @@ def build_tree_single(arrays, tree_namespace, score):
 	tree_child_dict[ancestor.id].add_child(tree_child_dict[array2.id])
 
 	if len(arrays) != 2:
-		for a in arrays[2:]: # Already added the first two so now add the rest 1 by 1
+		for i in range(2, len(arrays)): # Already added the first two so now add the rest 1 by 1
+			a = arrays[i]
 			seed = False # To check if we are modifying the child of the seed node
 
 			# Find the most similar array already in the tree (measured in parsimony score)
@@ -1166,7 +1171,14 @@ def build_tree_single(arrays, tree_namespace, score):
 					best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
 					)
 				if results == "No_ID":
-					return (False, False)
+					while results == "No_ID":
+						arrays.append(arrays[i])
+						del arrays[i]
+						a = arrays[i]
+						results = replace_existing_array(
+							best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
+							)
+						#return (False, False)
 
 
 				else:
@@ -1182,7 +1194,14 @@ def build_tree_single(arrays, tree_namespace, score):
 					best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
 					)
 				if results == "No_ID":
-					return (False, False)
+					while results == "No_ID":
+						arrays.append(arrays[i])
+						del arrays[i]
+						a = arrays[i]
+						results = replace_existing_array(
+							best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
+							)
+						#return (False, False)
 
 					
 				else:
