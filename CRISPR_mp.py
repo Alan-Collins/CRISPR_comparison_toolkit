@@ -879,9 +879,6 @@ def plot_tree(tree, array_dict, filename):
 	hscale = (dim_x+1)/(tree_width + max([len(array.spacers) for array in array_dict.values()])) # Factor to scale all branch lengths to fit them in the plot
 	vscale = (dim_y+1)/tree_height
 
-	print(hscale)
-	print(vscale)
-
 	max_depth = 0.5+tree_width*hscale
 
 	fig, ax = plt.subplots()
