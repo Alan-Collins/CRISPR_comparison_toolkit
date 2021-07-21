@@ -879,6 +879,9 @@ def plot_tree(tree, array_dict, filename):
 	hscale = (dim_x+1)/(tree_width + max([len(array.spacers) for array in array_dict.values()])) # Factor to scale all branch lengths to fit them in the plot
 	vscale = (dim_y+1)/tree_height
 
+	print(hscale)
+	print(vscale)
+
 	max_depth = 0.5+tree_width*hscale
 
 	fig, ax = plt.subplots()
@@ -1031,7 +1034,7 @@ def plot_tree(tree, array_dict, filename):
 			child = count_parsimony_events(child, ancestor)
 
 			if args.emphasize_diffs:
-				start_pos_x = location[0]-1.5*vscale # Start a bit to the left to leave room for the label
+				start_pos_x = location[0]-1*vscale # Start a bit to the left to leave room for the label
 				start_pos_y = location[1]
 				spacer_count = 0 # How many spacers have been plotted?
 				reshift_loc = 1000
@@ -1067,7 +1070,7 @@ def plot_tree(tree, array_dict, filename):
 							elif diff_type.type == "acquisition":
 								nspacers = len(diff_type.indices)
 
-								rcParams['path.sketch'] = (80*vscale, 5/hscale, 1)
+								rcParams['path.sketch'] = (50*vscale, 100*vscale, 1)
 								ax.plot(np.linspace(start_pos_x-2*(spacer_count+nspacers)*hscale,start_pos_x-2*spacer_count*hscale,3),[start_pos_y-0.5*vscale]*3,color="#666666", linewidth=3*vscale, solid_capstyle="butt")
 								rcParams['path.sketch'] = (0, 0, 0)
 
@@ -1482,7 +1485,7 @@ if len(non_singleton_spacers) > 8:
 				else:
 					col_scheme = Cols_hex_27
 				colours = []
-				for i in range(len(non_singleton_spacers)//len(col_scheme)): # Repeat the same colour scheme.
+				for i in range((len(non_singleton_spacers)+len(col_scheme)-1)//len(col_scheme)): # Repeat the same colour scheme.
 					for j in col_scheme:
 						colours += [(j, col_scheme[i])]
 
@@ -1496,6 +1499,7 @@ else:
 	colours = [(i, "#000000") for i in Cols_tol]
 # build a dictionary with colours assigned to each spacer.
 spacer_cols_dict  = {}
+
 
 for i, spacer in enumerate(sorted(non_singleton_spacers)):
 	spacer_cols_dict[spacer] = colours[i]
