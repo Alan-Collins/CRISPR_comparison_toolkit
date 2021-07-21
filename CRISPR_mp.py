@@ -1171,34 +1171,15 @@ def build_tree_single(arrays, tree_namespace, score):
 			# Find the most similar array already in the tree (measured in parsimony score)
 			best_match = find_closest_array(a, array_dict)
 			while best_match == "No_ID":
-				test = count_parsimony_events(a, array_dict['1147'])
-				print(test.aligned)
-				print([_.type for _ in test.modules])
-				print(i)
-				print([_.id for _ in arrays])
 				arrays.append(arrays[i])
 				del arrays[i]
 				a = arrays[i]
-				print([_.id for _ in arrays])
-				sys.exit()
 				best_match = find_closest_array(a, array_dict)
 			if best_match.extant: # If the closest match is a array then just join them and replace the existing array with the new node
 				current_parent = array_dict[tree_child_dict[best_match.id].parent_node.taxon.label]
 				results = replace_existing_array(
 					best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
 					)
-				# while results == "No_ID":
-				# 	arrays.append(arrays[i])
-				# 	del arrays[i]
-				# 	print(a.id)
-				# 	a = arrays[i]
-				# 	print(a.id)
-				# 	print([i.id for i in arrays])
-				# 	sys.exit()
-				# 	results = replace_existing_array(
-				# 		best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
-				# 		)
-
 				tree, array_dict, tree_child_dict = results
 				node_count += 1
 			else:
@@ -1210,13 +1191,6 @@ def build_tree_single(arrays, tree_namespace, score):
 				results = replace_existing_array(
 					best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
 					)
-				while results == "No_ID":
-					arrays.append(arrays[i])
-					del arrays[i]
-					a = arrays[i]
-					results = replace_existing_array(
-						best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
-						)
 
 				tree, array_dict, tree_child_dict = results
 				node_count += 1
@@ -1253,12 +1227,13 @@ def build_tree_multi(arrays, tree_namespace):
 	node_count = 0 # Keep track of which internal node ID should be used for each node
 
 	results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count)
-	if results != "No_ID":
-		node_count += 1
-		array1, array2, ancestor = results
-	else:
-		return (False, False, False)
+	while results == "No_ID":
 
+		arrays.append(arrays[1])
+		del arrays[1]
+		results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count)
+	node_count += 1
+	array1, array2, ancestor = results
 
 	for a in [array1, array2, ancestor]:
 		# Create tree nodes
@@ -1276,17 +1251,18 @@ def build_tree_multi(arrays, tree_namespace):
 
 		# Find the most similar array already in the tree (measured in parsimony score)
 		best_match = find_closest_array(a, array_dict)
+		while best_match == "No_ID":
+			arrays.append(arrays[i])
+			del arrays[i]
+			a = arrays[i]
+			best_match = find_closest_array(a, array_dict)
 		if best_match.extant: # If the closest match is a array then just join them and replace the existing array with the new node
 			current_parent = array_dict[tree_child_dict[best_match.id].parent_node.taxon.label]
 			results = replace_existing_array(
 				best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
 				)
-			if results == "No_ID":
-				return (False, False, False)
 
-
-			else:
-				tree, array_dict, tree_child_dict = results
+			tree, array_dict, tree_child_dict = results
 			node_count += 1
 		else:
 			try:
@@ -1297,12 +1273,8 @@ def build_tree_multi(arrays, tree_namespace):
 			results = replace_existing_array(
 				best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
 				)
-			if results == "No_ID":
-				return (False, False, False)
 
-				
-			else:
-				tree, array_dict, tree_child_dict = results
+			tree, array_dict, tree_child_dict = results
 			node_count += 1
 		
 		if a == arrays[-1]:
