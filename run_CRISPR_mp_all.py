@@ -100,12 +100,13 @@ with open(infile, 'r') as fin:
 array_network_dict, array_network_list = build_network(array_dict, 1)
 
 for k,v in list(array_network_dict.items()):
-	out_image = "{}{}_cluster_tree.png".format(outdir,k)
-	out_file = "{}{}_cluster.log".format(outdir,k)
+	if len(v) > 2:
+		out_image = "{}{}_cluster_tree.png".format(outdir,k)
+		out_file = "{}{}_cluster.log".format(outdir,k)
 
-	command = "python3 {} -a {} -r {} -o {} -t {} {} {} > {}".format(args.CRISPR_mp_py_path, infile, args.replicates, out_image, args.num_threads, args.extra_args, " ".join(v), out_file)
+		command = "python3 {} -a {} -r {} -o {} -t {} {} {} > {}".format(args.CRISPR_mp_py_path, infile, args.replicates, out_image, args.num_threads, args.extra_args, " ".join(v), out_file)
 
-	print("\nAligning the {} arrays in cluster {}\nCommand: {}\n".format(len(v), k, command))
+		print("\nAligning the {} arrays in cluster {}\nCommand: {}\n".format(len(v), k, command))
 
-	run = subprocess.Popen(command, shell=True)
-	run.wait()
+		run = subprocess.Popen(command, shell=True)
+		run.wait()
