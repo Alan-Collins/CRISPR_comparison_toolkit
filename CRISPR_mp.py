@@ -1153,48 +1153,54 @@ def build_tree_single(arrays, tree_namespace, score):
 	tree.seed_node.add_child(tree_child_dict[ancestor.id])
 	tree_child_dict[ancestor.id].add_child(tree_child_dict[array1.id])
 	tree_child_dict[ancestor.id].add_child(tree_child_dict[array2.id])
-	for a in arrays[2:]: # Already added the first two so now add the rest 1 by 1
-		seed = False # To check if we are modifying the child of the seed node
 
-		# Find the most similar array already in the tree (measured in parsimony score)
-		best_match = find_closest_array(a, array_dict)
-		if best_match.extant: # If the closest match is a array then just join them and replace the existing array with the new node
-			current_parent = array_dict[tree_child_dict[best_match.id].parent_node.taxon.label]
-			results = replace_existing_array(
-				best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
-				)
-			if results == "No_ID":
-				return (False, False)
+	if len(arrays) != 2:
+		for a in arrays[2:]: # Already added the first two so now add the rest 1 by 1
+			seed = False # To check if we are modifying the child of the seed node
 
-
-			else:
-				tree, array_dict, tree_child_dict = results
-			node_count += 1
-		else:
-			try:
+			# Find the most similar array already in the tree (measured in parsimony score)
+			best_match = find_closest_array(a, array_dict)
+			if best_match.extant: # If the closest match is a array then just join them and replace the existing array with the new node
 				current_parent = array_dict[tree_child_dict[best_match.id].parent_node.taxon.label]
-			except: # Fails if the best match is a child of the seed node
-				seed = True
-				current_parent = None
-			results = replace_existing_array(
-				best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
-				)
-			if results == "No_ID":
+				results = replace_existing_array(
+					best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
+					)
+				if results == "No_ID":
+					return (False, False)
+
+
+				else:
+					tree, array_dict, tree_child_dict = results
+				node_count += 1
+			else:
+				try:
+					current_parent = array_dict[tree_child_dict[best_match.id].parent_node.taxon.label]
+				except: # Fails if the best match is a child of the seed node
+					seed = True
+					current_parent = None
+				results = replace_existing_array(
+					best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
+					)
+				if results == "No_ID":
+					return (False, False)
+
+					
+				else:
+					tree, array_dict, tree_child_dict = results
+				node_count += 1
+		
+			brlen = tree.length()
+			if brlen > score:
 				return (False, False)
 
-				
-			else:
-				tree, array_dict, tree_child_dict = results
-			node_count += 1
-	
-		brlen = tree.length()
-		if brlen > score:
-			return (False, False)
+					
+			if a == arrays[-1]:
+				tree.reroot_at_node(tree.seed_node, update_bipartitions=False) # Need to reroot at the seed so that RF distance works
+				return (array_dict, tree)
 
-				
-		if a == arrays[-1]:
-			tree.reroot_at_node(tree.seed_node, update_bipartitions=False) # Need to reroot at the seed so that RF distance works
-			return (array_dict, tree)
+
+	else:
+		return (array_dict, tree)
 
 
 def build_tree_multi(arrays, tree_namespace):
@@ -1296,7 +1302,7 @@ Cols_hex_12 = ["#07001c", "#14d625", "#4c62ff", "#92ffa9", "#810087", "#bcffe6",
 
 node_ids = ["Int_" + i for i in ascii_lowercase]
 if len(args.arrays_to_join) > 27: # Maximum internal nodes in tree is n-2 so only need more than 26 if n >= 28
-	node_ids += ["Int_" + "".join(i) for i in product(ascii_lowercase, repeat = 2)]
+	node_ids += ["Int_" + "".join(i) for i in product(ascii_lowercase, repeat=len(args.arrays_to_join)//26)]
 
 
 array_spacers_dict = {}
@@ -1345,6 +1351,9 @@ no_id_count = 0
 
 
 num_threads = args.num_threads if not args.fix_order else 1
+
+if len(array_choices) < num_threads:
+	num_threads = 1
 
 if num_threads == 1:
 	for i in range(min([args.replicates, len(array_choices)])):
@@ -1469,7 +1478,7 @@ if len(non_singleton_spacers) > 8:
 				else:
 					col_scheme = Cols_hex_27
 				colours = []
-				for i in range(1+len(non_singleton_spacers)//len(col_scheme)): # Repeat the same colour scheme.
+				for i in range(len(non_singleton_spacers)//len(col_scheme)): # Repeat the same colour scheme.
 					for j in col_scheme:
 						colours += [(j, col_scheme[i])]
 
