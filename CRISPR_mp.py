@@ -12,6 +12,7 @@ from itertools import product
 from string import ascii_lowercase
 import random
 from collections import Counter
+from collections import defaultdict
 import dendropy
 import copy
 from itertools import permutations
@@ -789,11 +790,50 @@ def identify_repeat_indels(child, ancestor, array_dict, module, tree):
 
 			non_ancestor_children_spacers = [array_dict[array].spacers for array in non_ancestor_children_ids]
 
-			print(tree.as_ascii_plot(show_internal_node_labels=True))
-			print(module.spacers)
-			print(ancestor_children_ids)
-			print(non_ancestor_children_ids)
-			print(non_ancestor_children_spacers)
+			spacer_hits = defaultdict(list)
+			repeated_indel_instances = []
+			repeat_search = True
+			spacers_to_check = module.spacers
+			while repeat_search:
+				longest_match = 0
+				longest_indices = []
+				arrays_to_check = []
+				
+				for s, spacer in enumerate(spacers_to_check):
+					for a, array in enumerate(non_ancestor_children_spacers):
+						if spacer in array:
+							arrays_to_check.append(a)
+				arrays_to_check = [i for i in set(arrays_to_check)]
+				if len(arrays_to_check) == 0:
+					repeat_search = False
+				else:
+					for a in arrays_to_check:
+						x = Array("x", module.spacers)
+						y = Array("y", non_ancestor_children_spacers[a])
+						x.aligned, y.aligned = needle(x.spacers, y.spacers) # Find where the match is by aligning
+						x,y = find_modules(x,y) # Then identify any shared regions
+						shared_list = []
+						for m in x.modules: # Pull out the shared modules
+							if m.type == "shared":
+								if len(m.indices) > longest_match:
+									longest_match = len(m.indices)
+									longest_indices = [n for n, _ in enumerate(module.spacers) if _ in m.spacers]
+					repeated_indels += 1
+					# Remove spacers that have been found from list and look again
+					spacers_to_check = [s for n, s in enumerate(spacers_to_check) if n not in longest_indices]
+			if len(spacers_to_check) > 0:
+				# identify consecutive runs of spacers that are unique to this array
+				spacer_indices = [n for n, s in enumerate(module.spacers) if s in spacers_to_check]
+				last_n = False
+				for n in spacer_indices:
+					if last_n:
+						if n != last_n + 1:
+							indels += 1
+						last_n = n
+					else:
+						last_n = n
+					if n == spacer_indices[-1]:
+						indels += 1
 
 		else:
 			indels = 1
@@ -802,6 +842,7 @@ def identify_repeat_indels(child, ancestor, array_dict, module, tree):
 
 			
 	return indels, repeated_indels
+
 
 def resolve_pairwise_parsimony(array1, array2, all_arrays, array_dict, node_ids, node_count, tree):
 	"""
