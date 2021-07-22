@@ -543,7 +543,7 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 									if sp in array:
 										count += 1
 									if count == 2:
-										singleton[b] = False
+										singleton[n] = False
 										continue
 							if all([_ == False for _ in singleton]):
 								ancestor.modules.append(mod2)
@@ -787,9 +787,13 @@ def identify_repeat_indels(child, ancestor, array_dict, module, tree):
 
 			non_ancestor_children_ids = [node.taxon.label for node in non_ancestor_children]
 
+			non_ancestor_children_spacers = [array_dict[array].spacers for array in non_ancestor_children_ids]
+
 			print(tree.as_ascii_plot(show_internal_node_labels=True))
+			print(module.spacers)
 			print(ancestor_children_ids)
 			print(non_ancestor_children_ids)
+			print(non_ancestor_children_spacers)
 
 		else:
 			indels = 1
