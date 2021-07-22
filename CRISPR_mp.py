@@ -68,6 +68,10 @@ parser.add_argument(
 		help="Specify number of threads to use for building trees. Using multiple threads will speed up the search for trees when performing many replicates with the -r option. Default: 1"
 	)
 parser.add_argument(
+	"-y", dest="output_arrays", required = False,
+	help="Specify filename for the details of you final arrays with hypothetical intermediate arrays in the same format as your input array_file. If there are multiple best trees, one file will be created per tree numbered in the order they are described in the stdout output."
+	)
+parser.add_argument(
 	"arrays_to_join", nargs="*",  
 	help="Specify the IDs of the arrays you want to join. If none provided, joins all arrays in the provided array representatives file. **If given, must come at the end of your command after all other arguments.**"
 	)
@@ -878,6 +882,7 @@ def replace_existing_array(existing_array, new_array, current_parent, tree, all_
 					other_child = child.taxon.label
 			# Add new node to existing tree as a child of the previous parent of the existing array.
 			tree_child_dict[current_parent.id].set_child_nodes([tree_child_dict[ancestor.id], tree_child_dict[other_child]])
+			
 
 
 		else:
@@ -1179,13 +1184,23 @@ def build_tree_single(arrays, tree_namespace, score):
 	array_dict = {}
 	tree_child_dict = {}
 	node_count = 0 # Keep track of which internal node ID should be used for each node
-
+	stuck = False
+	count = 0
 	results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count)
 	while results == "No_ID":
-
+		if not stuck:
+			stuck = arrays[1].id
+		else:
+			if stuck == arrays[1].id:
+				count+=1
+		if count == 1:
+			print(needle(arrays[0].spacers, arrays[1].spacers))
+		if count == 2:
+			sys.exit()
 		arrays.append(arrays[1])
 		del arrays[1]
 		results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count)
+	stuck = False
 	node_count += 1
 	array1, array2, ancestor = results
 
@@ -1347,7 +1362,7 @@ Cols_hex_12 = ["#07001c", "#14d625", "#4c62ff", "#92ffa9", "#810087", "#bcffe6",
 
 node_ids = ["Int_" + i for i in ascii_lowercase]
 if len(args.arrays_to_join) > 27: # Maximum internal nodes in tree is n-2 so only need more than 26 if n >= 28
-	node_ids += ["Int_" + "".join(i) for i in product(ascii_lowercase, repeat=len(args.arrays_to_join)//26)]
+	node_ids += ["Int_" + "".join(i) for i in product(ascii_lowercase, repeat=(len(args.arrays_to_join)//26)+1)]
 
 
 array_spacers_dict = {}
@@ -1417,8 +1432,11 @@ if num_threads == 1:
 			addition_order = [Array(i, array_spacers_dict[i]) for i in args.arrays_to_join]
 		else:
 			addition_order = array_choices[i]
-
-		array_dict, tree = build_tree_single(addition_order, taxon_namespace, best_score)
+		try:
+			array_dict, tree = build_tree_single(addition_order, taxon_namespace, best_score)
+		except Exception as e:
+			print("Failed while trying to build the tree with the following array order:\n{}\n\nError:\n{}".format(" ".join([i.id for i in addition_order]), e))
+			sys.exit()
 
 		if array_dict:
 			score = tree.length()
@@ -1558,6 +1576,11 @@ try:
 				filename = "{}_{}.png".format(args.output_tree[:-4], n+1)
 				print("Saving image of tree with array diagrams to {}\n".format(filename))
 				plot_tree(good_tree, best_arrays[n], filename)
+			if args.output_arrays:
+				filename = "{}_{}.txt".format(args.output_arrays[:-4], n+1)
+				print("Saving details of arrays to {}\n".format(filename))
+				with open(filename, 'w') as fout:
+					fout.write('\n'.join(["{}\t{}".format(k," ".join(v.spacers)) for k,v in best_arrays[n].items()]))
 	else:
 		order = [i.id for i in best_addition_order]
 		print("\nThe addition order to make the best tree was: {}\n\n".format(" ".join(order)))
@@ -1567,6 +1590,10 @@ try:
 		if args.output_tree:
 			print("Saving image of tree with array diagrams to {}\n".format(args.output_tree))
 			plot_tree(best_tree, best_arrays, args.output_tree)
+		if args.output_arrays:
+			print("Saving details of arrays to {}\n".format(args.output_arrays))
+			with open(args.output_arrays, 'w') as fout:
+				fout.write('\n'.join(["{}\t{}".format(k," ".join(v.spacers)) for k,v in best_arrays.items()]))
 except Exception as e:
 	exc_type, exc_obj, exc_tb = sys.exc_info()
 	exc_tb.print_exception()
