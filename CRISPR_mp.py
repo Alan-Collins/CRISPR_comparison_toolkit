@@ -536,16 +536,16 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 									duplication = True
 									break
 						if duplication == False:
-							singleton = True # Start with the assumption that these spacers aren't found in another array.
-							for sp in mod2.spacers:
+							singleton = [True for _ in mod2.spacers] # Start with the assumption that these spacers aren't found in another array.
+							for n, sp in enumerate(mod2.spacers):
 								count = 0
 								for array in all_arrays:
 									if sp in array:
 										count += 1
 									if count == 2:
-										singleton = False
+										singleton[b] = False
 										continue
-							if singleton == False:
+							if all([_ == False for _ in singleton]):
 								ancestor.modules.append(mod2)
 					else:
 						duplication = False # Start with the assumption this isn't a duplication
@@ -559,15 +559,15 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 									break
 						if duplication == False:
 							singleton = True # Start with the assumption that these spacers aren't found in another array.
-							for sp in mod1.spacers:
+							for n, sp in enumerate(mod1.spacers):
 								count = 0
 								for array in all_arrays:
 									if sp in array:
 										count += 1
 									if count == 2:
-										singleton = False
+										singleton[b] = False
 										continue
-							if singleton == False:
+							if all([_ == False for _ in singleton]):
 								ancestor.modules.append(mod1)
 					idx = mod1.indices[-1] + 1
 				else:
@@ -1375,6 +1375,11 @@ else:
 
 all_arrays = [array.spacers for array in arrays]
 
+a, b = find_modules(arrays[0], arrays[1])
+
+print(a.id, [_.type for _ in a.modules])
+print(b.id, [_.type for _ in b.modules])
+sys.exit()
 
 if len(labels) < 9:
 	array_choices = [i for i in permutations(arrays, len(arrays))]
