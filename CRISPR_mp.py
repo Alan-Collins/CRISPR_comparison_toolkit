@@ -52,6 +52,10 @@ parser.add_argument(
 		help="Specify the parsimony cost of an indel event involving one or more spacers. Default: 1"
 	)
 parser.add_argument(
+	"-b",  dest="rep_indel", type=int, nargs="?", default = 50,
+		help="Specify the parsimony cost of an indel event involving one or more spacers that is independently acquired in multiple arrays. Default: 50"
+	)
+parser.add_argument(
 	"-d",  dest="duplication", type=int, nargs="?", default = 1,
 		help="Specify the parsimony cost of a duplication event involving one or more spacers. Default: 1"
 	)
@@ -105,6 +109,7 @@ class Array():
 		self.events = { 
 						"acquisition" : 0,
 						"indel" : 0,
+						"repeated_indel" : 0,
 						"duplication": 0,
 						"trailer_loss": 0
 						}
@@ -117,6 +122,7 @@ class Array():
 		self.events = { 
 						"acquisition" : 0,
 						"indel" : 0,
+						"repeated_indel" : 0,
 						"duplication": 0,
 						"trailer_loss": 0
 						}
@@ -1342,6 +1348,7 @@ def build_tree_multi(arrays, tree_namespace):
 event_costs = { 
 				"acquisition" : args.acquisition,
 				"indel" : args.indel,
+				"repeated_indel" : args.rep_indel,
 				"duplication": args.duplication,
 				"trailer_loss": args.trailer_loss
 				}
