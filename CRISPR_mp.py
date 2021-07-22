@@ -1300,7 +1300,8 @@ def build_tree_multi(arrays, tree_namespace):
 	tree.seed_node.add_child(tree_child_dict[ancestor.id])
 	tree_child_dict[ancestor.id].add_child(tree_child_dict[array1.id])
 	tree_child_dict[ancestor.id].add_child(tree_child_dict[array2.id])
-	for a in arrays[2:]: # Already added the first two so now add the rest 1 by 1
+	for i in range(2, len(arrays)): # Already added the first two so now add the rest 1 by 1
+		a = arrays[i]
 		seed = False # To check if we are modifying the child of the seed node
 
 		# Find the most similar array already in the tree (measured in parsimony score)
