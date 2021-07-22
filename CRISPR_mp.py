@@ -704,12 +704,13 @@ def find_dupes(child, ancestor):
 	return dupe_groups
 
 
-def count_parsimony_events(child, ancestor):
+def count_parsimony_events(child, ancestor, tree):
 	"""
 	Args:
 		child (Array class instance): The child array.
 		ancestor (Array class instance): The hypothetical ancestor of the child array.
-	
+		tree (Deondropy Tree class instance): The tree in which the arrays are located.	
+
 	Returns:
 		(Array class instance) The child Array class instance with parsimony events added to the .events dict attribute.
 	"""
@@ -749,7 +750,30 @@ def count_parsimony_events(child, ancestor):
 	return child
 
 
-def resolve_pairwise_parsimony(array1, array2, all_arrays, node_ids, node_count):
+def identify_repeat_indels(child, module, tree):
+	"""
+	Args:
+		child (Array class instance): The child array.
+		module (Spacer_Module class instance): The indel module to be processed.
+		tree (Deondropy Tree class instance): The tree in which the arrays are located.
+	
+	Returns:
+		(list) list of lists of indices of the fewest insertions that would have to have happened multiple times for this child-ancestor orientation to be correct. E.g. format [["Event1_start_index", "Event1_end_index"], ["Event2_start_index", "Event2_end_index"]]
+	"""
+	
+	child_children = child.leaf_nodes() + [node for node in child.levelorder_iter(lambda x: x.is_internal())]
+	child_children_ids = [node.taxon.label for node in child_children]
+
+	non_child_children = [node for node in tree.preorder_node_iter(lambda x: x.taxon.label not in child_children_ids)]
+	non_child_children_ids = [node.taxon.label for node in non_child_children]
+
+	print(tree.as_ascii_plot(show_internal_node_labels=True))
+	print(child_children_ids)
+	print(non_child_children_ids)
+
+	sys.exit()
+
+def resolve_pairwise_parsimony(array1, array2, all_arrays, node_ids, node_count, tree):
 	"""
 	Given two arrays, make a hypothetical ancestral state and calculate parsimony distance of each input array to that ancestor. 
 	Can only build an ancestor state if there are shared spacers so throws an error if none are found.
@@ -759,6 +783,7 @@ def resolve_pairwise_parsimony(array1, array2, all_arrays, node_ids, node_count)
 		all_arrays (list): The list of all arrays so that indels can be resolved to favour keeping spacers found in other arrays.
 		node_ids (list): A list of names to be used to name internal nodes.
 		node_count (int): The index of the name to use in the node_ids list to name this internal node.
+		tree (Deondropy Tree class instance): The tree in which the arrays are located.
 
 	Returns:
 		(tuple of Array class instances) The input Array class instances with module and distance info added, the ancestral array Array class instance. Tuple order is (array1, array2, ancestor)
@@ -777,9 +802,9 @@ def resolve_pairwise_parsimony(array1, array2, all_arrays, node_ids, node_count)
 
 		ancestor = infer_ancestor(array1, array2, all_arrays, node_ids, node_count)
 
-		array1 = count_parsimony_events(array1, ancestor)
+		array1 = count_parsimony_events(array1, ancestor, tree)
 
-		array2 = count_parsimony_events(array2, ancestor)
+		array2 = count_parsimony_events(array2, ancestor, tree)
 
 
 		for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
@@ -793,7 +818,7 @@ def resolve_pairwise_parsimony(array1, array2, all_arrays, node_ids, node_count)
 		return "No_ID"
 
 
-def find_closest_array(array, array_dict):
+def find_closest_array(array, array_dict, tree):
 	"""
 	Args:
 		array (Array class instance): The array you want to find the closest match for.
@@ -809,7 +834,7 @@ def find_closest_array(array, array_dict):
 	for array_id in array_dict.keys():
 		comparator_array = copy.deepcopy(array_dict[array_id])
 		comparator_array.reset()
-		comparator_array = count_parsimony_events(comparator_array, array)
+		comparator_array = count_parsimony_events(comparator_array, array, tree)
 		for k,v in event_costs.items():
 			comparator_array.distance += comparator_array.events[k] * v
 		if any([i.type == "shared" for i in comparator_array.modules]):
@@ -853,7 +878,7 @@ def replace_existing_array(existing_array, new_array, current_parent, tree, all_
 	"""
 
 	# Make a hypothetical ancestor for the pair of arrays and calculate the distances
-	results = resolve_pairwise_parsimony(existing_array, new_array, all_arrays, node_ids, node_count)
+	results = resolve_pairwise_parsimony(existing_array, new_array, all_arrays, node_ids, node_count, tree)
 	
 	if results == "No_ID":
 		return results
@@ -865,7 +890,7 @@ def replace_existing_array(existing_array, new_array, current_parent, tree, all_
 		if not seed:
 			# Calculate distance from this hypothetical ancestor to its new parent in the tree
 			ancestor.reset()
-			ancestor = count_parsimony_events(ancestor, current_parent)
+			ancestor = count_parsimony_events(ancestor, current_parent, tree)
 			for k,v in event_costs.items():
 				ancestor.distance += ancestor.events[k] * v
 
@@ -1072,7 +1097,7 @@ def plot_tree(tree, array_dict, filename):
 
 			ancestor = 	array_dict[first_node.parent_node.taxon.label]
 			child = array_dict[array]
-			child = count_parsimony_events(child, ancestor)
+			child = count_parsimony_events(child, ancestor, tree)
 
 			if args.emphasize_diffs:
 				start_pos_x = location[0]-2*vscale # Start a bit to the left to leave room for the label
@@ -1190,11 +1215,11 @@ def build_tree_single(arrays, tree_namespace, score):
 	array_dict = {}
 	tree_child_dict = {}
 	node_count = 0 # Keep track of which internal node ID should be used for each node
-	results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count)
+	results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count, tree)
 	while results == "No_ID":
 		arrays.append(arrays[1])
 		del arrays[1]
-		results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count)
+		results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count, tree)
 	node_count += 1
 	array1, array2, ancestor = results
 
@@ -1217,12 +1242,12 @@ def build_tree_single(arrays, tree_namespace, score):
 			seed = False # To check if we are modifying the child of the seed node
 
 			# Find the most similar array already in the tree (measured in parsimony score)
-			best_match = find_closest_array(a, array_dict)
+			best_match = find_closest_array(a, array_dict, tree)
 			while best_match == "No_ID":
 				arrays.append(arrays[i])
 				del arrays[i]
 				a = arrays[i]
-				best_match = find_closest_array(a, array_dict)
+				best_match = find_closest_array(a, array_dict, tree)
 			if best_match.extant: # If the closest match is a array then just join them and replace the existing array with the new node
 				current_parent = array_dict[tree_child_dict[best_match.id].parent_node.taxon.label]
 				results = replace_existing_array(
@@ -1274,12 +1299,12 @@ def build_tree_multi(arrays, tree_namespace):
 	tree_child_dict = {}
 	node_count = 0 # Keep track of which internal node ID should be used for each node
 
-	results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count)
+	results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count, tree)
 	while results == "No_ID":
 
 		arrays.append(arrays[1])
 		del arrays[1]
-		results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count)
+		results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count, tree)
 	node_count += 1
 	array1, array2, ancestor = results
 
@@ -1299,12 +1324,12 @@ def build_tree_multi(arrays, tree_namespace):
 		seed = False # To check if we are modifying the child of the seed node
 
 		# Find the most similar array already in the tree (measured in parsimony score)
-		best_match = find_closest_array(a, array_dict)
+		best_match = find_closest_array(a, array_dict, tree)
 		while best_match == "No_ID":
 			arrays.append(arrays[i])
 			del arrays[i]
 			a = arrays[i]
-			best_match = find_closest_array(a, array_dict)
+			best_match = find_closest_array(a, array_dict, tree)
 		if best_match.extant: # If the closest match is a array then just join them and replace the existing array with the new node
 			current_parent = array_dict[tree_child_dict[best_match.id].parent_node.taxon.label]
 			results = replace_existing_array(
@@ -1375,20 +1400,6 @@ else:
 
 all_arrays = [array.spacers for array in arrays]
 
-a, b = find_modules(arrays[0], arrays[1])
-
-ancestor = infer_ancestor(arrays[0], arrays[1], all_arrays, node_ids, 0)
-
-array1 = count_parsimony_events(arrays[0], ancestor)
-
-array2 = count_parsimony_events(arrays[1], ancestor)
-
-print(a.id, [_.type for _ in a.modules])
-print(b.id, [_.type for _ in b.modules])
-
-print(array1.id, [_.type for _ in array1.modules])
-print(array2.id, [_.type for _ in array2.modules])
-sys.exit()
 
 if len(labels) < 9:
 	array_choices = [i for i in permutations(arrays, len(arrays))]
@@ -1417,8 +1428,6 @@ best_score = 99999999
 
 no_id_count = 0 
 
-
-
 num_threads = args.num_threads if not args.fix_order else 1
 
 if len(array_choices) < num_threads:
@@ -1445,6 +1454,8 @@ if num_threads == 1:
 			array_dict, tree = build_tree_single(addition_order, taxon_namespace, best_score)
 		except Exception as e:
 			print("Failed while trying to build the tree with the following array order:\n{}\n\nError:\n{}".format(" ".join([i.id for i in addition_order]), e))
+			exc_type, exc_obj, exc_tb = sys.exc_info()
+			exc_tb.print_exception()
 			sys.exit()
 
 		if array_dict:
