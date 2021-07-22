@@ -1184,23 +1184,12 @@ def build_tree_single(arrays, tree_namespace, score):
 	array_dict = {}
 	tree_child_dict = {}
 	node_count = 0 # Keep track of which internal node ID should be used for each node
-	stuck = False
-	count = 0
+
 	results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count)
 	while results == "No_ID":
-		if not stuck:
-			stuck = arrays[1].id
-		else:
-			if stuck == arrays[1].id:
-				count+=1
-		if count == 1:
-			print(needle(arrays[0].spacers, arrays[1].spacers))
-		if count == 2:
-			sys.exit()
 		arrays.append(arrays[1])
 		del arrays[1]
 		results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count)
-	stuck = False
 	node_count += 1
 	array1, array2, ancestor = results
 
