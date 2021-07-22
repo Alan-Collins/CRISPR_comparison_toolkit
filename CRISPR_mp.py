@@ -704,11 +704,12 @@ def find_dupes(child, ancestor):
 	return dupe_groups
 
 
-def count_parsimony_events(child, ancestor, tree, parent_comparison):
+def count_parsimony_events(child, ancestor, array_dict, tree, parent_comparison):
 	"""
 	Args:
 		child (Array class instance): The child array.
 		ancestor (Array class instance): The hypothetical ancestor of the child array.
+		array_dict (dict): Dict of Array class instances with information about the nodes of your tree.
 		tree (Deondropy Tree class instance): The tree in which the arrays are located.	
 		parent_comparison (bool): Are the arrays being compared parent-child nodes in the tree? E.g. if you are trying to find the best matching array in the tree this is False. If you are counting events between an array and its ancestor array this is True
 
@@ -741,8 +742,11 @@ def count_parsimony_events(child, ancestor, tree, parent_comparison):
 			continue
 		if mod.type == 'indel_gap' or mod.type == "indel_mm":
 			if parent_comparison:
-				indels, repeated_indels = identify_repeat_indels(child, ancestor, mod, tree)
-			child.events['indel'] += 1
+				indels, repeated_indels = identify_repeat_indels(child, ancestor, array_dict, mod, tree)
+				child.events['indel'] += indels
+				child.events['repeated_indel'] += repeated_indels
+			else:
+				child.events['indel'] += 1
 			idx = mod.indices[-1] + 1 # Skip the rest of this module.
 		if mod.type == 'duplication':
 			child.events['duplication'] += 1
@@ -753,21 +757,22 @@ def count_parsimony_events(child, ancestor, tree, parent_comparison):
 	return child
 
 
-def identify_repeat_indels(child, ancestor, module, tree):
+def identify_repeat_indels(child, ancestor, array_dict, module, tree):
 	"""
 	Args:
 		child (Array class instance): The child array.
+		ancestor (Array class instance): The hypothetical ancestor of the child array.
+		array_dict (dict): Dict of Array class instances with information about the nodes of your tree.
 		module (Spacer_Module class instance): The indel module to be processed.
 		tree (Deondropy Tree class instance): The tree in which the arrays are located.
 	
 	Returns:
 		(tuple) count of indels and of repeat_indels
 	"""
+
+	indels = repeated_indels = 0
 	if len(tree) > 1:
 		ancestor_node = tree.find_node_with_taxon_label(ancestor.id)
-
-		print(child.id)
-		print(ancestor.id)
 
 		if ancestor_node:
 
@@ -788,10 +793,13 @@ def identify_repeat_indels(child, ancestor, module, tree):
 
 		else:
 			indels = 1
+	else:
+		indels = 1
+
 			
 	return indels, repeated_indels
 
-def resolve_pairwise_parsimony(array1, array2, all_arrays, node_ids, node_count, tree):
+def resolve_pairwise_parsimony(array1, array2, all_arrays, array_dict, node_ids, node_count, tree):
 	"""
 	Given two arrays, make a hypothetical ancestral state and calculate parsimony distance of each input array to that ancestor. 
 	Can only build an ancestor state if there are shared spacers so throws an error if none are found.
@@ -799,6 +807,7 @@ def resolve_pairwise_parsimony(array1, array2, all_arrays, node_ids, node_count,
 		array1 (Array class instance): The first array to be compared.
 		array2 (Array class instance): The second array to be compared.
 		all_arrays (list): The list of all arrays so that indels can be resolved to favour keeping spacers found in other arrays.
+		array_dict (dict): Dict of Array class instances with information about the nodes of your tree.
 		node_ids (list): A list of names to be used to name internal nodes.
 		node_count (int): The index of the name to use in the node_ids list to name this internal node.
 		tree (Deondropy Tree class instance): The tree in which the arrays are located.
@@ -820,9 +829,9 @@ def resolve_pairwise_parsimony(array1, array2, all_arrays, node_ids, node_count,
 
 		ancestor = infer_ancestor(array1, array2, all_arrays, node_ids, node_count)
 
-		array1 = count_parsimony_events(array1, ancestor, tree, True)
+		array1 = count_parsimony_events(array1, ancestor, array_dict, tree, True)
 
-		array2 = count_parsimony_events(array2, ancestor, tree, True)
+		array2 = count_parsimony_events(array2, ancestor, array_dict, tree, True)
 
 
 		for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
@@ -852,7 +861,7 @@ def find_closest_array(array, array_dict, tree):
 	for array_id in array_dict.keys():
 		comparator_array = copy.deepcopy(array_dict[array_id])
 		comparator_array.reset()
-		comparator_array = count_parsimony_events(comparator_array, array, tree, False)
+		comparator_array = count_parsimony_events(comparator_array, array, array_dict, tree, False)
 		for k,v in event_costs.items():
 			comparator_array.distance += comparator_array.events[k] * v
 		if any([i.type == "shared" for i in comparator_array.modules]):
@@ -896,7 +905,7 @@ def replace_existing_array(existing_array, new_array, current_parent, tree, all_
 	"""
 
 	# Make a hypothetical ancestor for the pair of arrays and calculate the distances
-	results = resolve_pairwise_parsimony(existing_array, new_array, all_arrays, node_ids, node_count, tree)
+	results = resolve_pairwise_parsimony(existing_array, new_array, all_arrays, array_dict, node_ids, node_count, tree)
 	
 	if results == "No_ID":
 		return results
@@ -908,7 +917,7 @@ def replace_existing_array(existing_array, new_array, current_parent, tree, all_
 		if not seed:
 			# Calculate distance from this hypothetical ancestor to its new parent in the tree
 			ancestor.reset()
-			ancestor = count_parsimony_events(ancestor, current_parent, tree, True)
+			ancestor = count_parsimony_events(ancestor, current_parent, array_dict, tree, True)
 			for k,v in event_costs.items():
 				ancestor.distance += ancestor.events[k] * v
 
@@ -1115,7 +1124,7 @@ def plot_tree(tree, array_dict, filename):
 
 			ancestor = 	array_dict[first_node.parent_node.taxon.label]
 			child = array_dict[array]
-			child = count_parsimony_events(child, ancestor, tree, True)
+			child = count_parsimony_events(child, ancestor, array_dict, tree, True)
 
 			if args.emphasize_diffs:
 				start_pos_x = location[0]-2*vscale # Start a bit to the left to leave room for the label
@@ -1233,11 +1242,11 @@ def build_tree_single(arrays, tree_namespace, score):
 	array_dict = {}
 	tree_child_dict = {}
 	node_count = 0 # Keep track of which internal node ID should be used for each node
-	results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count, tree)
+	results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, array_dict, node_ids, node_count, tree)
 	while results == "No_ID":
 		arrays.append(arrays[1])
 		del arrays[1]
-		results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count, tree)
+		results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, array_dict, node_count, tree)
 	node_count += 1
 	array1, array2, ancestor = results
 
@@ -1317,12 +1326,12 @@ def build_tree_multi(arrays, tree_namespace):
 	tree_child_dict = {}
 	node_count = 0 # Keep track of which internal node ID should be used for each node
 
-	results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count, tree)
+	results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, array_dict, node_ids, node_count, tree)
 	while results == "No_ID":
 
 		arrays.append(arrays[1])
 		del arrays[1]
-		results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count, tree)
+		results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, array_dict, node_ids, node_count, tree)
 	node_count += 1
 	array1, array2, ancestor = results
 
