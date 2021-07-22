@@ -1377,8 +1377,17 @@ all_arrays = [array.spacers for array in arrays]
 
 a, b = find_modules(arrays[0], arrays[1])
 
+ancestor = infer_ancestor(arrays[0], arrays[1], all_arrays, node_ids, 0)
+
+array1 = count_parsimony_events(arrays[0], ancestor)
+
+array2 = count_parsimony_events(arrays[1], ancestor)
+
 print(a.id, [_.type for _ in a.modules])
 print(b.id, [_.type for _ in b.modules])
+
+print(array1.id, [_.type for _ in array1.modules])
+print(array2.id, [_.type for _ in array2.modules])
 sys.exit()
 
 if len(labels) < 9:
