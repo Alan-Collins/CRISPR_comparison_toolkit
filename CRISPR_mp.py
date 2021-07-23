@@ -1339,6 +1339,20 @@ def build_tree_single(arrays, tree_namespace, score):
 
 				tree, array_dict, tree_child_dict = results
 				node_count += 1
+
+			# Recheck child - ancestor branch length to find indels that would have to occur multiple times
+			for node in tree:
+				if node.level() != 0:
+					if node.parent_node.level() != 0:
+						node_array = array_dict[node.taxon.label]
+						parent_array = array_dict[node.parent_node.taxon.label]
+						node_array.reset()
+						parent_array.reset()
+						node_array = count_parsimony_events(node_array, parent_array, array_dict, tree, True)
+						for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
+							node_array.distance += node_array.events[k] * v
+						node.edge_length = node_array.distance
+
 		
 			brlen = tree.length()
 			if brlen > score:
@@ -1422,8 +1436,22 @@ def build_tree_multi(arrays, tree_namespace):
 
 			tree, array_dict, tree_child_dict = results
 			node_count += 1
+
 		
 		if a == arrays[-1]:
+			# Recheck child - ancestor branch length to find indels that would have to occur multiple times
+			for node in tree:
+				if node.level() != 0:
+					if node.parent_node.level() != 0:
+						node_array = array_dict[node.taxon.label]
+						parent_array = array_dict[node.parent_node.taxon.label]
+						node_array.reset()
+						parent_array.reset()
+						node_array = count_parsimony_events(node_array, parent_array, array_dict, tree, True)
+						for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
+							node_array.distance += node_array.events[k] * v
+						node.edge_length = node_array.distance
+						
 			tree.reroot_at_node(tree.seed_node, update_bipartitions=False) # Need to reroot at the seed so that RF distance works
 			return array_dict, tree, arrays
 
