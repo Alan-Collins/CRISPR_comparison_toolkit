@@ -781,7 +781,6 @@ def count_parsimony_events(child, ancestor, array_dict, tree, parent_comparison)
 
 	child, ancestor = find_modules(child, ancestor)
 
-
 	# Process modules to count events since ancestor
 
 	# First look for duplications
@@ -915,7 +914,10 @@ def identify_repeat_indels(child, ancestor, array_dict, module, tree):
 		else:
 			indels = 1
 	else:
-		indels = 1
+		if module.type == "acquisition":
+			acquisition += len(module.indices)
+		else:
+			indels = 1
 
 			
 	return indels, repeated_indels, acquisition
@@ -952,9 +954,7 @@ def resolve_pairwise_parsimony(array1, array2, all_arrays, array_dict, node_ids,
 		ancestor = infer_ancestor(array1, array2, all_arrays, node_ids, node_count)
 
 		array1 = count_parsimony_events(array1, ancestor, array_dict, tree, True)
-
 		array2 = count_parsimony_events(array2, ancestor, array_dict, tree, True)
-
 
 		for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
 			array1.distance += array1.events[k] * v
