@@ -797,7 +797,7 @@ def count_parsimony_events(child, ancestor, array_dict, tree, parent_comparison)
 		# Checking no acquisition allows comparison of child-child as well as child-ancestor arrays.
 			if parent_comparison: 
 				# If comparing to a nodes ancestor, then deletions of spacers from the leader end may look like acquisition. This must be checked to make sure deletions are not being miscalled as acquisitions.
-				indels, repeated_indels, acquisition = identify_repeat_indels(child, ancestor, array_dict, mod, tree)
+				indels, repeated_indels, acquisition = identify_repeat_indels(child, ancestor, array_dict, mod, ancestor.module_lookup[idx], tree)
 				child.events['acquisition'] += acquisition
 				child.events['repeated_indel'] += repeated_indels
 			else:
@@ -806,7 +806,7 @@ def count_parsimony_events(child, ancestor, array_dict, tree, parent_comparison)
 			continue
 		if mod.type == 'indel_gap' or mod.type == "indel_mm":
 			if parent_comparison:
-				indels, repeated_indels, _ = identify_repeat_indels(child, ancestor, array_dict, mod, tree)
+				indels, repeated_indels, _ = identify_repeat_indels(child, ancestor, array_dict, mod, ancestor.module_lookup[idx], tree)
 				child.events['indel'] += indels
 				child.events['repeated_indel'] += repeated_indels
 			else:
@@ -821,13 +821,14 @@ def count_parsimony_events(child, ancestor, array_dict, tree, parent_comparison)
 	return child
 
 
-def identify_repeat_indels(child, ancestor, array_dict, module, tree):
+def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module, tree):
 	"""
 	Args:
 		child (Array class instance): The child array.
 		ancestor (Array class instance): The hypothetical ancestor of the child array.
 		array_dict (dict): Dict of Array class instances with information about the nodes of your tree.
 		module (Spacer_Module class instance): The indel module to be processed.
+		ancestor_module (Spacer_Module class instance): The module of the parent of the array to be processed.
 		tree (Deondropy Tree class instance): The tree in which the arrays are located.
 	
 	Returns:
@@ -906,8 +907,21 @@ def identify_repeat_indels(child, ancestor, array_dict, module, tree):
 							last_n = n
 						else: # Otherwise move to the next number
 							last_n = n 
-						
-
+			if module.type == 'no_acquisition':
+				# None of the above will have run if this module is just gaps.
+				# In that case we need to check if the absence of those spacers in the child array represents simply not having acquired them or if it would require the loss and regain of the same spacers at different points in the tree.
+				# If the lost spacers are present in the children of this array then there has to have been a deletion and regain. That probably means this arrangement is wrong so I will assign a high parsimony cost in order to favour other topologies.
+				ancestor_children_spacers = [array_dict[array].spacers for array in ancestor_children_ids]
+				# Do a simple check to see if all the lost spacers are in any of the children
+				found = False
+				for array in ancestor_children_spacers:
+					if all([spacer in array for spacer in ancestor_module.spacers]):
+						found = True
+						break
+				if found: # If we found all the lost spacers in a child array then this is at least one repeated deletion. Add one event for now. May implement more detailed characterization in future if trees don't look right.
+					repeated_indels += 1
+				else: # If not then just add the cost of the acquisitions that must have occured between the child and ancestor (even though the direction of that change is opposite to normal comparisons.)
+					acquisition += len(module.indices)
 		else:
 			indels = 1
 	else:
@@ -1587,7 +1601,7 @@ else:
 	labels = list(array_spacers_dict.keys())
 
 all_arrays = [array.spacers for array in arrays]
-all_arrays = [['961', '1677', '4809', '694', '1073', '5324', '4913', '2014', '2034', '6045', '1737', '3917'], ['6569', '130', '117', '830', '42', '1015', '1677', '4809', '2034', '6045', '1737', '3917'], ['961', '1677', '4809', '694', '1073', '5324', '6045', '1737'], ['2698', '274', '3191', '18', '3300', '3280', '7180', '2034', '6045', '1737']]
+
 
 if len(labels) < 9:
 	array_choices = [i for i in permutations(arrays, len(arrays))]
@@ -1763,8 +1777,7 @@ else:
 	colours = [(i, "#000000") for i in Cols_tol]
 # build a dictionary with colours assigned to each spacer.
 spacer_cols_dict  = {}
-colours = [(i, "#000000") for i in Cols_hex_12] ########## TEMP!!!!!!!!!!!!
-non_singleton_spacers = ['2034', '6045', '1737', '1677', '4809', '3917', '961', '694', '1073', '5324']
+
 for i, spacer in enumerate(sorted(non_singleton_spacers)):
 	spacer_cols_dict[spacer] = colours[i]
 
