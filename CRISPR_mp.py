@@ -987,6 +987,10 @@ def find_closest_array(array, array_dict, tree):
 			if comparator_array.distance < best_score:
 				best_score = comparator_array.distance
 				best_match = comparator_array
+			elif comparator_array.distance == best_score:
+				if best_match.extant and not comparator_array.extant:
+					# Prefer to join arrays to existing ancestors rather than to leaves if they are the same distance.
+					best_match = comparator_array
 	if not best_match:
 		return "No_ID"
 
