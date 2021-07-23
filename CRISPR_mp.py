@@ -1140,7 +1140,7 @@ def plot_tree(tree, array_dict, filename):
 	for array, location in node_locs.items():
 		# Add label first
 		x ,y = location
-		ax.text(x-0.05*hscale, y-0.1*vscale, array, ha='right', fontsize=15*vscale)
+		ax.text(x-0.05*hscale, y-0.4*hscale, array, ha='right', fontsize=50*hscale)
 		# then add branches
 		first_node = tree.find_node_with_taxon_label(array)
 		
