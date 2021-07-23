@@ -1240,7 +1240,7 @@ def plot_tree(tree, array_dict, filename):
 			child = count_parsimony_events(child, ancestor, array_dict, tree, True)
 
 			if args.emphasize_diffs:
-				start_pos_x = location[0]-2*vscale # Start a bit to the left to leave room for the label
+				start_pos_x = location[0]-5*hscale # Start a bit to the left to leave room for the label
 				start_pos_y = location[1]
 				spacer_count = 0 # How many spacers have been plotted?
 				reshift_loc = 1000
@@ -1321,7 +1321,7 @@ def plot_tree(tree, array_dict, filename):
 		if not args.emphasize_diffs:
 			# Then add spacers
 			spacers = array_dict[array].spacers
-			start_pos_x = location[0]-4*hscale # Start a bit to the left to leave room for the label
+			start_pos_x = location[0]-5*hscale # Start a bit to the left to leave room for the label
 			start_pos_y = location[1] 
 			for n, spacer in enumerate(reversed(spacers)): # work backwards through the array plotting from right to left
 				if spacer in spacer_cols_dict.keys():
