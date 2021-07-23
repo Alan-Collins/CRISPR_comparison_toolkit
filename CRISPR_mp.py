@@ -738,12 +738,18 @@ def count_parsimony_events(child, ancestor, array_dict, tree, parent_comparison)
 		mod = child.module_lookup[idx]
 		if mod.type == 'acquisition' or mod.type == 'no_acquisition': 
 		# Checking no acquisition allows comparison of child-child as well as child-ancestor arrays.
-			child.events['acquisition'] += len(mod.indices)
+			if parent_comparison: 
+				# If comparing to a nodes ancestor, then deletions of spacers from the leader end may look like acquisition. This must be checked to make sure deletions are not being miscalled as acquisitions.
+				indels, repeated_indels, acquisition = identify_repeat_indels(child, ancestor, array_dict, mod, tree)
+				child.events['acquisition'] += acquisition
+				child.events['repeated_indel'] += repeated_indels
+			else:
+				child.events['acquisition'] += len(mod.indices)
 			idx = mod.indices[-1] + 1 # Skip the rest of this module.
 			continue
 		if mod.type == 'indel_gap' or mod.type == "indel_mm":
 			if parent_comparison:
-				indels, repeated_indels = identify_repeat_indels(child, ancestor, array_dict, mod, tree)
+				indels, repeated_indels, _ = identify_repeat_indels(child, ancestor, array_dict, mod, tree)
 				child.events['indel'] += indels
 				child.events['repeated_indel'] += repeated_indels
 			else:
@@ -768,10 +774,10 @@ def identify_repeat_indels(child, ancestor, array_dict, module, tree):
 		tree (Deondropy Tree class instance): The tree in which the arrays are located.
 	
 	Returns:
-		(tuple) count of indels and of repeat_indels
+		(tuple) count of indels, repeat_indels, and of acquisitions.
 	"""
 
-	indels = repeated_indels = 0
+	indels = repeated_indels = acquisition = 0
 	if len(tree) > 1:
 		ancestor_node = tree.find_node_with_taxon_label(ancestor.id)
 
@@ -824,6 +830,7 @@ def identify_repeat_indels(child, ancestor, array_dict, module, tree):
 			if len(spacers_to_check) > 0:
 				# identify consecutive runs of spacers that are unique to this array
 				spacer_indices = [n for n, s in enumerate(module.spacers) if s in spacers_to_check]
+				acquisition = len(spacer_indices)
 				last_n = False
 				for n in spacer_indices:
 					if last_n:
@@ -841,7 +848,7 @@ def identify_repeat_indels(child, ancestor, array_dict, module, tree):
 		indels = 1
 
 			
-	return indels, repeated_indels
+	return indels, repeated_indels, acquisition
 
 
 def resolve_pairwise_parsimony(array1, array2, all_arrays, array_dict, node_ids, node_count, tree):
@@ -1451,7 +1458,7 @@ def build_tree_multi(arrays, tree_namespace):
 						for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
 							node_array.distance += node_array.events[k] * v
 						node.edge_length = node_array.distance
-						
+
 			tree.reroot_at_node(tree.seed_node, update_bipartitions=False) # Need to reroot at the seed so that RF distance works
 			return array_dict, tree, arrays
 
