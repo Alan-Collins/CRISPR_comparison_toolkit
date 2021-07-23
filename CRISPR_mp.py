@@ -891,17 +891,26 @@ def identify_repeat_indels(child, ancestor, array_dict, module, tree):
 			if len(spacers_to_check) > 0:
 				# identify consecutive runs of spacers that are unique to this array
 				spacer_indices = [n for n, s in enumerate(module.spacers) if s in spacers_to_check]
-				acquisition = len(spacer_indices)
-				last_n = False
-				for n in spacer_indices:
-					if last_n:
-						if n != last_n + 1:
+				if module.type == "acquisition":
+					expected_index = 0 # If this is an acquisition then the first spacer will still be present.
+					while spacer_indices[0] == expected_index:
+						acquisition += 1 # If true then this spacer was acquired since ancestor.
+						expected_index = spacer_indices.pop(0)+1 # Update expected index to be the one higher. Remove the index from the list so it isn't later counted as an indel
+						if len(spacer_indices) == 0: # If we finish the list then break the while loop
+							break
+				if len(spacer_indices) > 0: # Then find consecutive runs of spacers. Each must be an indel
+					last_n = False # Keep track of what the last index was to know if this is a consecutive run.
+					for n in spacer_indices:
+						if n == spacer_indices[-1]: # If the list is over then add the last indel and break
 							indels += 1
-						last_n = n
-					else:
-						last_n = n
-					if n == spacer_indices[-1]:
-						indels += 1
+							break
+						if last_n:
+							if n != last_n + 1: # If this number is not one more than the last then consecutive run is over
+								indels += 1
+							last_n = n
+						else: # Otherwise move to the next number
+							last_n = n 
+						
 
 		else:
 			indels = 1
