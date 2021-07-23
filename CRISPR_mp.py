@@ -488,6 +488,10 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 	Returns:
 		(str or list) A hypothesis of the ancestral state of the provided sequences.
 	"""
+
+	# First remove the arrays being compared from checks to see what spacers are in other arrays.
+	all_arrays = [a for a in all_arrays if a not in [array1.spacers, array2.spacers]]
+	
 	ancestor = Array(node_ids[node_count], extant=False)
 
 	array1, array2 = find_modules(array1, array2)	
