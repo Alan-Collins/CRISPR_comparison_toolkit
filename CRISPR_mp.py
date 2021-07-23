@@ -488,7 +488,6 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 	Returns:
 		(str or list) A hypothesis of the ancestral state of the provided sequences.
 	"""
-
 	ancestor = Array(node_ids[node_count], extant=False)
 
 	array1, array2 = find_modules(array1, array2)	
@@ -529,13 +528,14 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 						# If not a duplication check if these spacers are in another array. If so keep.
 						duplication = False # Start with the assumption this isn't a duplication
 						for sp in mod2.spacers:
-							count = 0
-							for spacer in mod2.spacers:
-								if sp == spacer:
-									count += 1
-								if count == 2: # If the same spacer is present twice then duplication has occured in this region.
-									duplication = True
-									break
+							if sp != '-':
+								count = 0
+								for spacer in mod2.spacers:
+									if sp == spacer:
+										count += 1
+									if count == 2: # If the same spacer is present twice then duplication has occured in this region.
+										duplication = True
+										break
 						if duplication == False:
 							singleton = [True for _ in mod2.spacers] # Start with the assumption that these spacers aren't found in another array.
 							for n, sp in enumerate(mod2.spacers):
@@ -546,30 +546,87 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 									if count == 2:
 										singleton[n] = False
 										continue
+
 							if all([_ == False for _ in singleton]):
 								ancestor.modules.append(mod2)
+
+							elif not singleton[0] and not singleton[-1]: 
+								# If the outtermost are shared with other arrays, perhaps this is an insertion in one and a deletion in the other. That may be more likely than independent acquisition of two stretches of spacers twice.
+								ancestor.modules.append(mod2)
+							elif not all(singleton):
+								# If spacers found in another array are on the edge of this indel it may be more parsimonious to have them in the ancestor than not.
+								if not singleton[0]: # Start looking from the leader end
+									spacers = []
+									for n, tf in enumerate(singleton):
+										if not tf:
+											spacers.append(mod2.spacers[n])
+										else:
+											x = Spacer_Module()
+											x.spacers = spacers
+											ancestor.modules.append(x)
+											break
+								elif not singleton[-1]: # Start looking from the trailer end
+									spacers = []
+									for n, tf in enumerate(reversed(singleton)):
+										if not tf:
+											spacers.append(mod2.spacers[::-1][n])
+										else:
+											
+											spacers.reverse() # We were working from trailer to leader so need to reverse now.
+											x = Spacer_Module()
+											x.spacers = spacers
+											ancestor.modules.append(x)
+											break
+
 					else:
 						duplication = False # Start with the assumption this isn't a duplication
 						for sp in mod2.spacers:
-							count = 0
-							for spacer in mod2.spacers:
-								if sp == spacer:
-									count += 1
-								if count == 2: # If the same spacer is present twice then duplication has occured in this region.
-									duplication = True
-									break
+							if sp != '-':
+								count = 0
+								for spacer in mod2.spacers:
+									if sp == spacer:
+										count += 1
+									if count == 2: # If the same spacer is present twice then duplication has occured in this region.
+										duplication = True
+										break
 						if duplication == False:
-							singleton = True # Start with the assumption that these spacers aren't found in another array.
+							singleton = [True for _ in mod1.spacers] # Start with the assumption that these spacers aren't found in another array.
 							for n, sp in enumerate(mod1.spacers):
 								count = 0
 								for array in all_arrays:
 									if sp in array:
 										count += 1
 									if count == 2:
-										singleton[b] = False
+										singleton[n] = False
 										continue
 							if all([_ == False for _ in singleton]):
 								ancestor.modules.append(mod1)
+							elif not singleton[0] and not singleton[-1]: 
+								# If the outtermost are shared with other arrays, perhaps this is an insertion in one and a deletion in the other. That may be more likely than independent acquisition of two stretches of spacers twice.
+								ancestor.modules.append(mod1)
+							elif not all(singleton):
+								# If spacers found in another array are on the edge of this indel it may be more parsimonious to have them in the ancestor than not.
+								if not singleton[0]: # Start looking from the leader end
+									spacers = []
+									for n, tf in enumerate(singleton):
+										if not tf:
+											spacers.append(mod1.spacers[n])
+										else:
+											x = Spacer_Module()
+											x.spacers = spacers
+											ancestor.modules.append(x)
+											break
+								elif not singleton[-1]: # Start looking from the trailer end
+									spacers = []
+									for n, tf in enumerate(reversed(singleton)):
+										if not tf:
+											spacers.append(mod1.spacers[::-1][n])
+										else:
+											spacers.reverse() # We were working from trailer to leader so need to reverse now.
+											x = Spacer_Module()
+											x.spacers = spacers
+											ancestor.modules.append(x)
+											break
 					idx = mod1.indices[-1] + 1
 				else:
 					# If both modules contain spacers then this may be two deletions from a larger ancestor or a recombination event.
