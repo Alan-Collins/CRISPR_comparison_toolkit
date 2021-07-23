@@ -12,6 +12,7 @@ from itertools import product
 from string import ascii_lowercase
 import random
 from collections import Counter
+from collections import defaultdict
 import dendropy
 import copy
 from itertools import permutations
@@ -50,6 +51,10 @@ parser.add_argument(
 parser.add_argument(
 	"-i",  dest="indel", type=int, nargs="?", default = 1,
 		help="Specify the parsimony cost of an indel event involving one or more spacers. Default: 1"
+	)
+parser.add_argument(
+	"-b",  dest="rep_indel", type=int, nargs="?", default = 50,
+		help="Specify the parsimony cost of an indel event involving one or more spacers that is independently acquired in multiple arrays. Default: 50"
 	)
 parser.add_argument(
 	"-d",  dest="duplication", type=int, nargs="?", default = 1,
@@ -105,6 +110,7 @@ class Array():
 		self.events = { 
 						"acquisition" : 0,
 						"indel" : 0,
+						"repeated_indel" : 0,
 						"duplication": 0,
 						"trailer_loss": 0
 						}
@@ -117,6 +123,7 @@ class Array():
 		self.events = { 
 						"acquisition" : 0,
 						"indel" : 0,
+						"repeated_indel" : 0,
 						"duplication": 0,
 						"trailer_loss": 0
 						}
@@ -482,6 +489,9 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 		(str or list) A hypothesis of the ancestral state of the provided sequences.
 	"""
 
+	# First remove the arrays being compared from checks to see what spacers are in other arrays.
+	all_arrays = [a for a in all_arrays if a not in [array1.spacers, array2.spacers]]
+	
 	ancestor = Array(node_ids[node_count], extant=False)
 
 	array1, array2 = find_modules(array1, array2)	
@@ -522,47 +532,105 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 						# If not a duplication check if these spacers are in another array. If so keep.
 						duplication = False # Start with the assumption this isn't a duplication
 						for sp in mod2.spacers:
-							count = 0
-							for spacer in mod2.spacers:
-								if sp == spacer:
-									count += 1
-								if count == 2: # If the same spacer is present twice then duplication has occured in this region.
-									duplication = True
-									break
+							if sp != '-':
+								count = 0
+								for spacer in mod2.spacers:
+									if sp == spacer:
+										count += 1
+									if count == 2: # If the same spacer is present twice then duplication has occured in this region.
+										duplication = True
+										break
 						if duplication == False:
-							singleton = True # Start with the assumption that these spacers aren't found in another array.
-							for sp in mod2.spacers:
+							singleton = [True for _ in mod2.spacers] # Start with the assumption that these spacers aren't found in another array.
+							for n, sp in enumerate(mod2.spacers):
 								count = 0
 								for array in all_arrays:
 									if sp in array:
 										count += 1
 									if count == 2:
-										singleton = False
+										singleton[n] = False
 										continue
-							if singleton == False:
+
+							if all([_ == False for _ in singleton]):
 								ancestor.modules.append(mod2)
+
+							elif not singleton[0] and not singleton[-1]: 
+								# If the outtermost are shared with other arrays, perhaps this is an insertion in one and a deletion in the other. That may be more likely than independent acquisition of two stretches of spacers twice.
+								ancestor.modules.append(mod2)
+							elif not all(singleton):
+								# If spacers found in another array are on the edge of this indel it may be more parsimonious to have them in the ancestor than not.
+								if not singleton[0]: # Start looking from the leader end
+									spacers = []
+									for n, tf in enumerate(singleton):
+										if not tf:
+											spacers.append(mod2.spacers[n])
+										else:
+											x = Spacer_Module()
+											x.spacers = spacers
+											ancestor.modules.append(x)
+											break
+								elif not singleton[-1]: # Start looking from the trailer end
+									spacers = []
+									for n, tf in enumerate(reversed(singleton)):
+										if not tf:
+											spacers.append(mod2.spacers[::-1][n])
+										else:
+											
+											spacers.reverse() # We were working from trailer to leader so need to reverse now.
+											x = Spacer_Module()
+											x.spacers = spacers
+											ancestor.modules.append(x)
+											break
+
 					else:
 						duplication = False # Start with the assumption this isn't a duplication
 						for sp in mod2.spacers:
-							count = 0
-							for spacer in mod2.spacers:
-								if sp == spacer:
-									count += 1
-								if count == 2: # If the same spacer is present twice then duplication has occured in this region.
-									duplication = True
-									break
+							if sp != '-':
+								count = 0
+								for spacer in mod2.spacers:
+									if sp == spacer:
+										count += 1
+									if count == 2: # If the same spacer is present twice then duplication has occured in this region.
+										duplication = True
+										break
 						if duplication == False:
-							singleton = True # Start with the assumption that these spacers aren't found in another array.
-							for sp in mod1.spacers:
+							singleton = [True for _ in mod1.spacers] # Start with the assumption that these spacers aren't found in another array.
+							for n, sp in enumerate(mod1.spacers):
 								count = 0
 								for array in all_arrays:
 									if sp in array:
 										count += 1
 									if count == 2:
-										singleton = False
+										singleton[n] = False
 										continue
-							if singleton == False:
+							if all([_ == False for _ in singleton]):
 								ancestor.modules.append(mod1)
+							elif not singleton[0] and not singleton[-1]: 
+								# If the outtermost are shared with other arrays, perhaps this is an insertion in one and a deletion in the other. That may be more likely than independent acquisition of two stretches of spacers twice.
+								ancestor.modules.append(mod1)
+							elif not all(singleton):
+								# If spacers found in another array are on the edge of this indel it may be more parsimonious to have them in the ancestor than not.
+								if not singleton[0]: # Start looking from the leader end
+									spacers = []
+									for n, tf in enumerate(singleton):
+										if not tf:
+											spacers.append(mod1.spacers[n])
+										else:
+											x = Spacer_Module()
+											x.spacers = spacers
+											ancestor.modules.append(x)
+											break
+								elif not singleton[-1]: # Start looking from the trailer end
+									spacers = []
+									for n, tf in enumerate(reversed(singleton)):
+										if not tf:
+											spacers.append(mod1.spacers[::-1][n])
+										else:
+											spacers.reverse() # We were working from trailer to leader so need to reverse now.
+											x = Spacer_Module()
+											x.spacers = spacers
+											ancestor.modules.append(x)
+											break
 					idx = mod1.indices[-1] + 1
 				else:
 					# If both modules contain spacers then this may be two deletions from a larger ancestor or a recombination event.
@@ -698,12 +766,15 @@ def find_dupes(child, ancestor):
 	return dupe_groups
 
 
-def count_parsimony_events(child, ancestor):
+def count_parsimony_events(child, ancestor, array_dict, tree, parent_comparison):
 	"""
 	Args:
 		child (Array class instance): The child array.
 		ancestor (Array class instance): The hypothetical ancestor of the child array.
-	
+		array_dict (dict): Dict of Array class instances with information about the nodes of your tree.
+		tree (Deondropy Tree class instance): The tree in which the arrays are located.	
+		parent_comparison (bool): Are the arrays being compared parent-child nodes in the tree? E.g. if you are trying to find the best matching array in the tree this is False. If you are counting events between an array and its ancestor array this is True
+
 	Returns:
 		(Array class instance) The child Array class instance with parsimony events added to the .events dict attribute.
 	"""
@@ -728,11 +799,22 @@ def count_parsimony_events(child, ancestor):
 		mod = child.module_lookup[idx]
 		if mod.type == 'acquisition' or mod.type == 'no_acquisition': 
 		# Checking no acquisition allows comparison of child-child as well as child-ancestor arrays.
-			child.events['acquisition'] += len(mod.indices)
+			if parent_comparison: 
+				# If comparing to a nodes ancestor, then deletions of spacers from the leader end may look like acquisition. This must be checked to make sure deletions are not being miscalled as acquisitions.
+				indels, repeated_indels, acquisition = identify_repeat_indels(child, ancestor, array_dict, mod, tree)
+				child.events['acquisition'] += acquisition
+				child.events['repeated_indel'] += repeated_indels
+			else:
+				child.events['acquisition'] += len(mod.indices)
 			idx = mod.indices[-1] + 1 # Skip the rest of this module.
 			continue
 		if mod.type == 'indel_gap' or mod.type == "indel_mm":
-			child.events['indel'] += 1
+			if parent_comparison:
+				indels, repeated_indels, _ = identify_repeat_indels(child, ancestor, array_dict, mod, tree)
+				child.events['indel'] += indels
+				child.events['repeated_indel'] += repeated_indels
+			else:
+				child.events['indel'] += 1
 			idx = mod.indices[-1] + 1 # Skip the rest of this module.
 		if mod.type == 'duplication':
 			child.events['duplication'] += 1
@@ -743,7 +825,94 @@ def count_parsimony_events(child, ancestor):
 	return child
 
 
-def resolve_pairwise_parsimony(array1, array2, all_arrays, node_ids, node_count):
+def identify_repeat_indels(child, ancestor, array_dict, module, tree):
+	"""
+	Args:
+		child (Array class instance): The child array.
+		ancestor (Array class instance): The hypothetical ancestor of the child array.
+		array_dict (dict): Dict of Array class instances with information about the nodes of your tree.
+		module (Spacer_Module class instance): The indel module to be processed.
+		tree (Deondropy Tree class instance): The tree in which the arrays are located.
+	
+	Returns:
+		(tuple) count of indels, repeat_indels, and of acquisitions.
+	"""
+
+	indels = repeated_indels = acquisition = 0
+	if len(tree) > 1:
+		ancestor_node = tree.find_node_with_taxon_label(ancestor.id)
+
+		if ancestor_node:
+
+			ancestor_children = ancestor_node.leaf_nodes() + [node for node in ancestor_node.levelorder_iter(lambda x: x.is_internal())]
+			ancestor_children_ids = [node.taxon.label for node in ancestor_children]
+
+			non_ancestor_children = []
+			for node in tree:
+				if node.taxon:
+					if node.taxon.label not in ancestor_children_ids:
+						non_ancestor_children.append(node)
+
+			non_ancestor_children_ids = [node.taxon.label for node in non_ancestor_children]
+
+			non_ancestor_children_spacers = [array_dict[array].spacers for array in non_ancestor_children_ids]
+
+			spacer_hits = defaultdict(list)
+			repeated_indel_instances = []
+			repeat_search = True
+			spacers_to_check = module.spacers
+			while repeat_search:
+				longest_match = 0
+				longest_indices = []
+				arrays_to_check = []
+				
+				for s, spacer in enumerate(spacers_to_check):
+					for a, array in enumerate(non_ancestor_children_spacers):
+						if spacer in array:
+							arrays_to_check.append(a)
+				arrays_to_check = [i for i in set(arrays_to_check)]
+				if len(arrays_to_check) == 0:
+					repeat_search = False
+				else:
+					for a in arrays_to_check:
+						x = Array("x", module.spacers)
+						y = Array("y", non_ancestor_children_spacers[a])
+						x.aligned, y.aligned = needle(x.spacers, y.spacers) # Find where the match is by aligning
+						x,y = find_modules(x,y) # Then identify any shared regions
+						shared_list = []
+						for m in x.modules: # Pull out the shared modules
+							if m.type == "shared":
+								if len(m.indices) > longest_match:
+									longest_match = len(m.indices)
+									longest_indices = [n for n, _ in enumerate(module.spacers) if _ in m.spacers]
+					repeated_indels += 1
+					# Remove spacers that have been found from list and look again
+					spacers_to_check = [s for n, s in enumerate(spacers_to_check) if n not in longest_indices]
+			if len(spacers_to_check) > 0:
+				# identify consecutive runs of spacers that are unique to this array
+				spacer_indices = [n for n, s in enumerate(module.spacers) if s in spacers_to_check]
+				acquisition = len(spacer_indices)
+				last_n = False
+				for n in spacer_indices:
+					if last_n:
+						if n != last_n + 1:
+							indels += 1
+						last_n = n
+					else:
+						last_n = n
+					if n == spacer_indices[-1]:
+						indels += 1
+
+		else:
+			indels = 1
+	else:
+		indels = 1
+
+			
+	return indels, repeated_indels, acquisition
+
+
+def resolve_pairwise_parsimony(array1, array2, all_arrays, array_dict, node_ids, node_count, tree):
 	"""
 	Given two arrays, make a hypothetical ancestral state and calculate parsimony distance of each input array to that ancestor. 
 	Can only build an ancestor state if there are shared spacers so throws an error if none are found.
@@ -751,8 +920,10 @@ def resolve_pairwise_parsimony(array1, array2, all_arrays, node_ids, node_count)
 		array1 (Array class instance): The first array to be compared.
 		array2 (Array class instance): The second array to be compared.
 		all_arrays (list): The list of all arrays so that indels can be resolved to favour keeping spacers found in other arrays.
+		array_dict (dict): Dict of Array class instances with information about the nodes of your tree.
 		node_ids (list): A list of names to be used to name internal nodes.
 		node_count (int): The index of the name to use in the node_ids list to name this internal node.
+		tree (Deondropy Tree class instance): The tree in which the arrays are located.
 
 	Returns:
 		(tuple of Array class instances) The input Array class instances with module and distance info added, the ancestral array Array class instance. Tuple order is (array1, array2, ancestor)
@@ -771,9 +942,9 @@ def resolve_pairwise_parsimony(array1, array2, all_arrays, node_ids, node_count)
 
 		ancestor = infer_ancestor(array1, array2, all_arrays, node_ids, node_count)
 
-		array1 = count_parsimony_events(array1, ancestor)
+		array1 = count_parsimony_events(array1, ancestor, array_dict, tree, True)
 
-		array2 = count_parsimony_events(array2, ancestor)
+		array2 = count_parsimony_events(array2, ancestor, array_dict, tree, True)
 
 
 		for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
@@ -787,7 +958,7 @@ def resolve_pairwise_parsimony(array1, array2, all_arrays, node_ids, node_count)
 		return "No_ID"
 
 
-def find_closest_array(array, array_dict):
+def find_closest_array(array, array_dict, tree):
 	"""
 	Args:
 		array (Array class instance): The array you want to find the closest match for.
@@ -803,7 +974,7 @@ def find_closest_array(array, array_dict):
 	for array_id in array_dict.keys():
 		comparator_array = copy.deepcopy(array_dict[array_id])
 		comparator_array.reset()
-		comparator_array = count_parsimony_events(comparator_array, array)
+		comparator_array = count_parsimony_events(comparator_array, array, array_dict, tree, False)
 		for k,v in event_costs.items():
 			comparator_array.distance += comparator_array.events[k] * v
 		if any([i.type == "shared" for i in comparator_array.modules]):
@@ -847,7 +1018,7 @@ def replace_existing_array(existing_array, new_array, current_parent, tree, all_
 	"""
 
 	# Make a hypothetical ancestor for the pair of arrays and calculate the distances
-	results = resolve_pairwise_parsimony(existing_array, new_array, all_arrays, node_ids, node_count)
+	results = resolve_pairwise_parsimony(existing_array, new_array, all_arrays, array_dict, node_ids, node_count, tree)
 	
 	if results == "No_ID":
 		return results
@@ -859,7 +1030,7 @@ def replace_existing_array(existing_array, new_array, current_parent, tree, all_
 		if not seed:
 			# Calculate distance from this hypothetical ancestor to its new parent in the tree
 			ancestor.reset()
-			ancestor = count_parsimony_events(ancestor, current_parent)
+			ancestor = count_parsimony_events(ancestor, current_parent, array_dict, tree, True)
 			for k,v in event_costs.items():
 				ancestor.distance += ancestor.events[k] * v
 
@@ -1030,7 +1201,7 @@ def plot_tree(tree, array_dict, filename):
 	for array, location in node_locs.items():
 		# Add label first
 		x ,y = location
-		ax.text(x-0.05*hscale, y-0.1*vscale, array, ha='right', fontsize=15*vscale)
+		ax.text(x-0.05*hscale, y-0.4*hscale, array, ha='right', fontsize=50*hscale)
 		# then add branches
 		first_node = tree.find_node_with_taxon_label(array)
 		
@@ -1066,7 +1237,7 @@ def plot_tree(tree, array_dict, filename):
 
 			ancestor = 	array_dict[first_node.parent_node.taxon.label]
 			child = array_dict[array]
-			child = count_parsimony_events(child, ancestor)
+			child = count_parsimony_events(child, ancestor, array_dict, tree, True)
 
 			if args.emphasize_diffs:
 				start_pos_x = location[0]-2*vscale # Start a bit to the left to leave room for the label
@@ -1150,7 +1321,7 @@ def plot_tree(tree, array_dict, filename):
 		if not args.emphasize_diffs:
 			# Then add spacers
 			spacers = array_dict[array].spacers
-			start_pos_x = location[0]-5*hscale # Start a bit to the left to leave room for the label
+			start_pos_x = location[0]-4*hscale # Start a bit to the left to leave room for the label
 			start_pos_y = location[1] 
 			for n, spacer in enumerate(reversed(spacers)): # work backwards through the array plotting from right to left
 				if spacer in spacer_cols_dict.keys():
@@ -1184,12 +1355,11 @@ def build_tree_single(arrays, tree_namespace, score):
 	array_dict = {}
 	tree_child_dict = {}
 	node_count = 0 # Keep track of which internal node ID should be used for each node
-
-	results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count)
+	results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, array_dict, node_ids, node_count, tree)
 	while results == "No_ID":
 		arrays.append(arrays[1])
 		del arrays[1]
-		results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count)
+		results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, array_dict, node_count, tree)
 	node_count += 1
 	array1, array2, ancestor = results
 
@@ -1212,12 +1382,12 @@ def build_tree_single(arrays, tree_namespace, score):
 			seed = False # To check if we are modifying the child of the seed node
 
 			# Find the most similar array already in the tree (measured in parsimony score)
-			best_match = find_closest_array(a, array_dict)
+			best_match = find_closest_array(a, array_dict, tree)
 			while best_match == "No_ID":
 				arrays.append(arrays[i])
 				del arrays[i]
 				a = arrays[i]
-				best_match = find_closest_array(a, array_dict)
+				best_match = find_closest_array(a, array_dict, tree)
 			if best_match.extant: # If the closest match is a array then just join them and replace the existing array with the new node
 				current_parent = array_dict[tree_child_dict[best_match.id].parent_node.taxon.label]
 				results = replace_existing_array(
@@ -1237,6 +1407,20 @@ def build_tree_single(arrays, tree_namespace, score):
 
 				tree, array_dict, tree_child_dict = results
 				node_count += 1
+
+			# Recheck child - ancestor branch length to find indels that would have to occur multiple times
+			for node in tree:
+				if node.level() != 0:
+					if node.parent_node.level() != 0:
+						node_array = array_dict[node.taxon.label]
+						parent_array = array_dict[node.parent_node.taxon.label]
+						node_array.reset()
+						parent_array.reset()
+						node_array = count_parsimony_events(node_array, parent_array, array_dict, tree, True)
+						for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
+							node_array.distance += node_array.events[k] * v
+						node.edge_length = node_array.distance
+
 		
 			brlen = tree.length()
 			if brlen > score:
@@ -1269,12 +1453,12 @@ def build_tree_multi(arrays, tree_namespace):
 	tree_child_dict = {}
 	node_count = 0 # Keep track of which internal node ID should be used for each node
 
-	results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count)
+	results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, array_dict, node_ids, node_count, tree)
 	while results == "No_ID":
 
 		arrays.append(arrays[1])
 		del arrays[1]
-		results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, node_count)
+		results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, array_dict, node_ids, node_count, tree)
 	node_count += 1
 	array1, array2, ancestor = results
 
@@ -1294,12 +1478,12 @@ def build_tree_multi(arrays, tree_namespace):
 		seed = False # To check if we are modifying the child of the seed node
 
 		# Find the most similar array already in the tree (measured in parsimony score)
-		best_match = find_closest_array(a, array_dict)
+		best_match = find_closest_array(a, array_dict, tree)
 		while best_match == "No_ID":
 			arrays.append(arrays[i])
 			del arrays[i]
 			a = arrays[i]
-			best_match = find_closest_array(a, array_dict)
+			best_match = find_closest_array(a, array_dict, tree)
 		if best_match.extant: # If the closest match is a array then just join them and replace the existing array with the new node
 			current_parent = array_dict[tree_child_dict[best_match.id].parent_node.taxon.label]
 			results = replace_existing_array(
@@ -1320,8 +1504,22 @@ def build_tree_multi(arrays, tree_namespace):
 
 			tree, array_dict, tree_child_dict = results
 			node_count += 1
+
 		
 		if a == arrays[-1]:
+			# Recheck child - ancestor branch length to find indels that would have to occur multiple times
+			for node in tree:
+				if node.level() != 0:
+					if node.parent_node.level() != 0:
+						node_array = array_dict[node.taxon.label]
+						parent_array = array_dict[node.parent_node.taxon.label]
+						node_array.reset()
+						parent_array.reset()
+						node_array = count_parsimony_events(node_array, parent_array, array_dict, tree, True)
+						for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
+							node_array.distance += node_array.events[k] * v
+						node.edge_length = node_array.distance
+
 			tree.reroot_at_node(tree.seed_node, update_bipartitions=False) # Need to reroot at the seed so that RF distance works
 			return array_dict, tree, arrays
 
@@ -1331,6 +1529,7 @@ def build_tree_multi(arrays, tree_namespace):
 event_costs = { 
 				"acquisition" : args.acquisition,
 				"indel" : args.indel,
+				"repeated_indel" : args.rep_indel,
 				"duplication": args.duplication,
 				"trailer_loss": args.trailer_loss
 				}
@@ -1371,7 +1570,7 @@ all_arrays = [array.spacers for array in arrays]
 
 
 if len(labels) < 9:
-	array_choices = [list(i) for i in permutations(arrays, len(arrays))]
+	array_choices = [i for i in permutations(arrays, len(arrays))]
 	random.shuffle(array_choices)
 	
 
@@ -1396,8 +1595,6 @@ best_score = 99999999
 # If no common spacers are ever found then print an error message saying so
 
 no_id_count = 0 
-
-
 
 num_threads = args.num_threads if not args.fix_order else 1
 
@@ -1425,6 +1622,8 @@ if num_threads == 1:
 			array_dict, tree = build_tree_single(addition_order, taxon_namespace, best_score)
 		except Exception as e:
 			print("Failed while trying to build the tree with the following array order:\n{}\n\nError:\n{}".format(" ".join([i.id for i in addition_order]), e))
+			exc_type, exc_obj, exc_tb = sys.exc_info()
+			exc_tb.print_exception()
 			sys.exit()
 
 		if array_dict:
