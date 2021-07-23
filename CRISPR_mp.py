@@ -488,9 +488,6 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 	Returns:
 		(str or list) A hypothesis of the ancestral state of the provided sequences.
 	"""
-
-	# First remove the arrays being compared from checks to see what spacers are in other arrays.
-	all_arrays = [a for a in all_arrays if a not in [array1.spacers, array2.spacers]]
 	
 	ancestor = Array(node_ids[node_count], extant=False)
 
@@ -547,7 +544,7 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 								for array in all_arrays:
 									if sp in array:
 										count += 1
-									if count == 2:
+									if count == 1: # If the spacer is found in another array than the two being considered here then it's not a singleton for our purposes.
 										singleton[n] = False
 										continue
 
@@ -590,7 +587,7 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 								for spacer in mod2.spacers:
 									if sp == spacer:
 										count += 1
-									if count == 2: # If the same spacer is present twice then duplication has occured in this region.
+									if count == 1: # If the same spacer is present twice then duplication has occured in this region.
 										duplication = True
 										break
 						if duplication == False:
@@ -600,7 +597,7 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 								for array in all_arrays:
 									if sp in array:
 										count += 1
-									if count == 2:
+									if count == 1:
 										singleton[n] = False
 										continue
 							if all([_ == False for _ in singleton]):
@@ -1347,13 +1344,14 @@ def plot_tree(tree, array_dict, filename):
 	plt.savefig(filename, dpi=600)
 
 
-def build_tree_single(arrays, tree_namespace, score):
+def build_tree_single(arrays, tree_namespace, score, all_arrays):
 	"""
 	Search treespace for most parsimonious tree using single process.
 	Args:
 		arrays (list): Ordered list of Array class instances of the arrays to analyse. Will be added to the tree in the provided order.
 		tree_namespace (dendropy.TaxonNamespace): Namespace for taxa to add to the tree.
 		score (int): The score to beat. If at any point during tree construction the tree has total branch lengths above this score construction will be aborted
+		all_arrays (list): The list of all arrays so that indels can be resolved to favour keeping spacers found in other arrays.
 	
 	Returns:
 		(tuple) Returns array_dict and dendropy.tree object if the tree beats or equals the provide score. Else retuns tuple of (False, False).
@@ -1364,6 +1362,9 @@ def build_tree_single(arrays, tree_namespace, score):
 	array_dict = {}
 	tree_child_dict = {}
 	node_count = 0 # Keep track of which internal node ID should be used for each node
+	# Remove the arrays being compared from checks to see what spacers are in other arrays.
+	# That way we only worry about ancestral states accounting for deletion of spacers in arrays not yet added to the tree.
+	all_arrays = [a for a in all_arrays if a not in [arrays[0].spacers, arrays[1].spacers]]
 	results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, array_dict, node_ids, node_count, tree)
 	while results == "No_ID":
 		arrays.append(arrays[1])
@@ -1388,8 +1389,8 @@ def build_tree_single(arrays, tree_namespace, score):
 	if len(arrays) != 2:
 		for i in range(2, len(arrays)): # Already added the first two so now add the rest 1 by 1
 			a = arrays[i]
+			all_arrays = [arr for arr in all_arrays if arr != a.spacers]
 			seed = False # To check if we are modifying the child of the seed node
-
 			# Find the most similar array already in the tree (measured in parsimony score)
 			best_match = find_closest_array(a, array_dict, tree)
 			while best_match == "No_ID":
@@ -1445,16 +1446,21 @@ def build_tree_single(arrays, tree_namespace, score):
 		return (array_dict, tree)
 
 
-def build_tree_multi(arrays, tree_namespace):
+def build_tree_multi(arrays, tree_namespace, all_arrays):
 	"""
 	Search treespace for most parsimonious tree using multiple processes.
 	Args:
 		arrays (list): Ordered list of Array class instances of the arrays to analyse. Will be added to the tree in the provided order.
 		tree_namespace (dendropy.TaxonNamespace): Namespace for taxa to add to the tree.
+		all_arrays (list): The list of all arrays so that indels can be resolved to favour keeping spacers found in other arrays.
 	
 	Returns:
 		(tuple) Returns array_dict and dendropy.tree object.
 	"""
+
+	# Remove the arrays being compared from checks to see what spacers are in other arrays.
+	# That way we only worry about ancestral states accounting for deletion of spacers in arrays not yet added to the tree.
+	all_arrays = [a for a in all_arrays if a not in [arrays[0].spacers, arrays[1].spacers]]
 
 	tree = dendropy.Tree(taxon_namespace=taxon_namespace)
 
@@ -1484,6 +1490,7 @@ def build_tree_multi(arrays, tree_namespace):
 	tree_child_dict[ancestor.id].add_child(tree_child_dict[array2.id])
 	for i in range(2, len(arrays)): # Already added the first two so now add the rest 1 by 1
 		a = arrays[i]
+		all_arrays = [arr for arr in all_arrays if arr != a.spacers]
 		seed = False # To check if we are modifying the child of the seed node
 
 		# Find the most similar array already in the tree (measured in parsimony score)
@@ -1576,7 +1583,7 @@ else:
 	labels = list(array_spacers_dict.keys())
 
 all_arrays = [array.spacers for array in arrays]
-
+all_arrays = [['961', '1677', '4809', '694', '1073', '5324', '4913', '2014', '2034', '6045', '1737', '3917'], ['6569', '130', '117', '830', '42', '1015', '1677', '4809', '2034', '6045', '1737', '3917'], ['961', '1677', '4809', '694', '1073', '5324', '6045', '1737'], ['2698', '274', '3191', '18', '3300', '3280', '7180', '2034', '6045', '1737']]
 
 if len(labels) < 9:
 	array_choices = [i for i in permutations(arrays, len(arrays))]
@@ -1628,7 +1635,7 @@ if num_threads == 1:
 		else:
 			addition_order = array_choices[i]
 		try:
-			array_dict, tree = build_tree_single(addition_order, taxon_namespace, best_score)
+			array_dict, tree = build_tree_single(addition_order, taxon_namespace, best_score, all_arrays)
 		except Exception as e:
 			print("Failed while trying to build the tree with the following array order:\n{}\n\nError:\n{}".format(" ".join([i.id for i in addition_order]), e))
 			exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -1670,7 +1677,7 @@ if num_threads == 1:
 else:
 	pool = multiprocessing.Pool(processes=num_threads)
 	chunksize = args.replicates//num_threads
-	options = [(array_list, taxon_namespace) for array_list in array_choices]
+	options = [(array_list, taxon_namespace, all_arrays) for array_list in array_choices]
 	tree_list = pool.starmap(build_tree_multi, options, chunksize)
 	pool.close()
 	pool.join()
@@ -1752,8 +1759,8 @@ else:
 	colours = [(i, "#000000") for i in Cols_tol]
 # build a dictionary with colours assigned to each spacer.
 spacer_cols_dict  = {}
-
-
+colours = [(i, "#000000") for i in Cols_hex_12] ########## TEMP!!!!!!!!!!!!
+non_singleton_spacers = ['2034', '6045', '1737', '1677', '4809', '3917', '961', '694', '1073', '5324']
 for i, spacer in enumerate(sorted(non_singleton_spacers)):
 	spacer_cols_dict[spacer] = colours[i]
 
