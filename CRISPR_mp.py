@@ -19,6 +19,7 @@ from itertools import permutations
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import multiprocessing
+import time
 
 
 parser = argparse.ArgumentParser(
@@ -872,7 +873,7 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 					repeat_search = False
 				else:
 					for a in arrays_to_check:
-						x = Array("x", module.spacers)
+						x = Array("x", spacers_to_check)
 						y = Array("y", non_ancestor_children_spacers[a])
 						x.aligned, y.aligned = needle(x.spacers, y.spacers) # Find where the match is by aligning
 						x,y = find_modules(x,y) # Then identify any shared regions
@@ -881,7 +882,7 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 							if m.type == "shared":
 								if len(m.indices) > longest_match:
 									longest_match = len(m.indices)
-									longest_indices = [n for n, _ in enumerate(module.spacers) if _ in m.spacers]
+									longest_indices = [n for n, _ in enumerate(spacers_to_check) if _ in m.spacers]
 					repeated_indels += 1
 					# Remove spacers that have been found from list and look again
 					spacers_to_check = [s for n, s in enumerate(spacers_to_check) if n not in longest_indices]
@@ -961,7 +962,7 @@ def resolve_pairwise_parsimony(array1, array2, all_arrays, array_dict, node_ids,
 
 		array1.reset() # Make sure the distance and events haven't carried over from a previous usage
 		array2.reset()
-
+		
 		ancestor = infer_ancestor(array1, array2, all_arrays, node_ids, node_count)
 
 		array1 = count_parsimony_events(array1, ancestor, array_dict, tree, True)
@@ -1384,14 +1385,13 @@ def build_tree_single(arrays, tree_namespace, score, all_arrays):
 	# That way we only worry about ancestral states accounting for deletion of spacers in arrays not yet added to the tree.
 	all_arrays = [a for a in all_arrays if a not in [arrays[0].spacers, arrays[1].spacers]]
 	results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, array_dict, node_ids, node_count, tree)
+
 	while results == "No_ID":
 		arrays.append(arrays[1])
 		del arrays[1]
-		results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, node_ids, array_dict, node_count, tree)
+		results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays,  array_dict, node_ids, node_count, tree)
 	node_count += 1
 	array1, array2, ancestor = results
-
-
 	for a in [array1, array2, ancestor]:
 		# Create tree nodes
 		tree_child_dict[a.id] = dendropy.Node(edge_length=a.distance)
@@ -1412,6 +1412,7 @@ def build_tree_single(arrays, tree_namespace, score, all_arrays):
 			# Find the most similar array already in the tree (measured in parsimony score)
 			best_match = find_closest_array(a, array_dict, tree)
 			while best_match == "No_ID":
+
 				arrays.append(arrays[i])
 				del arrays[i]
 				a = arrays[i]
@@ -1437,9 +1438,11 @@ def build_tree_single(arrays, tree_namespace, score, all_arrays):
 				node_count += 1
 
 			# Recheck child - ancestor branch length to find indels that would have to occur multiple times
+			count = 0
 			for node in tree:
 				if node.level() != 0:
 					if node.parent_node.level() != 0:
+						count+=1
 						node_array = array_dict[node.taxon.label]
 						parent_array = array_dict[node.parent_node.taxon.label]
 						node_array.reset()
@@ -1558,7 +1561,7 @@ def build_tree_multi(arrays, tree_namespace, all_arrays):
 			return array_dict, tree, arrays
 
 	
-
+print("Running with the following command:\n{}\n".format(" ".join(sys.argv)))
 
 event_costs = { 
 				"acquisition" : args.acquisition,
