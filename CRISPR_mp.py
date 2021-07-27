@@ -983,7 +983,8 @@ def find_closest_array(array, array_dict, tree):
 	Args:
 		array (Array class instance): The array you want to find the closest match for.
 		array_dict (dict): The dictionary with values of Array class instances of arrays already in your tree
-	
+		tree (Deondropy Tree class instance): The tree in which the arrays are located.
+		
 	Returns:
 		(Array class instance) The array already in your tree that is the most parsimonious match to the query array.
 	"""
