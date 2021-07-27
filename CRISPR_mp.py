@@ -19,7 +19,6 @@ from itertools import permutations
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import multiprocessing
-import time
 
 
 parser = argparse.ArgumentParser(
