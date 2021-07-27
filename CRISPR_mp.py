@@ -838,9 +838,7 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 	indels = repeated_indels = acquisition = 0
 	if len(tree) > 1:
 		ancestor_node = tree.find_node_with_taxon_label(ancestor.id)
-
 		if ancestor_node:
-
 			ancestor_children = ancestor_node.leaf_nodes() + [node for node in ancestor_node.levelorder_iter(lambda x: x.is_internal())]
 			ancestor_children_ids = [node.taxon.label for node in ancestor_children]
 
@@ -854,6 +852,23 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 
 			non_ancestor_children_spacers = [array_dict[array].spacers for array in non_ancestor_children_ids]
 
+			child_node = tree.find_node_with_taxon_label(child.id)
+			other_child_children = [] # Store a list of the children that are not the child array being assessed. If the child is already set as the child of this ancestor then this will just be that child's sibling. Otherwise this is a comparison used to place the "child" array which is not yet in the tree and so all the children of the ancestor should be included.
+			if child_node:
+				if child_node.parent_node == ancestor_node:
+					other_child = child_node.sibling_nodes()[0]
+					other_child_children = other_child.leaf_nodes() + [node for node in other_child.levelorder_iter(lambda x: x.is_internal())]
+				else:
+					for n in ancestor_node.child_nodes():
+						other_child_children += n.leaf_nodes() + [node for node in n.levelorder_iter(lambda x: x.is_internal())]
+			else:
+				for n in ancestor_node.child_nodes():
+					other_child_children += n.leaf_nodes() + [node for node in n.levelorder_iter(lambda x: x.is_internal())]
+			other_child_children_ids = [node.taxon.label for node in other_child_children]
+			other_child_children_spacers = [array_dict[array].spacers for array in other_child_children_ids]
+
+
+
 			spacer_hits = defaultdict(list)
 			repeated_indel_instances = []
 			repeat_search = True
@@ -862,9 +877,10 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 				longest_match = 0
 				longest_indices = []
 				arrays_to_check = []
-				
+				# If lost spacers are found in either of these two groups it indicates independent gain of the same spacers in different lineages.
+				arrays_of_concern = non_ancestor_children_spacers + other_child_children_spacers 
 				for s, spacer in enumerate(spacers_to_check):
-					for a, array in enumerate(non_ancestor_children_spacers):
+					for a, array in enumerate(arrays_of_concern):
 						if spacer in array:
 							arrays_to_check.append(a)
 				arrays_to_check = [i for i in set(arrays_to_check)]
@@ -873,7 +889,7 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 				else:
 					for a in arrays_to_check:
 						x = Array("x", spacers_to_check)
-						y = Array("y", non_ancestor_children_spacers[a])
+						y = Array("y", arrays_of_concern[a])
 						x.aligned, y.aligned = needle(x.spacers, y.spacers) # Find where the match is by aligning
 						x,y = find_modules(x,y) # Then identify any shared regions
 						shared_list = []
@@ -991,7 +1007,6 @@ def find_closest_array(array, array_dict, tree):
 
 	best_score = 9999999999
 	best_match = False
-
 	for array_id in array_dict.keys():
 		comparator_array = copy.deepcopy(array_dict[array_id])
 		comparator_array.reset()
@@ -1002,9 +1017,6 @@ def find_closest_array(array, array_dict, tree):
 			comparator_array.distance += comparator_array.events[k] * v
 			array.distance += array.events[k] * v
 
-		if array.id == "1027":
-			print(comparator_array.id)
-			array.distance
 		if any([i.type == "shared" for i in comparator_array.modules]):
 			# if comparator_array.distance < best_score:
 			if array.distance < best_score:
