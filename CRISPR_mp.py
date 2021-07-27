@@ -53,7 +53,7 @@ parser.add_argument(
 		help="Specify the parsimony cost of an indel event involving one or more spacers. Default: 1"
 	)
 parser.add_argument(
-	"-b",  dest="rep_indel", type=int, nargs="?", default = 50,
+	"-b",  dest="rep_indel", type=int, nargs="?", default = 20,
 		help="Specify the parsimony cost of an indel event involving one or more spacers that is independently acquired in multiple arrays. Default: 50"
 	)
 parser.add_argument(
@@ -984,7 +984,7 @@ def find_closest_array(array, array_dict, tree):
 		array (Array class instance): The array you want to find the closest match for.
 		array_dict (dict): The dictionary with values of Array class instances of arrays already in your tree
 		tree (Deondropy Tree class instance): The tree in which the arrays are located.
-		
+
 	Returns:
 		(Array class instance) The array already in your tree that is the most parsimonious match to the query array.
 	"""
@@ -996,11 +996,20 @@ def find_closest_array(array, array_dict, tree):
 		comparator_array = copy.deepcopy(array_dict[array_id])
 		comparator_array.reset()
 		comparator_array = count_parsimony_events(comparator_array, array, array_dict, tree, False)
+		array.reset()
+		array = count_parsimony_events(array, comparator_array, array_dict, tree, True)
 		for k,v in event_costs.items():
 			comparator_array.distance += comparator_array.events[k] * v
+			array.distance += array.events[k] * v
+
+		if array.id == "1027":
+			print(comparator_array.id)
+			array.distance
 		if any([i.type == "shared" for i in comparator_array.modules]):
-			if comparator_array.distance < best_score:
-				best_score = comparator_array.distance
+			# if comparator_array.distance < best_score:
+			if array.distance < best_score:
+				# best_score = comparator_array.distance
+				best_score = array.distance
 				best_match = comparator_array
 			elif comparator_array.distance == best_score:
 				if best_match.extant and not comparator_array.extant:
@@ -1320,7 +1329,7 @@ def plot_tree(tree, array_dict, filename):
 							spcolour = ("#000000", "#000000") #black
 							line_width = 0.04
 						# ax.plot([start_pos_x-2*spacer_count*hscale, start_pos_x-2*spacer_count*hscale-2*hscale],[start_pos_y, start_pos_y], color=spcolour, linewidth=line_width, solid_capstyle="butt")
-						ax.fill_between([start_pos_x-(2*spacer_count+0.03)*hscale, start_pos_x-(2*spacer_count+0.03)*hscale-1.97*hscale], start_pos_y-line_width*vscale, start_pos_y+line_width*vscale, color=spcolour[0], edgecolor=spcolour[1], linewidth=1.5*hscale)
+						ax.fill_between([start_pos_x-(2*spacer_count+0.03)*hscale, start_pos_x-(2*spacer_count+0.03)*hscale-1.97*hscale], start_pos_y-line_width*vscale, start_pos_y+line_width*vscale, color=spcolour[0], edgecolor=spcolour[1], linewidth=4*hscale)
 						spacer_count+=1
 
 
@@ -1340,7 +1349,7 @@ def plot_tree(tree, array_dict, filename):
 						spcolour = ("#000000", "#000000") #black
 						line_width = 0.04
 					# ax.plot([start_pos_x-2*n*hscale, start_pos_x-2*n*hscale-2*hscale],[start_pos_y, start_pos_y], color=spcolour, linewidth=line_width, solid_capstyle="butt")
-					ax.fill_between([start_pos_x-(2*n+0.03)*hscale, start_pos_x-(2*n+0.03)*hscale-1.97*hscale], start_pos_y-line_width*vscale, start_pos_y+line_width*vscale, color=spcolour[0], edgecolor=spcolour[1], linewidth=1.5*hscale)
+					ax.fill_between([start_pos_x-(2*n+0.03)*hscale, start_pos_x-(2*n+0.03)*hscale-1.97*hscale], start_pos_y-line_width*vscale, start_pos_y+line_width*vscale, color=spcolour[0], edgecolor=spcolour[1], linewidth=4*hscale)
 
 
 		if not args.emphasize_diffs:
@@ -1356,7 +1365,7 @@ def plot_tree(tree, array_dict, filename):
 					spcolour = ("#000000", "#000000") #black
 					line_width = 0.04 # 4*vscale
 				# ax.plot([start_pos_x-2*n*hscale, start_pos_x-2*n*hscale-2*hscale],[start_pos_y, start_pos_y], color=spcolour, linewidth=line_width, solid_capstyle="butt")
-				ax.fill_between([start_pos_x-(2*n+0.03)*hscale, start_pos_x-(2*n+0.03)*hscale-1.97*hscale], start_pos_y-line_width*vscale, start_pos_y+line_width*vscale, color=spcolour[0], edgecolor=spcolour[1], linewidth=1.5*hscale)
+				ax.fill_between([start_pos_x-(2*n+0.03)*hscale, start_pos_x-(2*n+0.03)*hscale-1.97*hscale], start_pos_y-line_width*vscale, start_pos_y+line_width*vscale, color=spcolour[0], edgecolor=spcolour[1], linewidth=4*hscale)
 
 	plt.axis('off')
 	plt.tight_layout()
