@@ -1251,9 +1251,15 @@ def plot_tree(tree, array_dict, filename):
 	for array, location in node_locs.items():
 		# Add label first
 		x ,y = location
-		ax.text(x-0.05*hscale, y-0.4*hscale, array, ha='right', fontsize=50*hscale)
+		ax.text(x-0.25*hscale, y-0.4*hscale, array, ha='right', fontsize=50*hscale)
 		# then add branches
 		first_node = tree.find_node_with_taxon_label(array)
+
+		# First add branch lengths if user desires
+
+		if args.branch_lengths:
+			if first_node.edge_length != 0:
+				ax.text(x+(first_node.edge_length/2)*hscale, y-0.7*hscale, first_node.edge_length, ha='center', fontsize=25*hscale)
 		
 		# Draw first branch
 		
@@ -1634,7 +1640,7 @@ all_arrays = [array.spacers for array in arrays]
 if len(labels) < 9:
 	array_choices = [list(i) for i in permutations(arrays, len(arrays))]
 	random.shuffle(array_choices)
-	
+
 
 
 	if len(array_choices) > args.replicates:
