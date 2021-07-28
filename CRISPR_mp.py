@@ -41,6 +41,10 @@ parser.add_argument(
 	help="When plotting a representation of the tree with cartooned arrays, emphasize locations where arrays differ from their hypothetical ancestor."
 	)
 parser.add_argument(
+	"-b", dest="branch_lengths", action='store_true', 
+	help="When plotting a representation of the tree Include branch lengths at midpoint on branches. N.B. This does not control inclusion of branch lengths in newick format tree output, which are always included."
+	)
+parser.add_argument(
 	"-r",  dest="replicates", type=int, nargs="?", default = 1,
 		help="Specify number of replicates of tree building to perform. The more replicates, the greater the chance that a better tree will be found. Default: 1"
 	)
@@ -53,7 +57,7 @@ parser.add_argument(
 		help="Specify the parsimony cost of an indel event involving one or more spacers. Default: 1"
 	)
 parser.add_argument(
-	"-b",  dest="rep_indel", type=int, nargs="?", default = 20,
+	"-x",  dest="rep_indel", type=int, nargs="?", default = 20,
 		help="Specify the parsimony cost of an indel event involving one or more spacers that is independently acquired in multiple arrays. Default: 50"
 	)
 parser.add_argument(
