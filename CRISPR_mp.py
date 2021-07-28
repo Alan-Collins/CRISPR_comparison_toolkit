@@ -1632,7 +1632,7 @@ all_arrays = [array.spacers for array in arrays]
 
 
 if len(labels) < 9:
-	array_choices = [i for i in permutations(arrays, len(arrays))]
+	array_choices = [list(i) for i in permutations(arrays, len(arrays))]
 	random.shuffle(array_choices)
 	
 
