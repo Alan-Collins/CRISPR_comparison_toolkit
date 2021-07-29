@@ -808,22 +808,24 @@ def count_parsimony_events(child, ancestor, array_dict, tree, parent_comparison)
 				child.events['acquisition'] += len(mod.indices)
 			idx = mod.indices[-1] + 1 # Skip the rest of this module.
 			continue
-		if mod.type == 'indel_gap' or mod.type == "indel_mm":
+		elif mod.type == 'indel_gap' or mod.type == "indel_mm":
 			if parent_comparison:
-				child = identify_repeat_indels(child, ancestor, array_dict, mod, ancestor.module_lookup[idx], tree)
+				if not all([s == '-' for s in mod.spacers]):
+					child = identify_repeat_indels(child, ancestor, array_dict, mod, ancestor.module_lookup[idx], tree)
+				else:
+					child.events['indel'] += 1
 			else:
 				child.events['indel'] += 1
 			idx = mod.indices[-1] + 1 # Skip the rest of this module.
-		if mod.type == 'duplication':
+		elif mod.type == 'duplication':
 			child.events['duplication'] += 1
 			idx = mod.indices[-1] + 1 # Skip the rest of this module.
-		if mod.type == "trailer_loss":
+		elif mod.type == "trailer_loss":
 			child.events['trailer_loss'] += 1
 			idx = mod.indices[-1] + 1
 			pass
 		else:
 			idx += 1
-
 	return child
 
 
@@ -874,10 +876,6 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 			other_child_children_ids = [node.taxon.label for node in other_child_children]
 			other_child_children_spacers = [array_dict[array].spacers for array in other_child_children_ids]
 
-
-
-			spacer_hits = defaultdict(list)
-			repeated_indel_instances = []
 			repeat_search = True
 			original_spacers_to_check = spacers_to_check = module.spacers # Store which spacers to look for and an original copy to maintain index information
 			array_IDs_of_concern = non_ancestor_children_ids + other_child_children_ids
@@ -907,7 +905,7 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 									longest_spacers = [s for s in spacers_to_check if s in m.spacers]
 									partner = [array_IDs_of_concern[a]]
 									partner_extant = array_dict[array_IDs_of_concern[a]].extant
-								elif len(m.indices) == longest_match and (m.spacers) == set(longest_spacers):
+								elif len(m.indices) == longest_match and set(m.spacers) == set(longest_spacers):
 									# If the modules are equally long, prefer to keep extant arrays.
 									if not partner_extant and array_dict[array_IDs_of_concern[a]].extant:
 										longest_match = len(m.indices)
@@ -944,7 +942,7 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 							break
 					if len(new_ac_mod.spacers) > 0: # If any acquisition was found then add the new acquisition module to the list of new modules
 						new_modules.append(new_ac_mod)
-				if spacers_to_check != module.indices: # If we haven't found anything, no need to update the existing indel. This check is passed if we found something
+				if spacers_to_check != module.spacers: # If we haven't found anything, no need to update the existing indel. This check is passed if we found something
 					if len(spacer_indices) > 0: # Then find consecutive runs of spacers. Each must be an indel
 						new_indel_mod = Spacer_Module() # Make a new Spacer_Module to store the indel.
 						new_indel_mod.type = "indel" # Call it just an idel as gap or mm relative to comparator is not assessed here.
@@ -1904,6 +1902,7 @@ spacer_cols_dict  = {}
 
 for i, spacer in enumerate(sorted(non_singleton_spacers)):
 	spacer_cols_dict[spacer] = colours[i]
+
 
 try:
 
