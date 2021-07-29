@@ -152,7 +152,7 @@ class Spacer_Module():
 		self.type = ""
 		self.spacers = []
 		self.indices = []
-		self.partner = ""
+		self.partner = []
 		
 
 def needle(seq1, seq2, match = 100, mismatch = -1, gap = -2):
@@ -906,7 +906,7 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 									longest_match = len(m.indices)
 									longest_indices = [original_spacers_to_check.index(s) for s in spacers_to_check if s in original_spacers_to_check]
 									longest_spacers = [s for s in spacers_to_check if s in m.spacers]
-									partner = array_IDs_of_concern[a]
+									partner = [array_IDs_of_concern[a]]
 									partner_extant = array_dict[array_IDs_of_concern[a]].extant
 								elif len(m.indices) == longest_match:
 									# If the modules are equally long, prefer to keep extant arrays.
@@ -914,8 +914,12 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 										longest_match = len(m.indices)
 										longest_indices = [original_spacers_to_check.index(s) for s in spacers_to_check if s in original_spacers_to_check]
 										longest_spacers = [s for s in spacers_to_check if s in m.spacers]
-										partner = array_IDs_of_concern[a]
+										partner = [array_IDs_of_concern[a]]
 										partner_extant = array_dict[array_IDs_of_concern[a]].extant
+									else:
+										if array_dict[array_IDs_of_concern[a]].extant:
+											if array_IDs_of_concern[a] not in partner:
+												partner.append(array_IDs_of_concern[a])
 					new_rep_indel_mod = Spacer_Module()
 					new_rep_indel_mod.spacers = longest_spacers
 					new_rep_indel_mod.indices = [module.indices[i] for i in longest_indices]
@@ -1301,6 +1305,8 @@ def plot_tree(tree, array_dict, filename):
 
 	# Add cartoon arrays to show hypothetical ancestral states
 	# plot each array using the coordinates of the array label on the plotted tree.
+	rep_indel_report_count = 1 # If repeat_indel found with multiple arrays as possible partners, annotate one on the tree and print the rest to stdout if user wants emphasis.
+	rep_indel_message_printed = False # Print a help message the first time a list of possible rep indel partners are found.
 
 	for array, location in node_locs.items():
 		# Add label first
@@ -1376,8 +1382,16 @@ def plot_tree(tree, array_dict, filename):
 								ax.fill_between([start_pos_x-2*(spacer_count+nspacers)*hscale-0.5*hscale-0.5*hscale, start_pos_x-2*spacer_count*hscale], start_pos_y-0.3*vscale, start_pos_y-0.5*vscale, color="#cc3300", edgecolor='none')
 								
 								# Add Array ID of the array in which the spacers of this predicted repeated_indel can be found
+								if len(diff_type.partner) > 1:
+									ax.text(start_pos_x-2*(spacer_count+nspacers/2)*hscale-0.5*hscale, start_pos_y-1*vscale, "\n".join([diff_type.partner[0], "event {}".format(rep_indel_report_count)]), color="#cc3300", ha='center', fontsize=40*hscale)
+									if not rep_indel_message_printed:
+										print("Repeated indels were identified with multiple possible partners. Those cases will be annotated in the tree png file with the one of the arrays identified as a partner followed by an event number corresponding to one of the lists of partner arrays below:\n\n")
+										rep_indel_message_printed = True
+									print("Event {}: {}\n\n".format(rep_indel_report_count, " ".join(diff_type.partner)))
+									rep_indel_report_count += 1
 
-								ax.text(start_pos_x-2*(spacer_count+nspacers/2)*hscale-0.5*hscale, start_pos_y-0.8*vscale, diff_type.partner, color="#cc3300", ha='center', fontsize=40*hscale)
+								else:
+									ax.text(start_pos_x-2*(spacer_count+nspacers/2)*hscale-0.5*hscale, start_pos_y-0.8*vscale, diff_type.partner[0], color="#cc3300", ha='center', fontsize=40*hscale)
 
 								start_pos_x-=0.5*hscale # Shift future spacers a bit to make spacer for this line.
 								# Shift again after the indel region
