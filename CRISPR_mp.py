@@ -890,16 +890,15 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 				for spacer in spacers_to_check:
 					for a, array in enumerate(arrays_of_concern):
 						if spacer in array:
-							arrays_to_check.append(a)
+							arrays_to_check.append(a)		
 				if len(arrays_to_check) == 0:
-					repeat_search = False
+					repeat_search = False 
 				else:
 					for a in arrays_to_check:
 						x = Array("x", spacers_to_check)
 						y = Array("y", arrays_of_concern[a])
 						x.aligned, y.aligned = needle(x.spacers, y.spacers) # Find where the match is by aligning
 						x,y = find_modules(x,y) # Then identify any shared regions
-						shared_list = []
 						for m in x.modules: # Pull out the shared modules
 							if m.type == "shared":
 								if len(m.indices) > longest_match:
@@ -928,7 +927,7 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 					new_modules.append(new_rep_indel_mod)
 					repeated_indels += 1
 					# Remove spacers that have been found from list and look again
-					spacers_to_check = [s for n, s in enumerate(spacers_to_check) if n not in longest_indices]
+					spacers_to_check = [s for s in spacers_to_check if s not in longest_spacers]
 			if len(spacers_to_check) > 0:
 				# identify consecutive runs of spacers that are unique to this array
 				spacer_indices = [n for n, s in enumerate(module.spacers) if s in spacers_to_check]
