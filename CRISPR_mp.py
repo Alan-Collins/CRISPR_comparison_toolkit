@@ -841,7 +841,8 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 		(Array class instance) The child array, modified to contain newly identified Spacer_Module instances if any are found.
 	"""
 
-	indels = repeated_indels = acquisition = 0
+	indels = repeated_indels = acquisition = 0 # Start counters to keep track of events identified
+	new_modules = [] # Initialize a list to contain new modules if any are found
 	if len(tree) > 1:
 		ancestor_node = tree.find_node_with_taxon_label(ancestor.id)
 		if ancestor_node:
@@ -879,7 +880,6 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 			repeated_indel_instances = []
 			repeat_search = True
 			spacers_to_check = module.spacers
-			new_modules = []
 			while repeat_search:
 				longest_match = 0
 				longest_indices = []
@@ -985,7 +985,7 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 
 	if len(new_modules) > 0: # If modules have been found within the query module then it should be replaced in the .modules list with the newly found modules and the .module_lookup dict updated.
 		new_modules.sort(key=lambda x: int(x.indices[0])) # Sort the modules in order of indices
-		idx = child.modules.index(modules) # find the index of the module being replaced in the .modules list
+		idx = child.modules.index(module) # find the index of the module being replaced in the .modules list
 		del child.modules[idx] # Remove the old module from the list.
 		for new_mod in new_modules:
 			# Add the new module to the .modules and .lookup_modules
