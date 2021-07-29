@@ -910,7 +910,7 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 									partner = array_IDs_of_concern[a]
 					new_rep_indel_mod = Spacer_Module()
 					new_rep_indel_mod.spacers = longest_spacers
-					new_rep_indel_mod.indices = longest_indices
+					new_rep_indel_mod.indices = [module.indices[i] for i in longest_indices]
 					new_rep_indel_mod.type = "repeated_indel"
 					new_rep_indel_mod.partner = partner
 					new_modules.append(new_rep_indel_mod)
@@ -925,7 +925,7 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 					new_ac_mod = Spacer_Module()
 					new_ac_mod.type = "acquisition"
 					while spacer_indices[0] == expected_index:
-						new_ac_mod.indices.append(spacer_indices[0])
+						new_ac_mod.indices.append(module.indices[spacer_indices[0]])
 						new_ac_mod.spacers.append(module.spacers[spacer_indices[0]])
 						acquisition += 1 # If true then this spacer was acquired since ancestor.
 						expected_index = spacer_indices.pop(0)+1 # Update expected index to be the one higher. Remove the index from the list so it isn't later counted as an indel
@@ -933,30 +933,31 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 							break
 					if len(new_ac_mod.spacers) > 0: # If any acquisition was found then add the new acquisition module to the list of new modules
 						new_modules.append(new_ac_mod)
-				if len(spacer_indices) > 0: # Then find consecutive runs of spacers. Each must be an indel
-					new_indel_mod = Spacer_Module() # Make a new Spacer_Module to store the indel.
-					new_indel_mod.type = "indel" # Call it just an idel as gap or mm relative to comparator is not assessed here.
-					last_n = False # Keep track of what the last index was to know if this is a consecutive run.
-					for n in spacer_indices:
-						if n == spacer_indices[-1]: # If the list is over then add the last indel and break
-							new_indel_mod.indices.append(n)
-							new_indel_mod.spacers.append(module.spacers[n])
-							new_modules.append(new_indel_mod)
-							indels += 1
-							break
-						if last_n:
-							if n != last_n + 1: # If this number is not one more than the last then consecutive run is over
+				if spacers_to_check != module.indices: # If we haven't found anything, no need to update the existing indel. This check is passed if we found something
+					if len(spacer_indices) > 0: # Then find consecutive runs of spacers. Each must be an indel
+						new_indel_mod = Spacer_Module() # Make a new Spacer_Module to store the indel.
+						new_indel_mod.type = "indel" # Call it just an idel as gap or mm relative to comparator is not assessed here.
+						last_n = False # Keep track of what the last index was to know if this is a consecutive run.
+						for n in spacer_indices:
+							if n == spacer_indices[-1]: # If the list is over then add the last indel and break
+								new_indel_mod.indices.append(module.indices[n])
+								new_indel_mod.spacers.append(module.spacers[n])
 								new_modules.append(new_indel_mod)
-								new_indel_mod = Spacer_Module() # Make a new Spacer_Module to store the next indel.
-								new_indel_mod.type = "indel"
 								indels += 1
-							last_n = n
-							new_indel_mod.indices.append(n)
-							new_indel_mod.spacers.append(module.spacers[n])
-						else: # Otherwise move to the next number
-							last_n = n 
-							new_indel_mod.indices.append(n)
-							new_indel_mod.spacers.append(module.spacers[n])
+								break
+							if last_n:
+								if n != last_n + 1: # If this number is not one more than the last then consecutive run is over
+									new_modules.append(new_indel_mod)
+									new_indel_mod = Spacer_Module() # Make a new Spacer_Module to store the next indel.
+									new_indel_mod.type = "indel"
+									indels += 1
+								last_n = n
+								new_indel_mod.indices.append(module.indices[n])
+								new_indel_mod.spacers.append(module.spacers[n])
+							else: # Otherwise move to the next number
+								last_n = n 
+								new_indel_mod.indices.append(module.indices[n])
+								new_indel_mod.spacers.append(module.spacers[n])
 			if module.type == 'no_acquisition':
 				# None of the above will have run if this module is just gaps.
 				# In that case we need to check if the absence of those spacers in the child array represents simply not having acquired them or if it would require the loss and regain of the same spacers at different points in the tree.
@@ -1374,7 +1375,7 @@ def plot_tree(tree, array_dict, filename):
 								# Shift again after the indel region
 								reshift_loc = diff_type.indices[0]-1
 								
-							if diff_type.type == 'indel_gap' or diff_type.type == 'indel_mm' or diff_type.type == 'indel': # or diff_type.type == 'trailer_loss':
+							if diff_type.type == 'indel_gap' or diff_type.type == 'indel_mm' or diff_type.type == 'indel': 
 								if spacer == '-':
 									ax.plot([start_pos_x-2*spacer_count*hscale, start_pos_x-2*spacer_count*hscale-2*hscale],[start_pos_y+0.3*vscale, start_pos_y-0.3*vscale], color="#666666", linewidth=3*vscale, solid_capstyle="butt")
 									ax.plot([start_pos_x-2*spacer_count*hscale, start_pos_x-2*spacer_count*hscale-2*hscale],[start_pos_y-0.3*vscale, start_pos_y+0.3*vscale], color="#666666", linewidth=3*vscale, solid_capstyle="butt")
