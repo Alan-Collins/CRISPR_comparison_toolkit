@@ -803,18 +803,14 @@ def count_parsimony_events(child, ancestor, array_dict, tree, parent_comparison)
 		# Checking no acquisition allows comparison of child-child as well as child-ancestor arrays.
 			if parent_comparison: 
 				# If comparing to a nodes ancestor, then deletions of spacers from the leader end may look like acquisition. This must be checked to make sure deletions are not being miscalled as acquisitions.
-				indels, repeated_indels, acquisition = identify_repeat_indels(child, ancestor, array_dict, mod, ancestor.module_lookup[idx], tree)
-				child.events['acquisition'] += acquisition
-				child.events['repeated_indel'] += repeated_indels
+				child = identify_repeat_indels(child, ancestor, array_dict, mod, ancestor.module_lookup[idx], tree)
 			else:
 				child.events['acquisition'] += len(mod.indices)
 			idx = mod.indices[-1] + 1 # Skip the rest of this module.
 			continue
 		if mod.type == 'indel_gap' or mod.type == "indel_mm":
 			if parent_comparison:
-				indels, repeated_indels, _ = identify_repeat_indels(child, ancestor, array_dict, mod, ancestor.module_lookup[idx], tree)
-				child.events['indel'] += indels
-				child.events['repeated_indel'] += repeated_indels
+				child = identify_repeat_indels(child, ancestor, array_dict, mod, ancestor.module_lookup[idx], tree)
 			else:
 				child.events['indel'] += 1
 			idx = mod.indices[-1] + 1 # Skip the rest of this module.
@@ -842,7 +838,7 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 		tree (Deondropy Tree class instance): The tree in which the arrays are located.
 	
 	Returns:
-		(tuple) count of indels, repeat_indels, and of acquisitions.
+		(Array class instance) The child array, modified to contain newly identified Spacer_Module instances if any are found.
 	"""
 
 	indels = repeated_indels = acquisition = 0
@@ -883,13 +879,14 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 			repeated_indel_instances = []
 			repeat_search = True
 			spacers_to_check = module.spacers
+			new_modules = []
 			while repeat_search:
 				longest_match = 0
 				longest_indices = []
 				arrays_to_check = []
 				# If lost spacers are found in either of these two groups it indicates independent gain of the same spacers in different lineages.
 				arrays_of_concern = non_ancestor_children_spacers + other_child_children_spacers 
-				for s, spacer in enumerate(spacers_to_check):
+				for spacer in spacers_to_check:
 					for a, array in enumerate(arrays_of_concern):
 						if spacer in array:
 							arrays_to_check.append(a)
@@ -908,6 +905,14 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 								if len(m.indices) > longest_match:
 									longest_match = len(m.indices)
 									longest_indices = [n for n, _ in enumerate(spacers_to_check) if _ in m.spacers]
+									longest_spacers = [s for s in spacers_to_check if s in m.spacers]
+									partner = arrays_of_concern[a]
+					new_rep_indel_mod = Spacer_Module()
+					new_rep_indel_mod.spacers = longest_spacers
+					new_rep_indel_mod.indices = longest_indices
+					new_rep_indel_mod.type = "repeated_indel"
+					new_rep_indel_mod.partner = partner
+					new_modules.append(new_rep_indel_mod)
 					repeated_indels += 1
 					# Remove spacers that have been found from list and look again
 					spacers_to_check = [s for n, s in enumerate(spacers_to_check) if n not in longest_indices]
@@ -916,23 +921,41 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 				spacer_indices = [n for n, s in enumerate(module.spacers) if s in spacers_to_check]
 				if module.type == "acquisition":
 					expected_index = 0 # If this is an acquisition then the first spacer will still be present.
+					new_ac_mod = Spacer_Module()
+					new_ac_mod.type = "acquisition"
 					while spacer_indices[0] == expected_index:
+						new_ac_mod.indices.append(spacer_indices[0])
+						new_ac_mod.spacers.append(module.spacers[spacer_indices[0]])
 						acquisition += 1 # If true then this spacer was acquired since ancestor.
 						expected_index = spacer_indices.pop(0)+1 # Update expected index to be the one higher. Remove the index from the list so it isn't later counted as an indel
 						if len(spacer_indices) == 0: # If we finish the list then break the while loop
 							break
+					if len(new_ac_mod.spacers) > 0: # If any acquisition was found then add the new acquisition module to the list of new modules
+						new_modules.append(new_ac_mod)
 				if len(spacer_indices) > 0: # Then find consecutive runs of spacers. Each must be an indel
+					new_indel_mod = Spacer_Module() # Make a new Spacer_Module to store the indel.
+					new_indel_mod.type = "indel" # Call it just an idel as gap or mm relative to comparator is not assessed here.
 					last_n = False # Keep track of what the last index was to know if this is a consecutive run.
 					for n in spacer_indices:
 						if n == spacer_indices[-1]: # If the list is over then add the last indel and break
+							new_indel_mod.indices.append(n)
+							new_indel_mod.spacers.append(module.spacers[n])
+							new_modules.append(new_indel_mod)
 							indels += 1
 							break
 						if last_n:
 							if n != last_n + 1: # If this number is not one more than the last then consecutive run is over
+								new_modules.append(new_indel_mod)
+								new_indel_mod = Spacer_Module() # Make a new Spacer_Module to store the next indel.
+								new_indel_mod.type = "indel"
 								indels += 1
 							last_n = n
+							new_indel_mod.indices.append(n)
+							new_indel_mod.spacers.append(module.spacers[n])
 						else: # Otherwise move to the next number
 							last_n = n 
+							new_indel_mod.indices.append(n)
+							new_indel_mod.spacers.append(module.spacers[n])
 			if module.type == 'no_acquisition':
 				# None of the above will have run if this module is just gaps.
 				# In that case we need to check if the absence of those spacers in the child array represents simply not having acquired them or if it would require the loss and regain of the same spacers at different points in the tree.
@@ -956,8 +979,23 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 		else:
 			indels = 1
 
+	child.events['acquisition'] += acquisition
+	child.events['indel'] += indels
+	child.events['repeated_indel'] += repeated_indels
+
+	if len(new_modules) > 0: # If modules have been found within the query module then it should be replaced in the .modules list with the newly found modules and the .module_lookup dict updated.
+		new_modules.sort(key=lambda x: int(x.indices[0])) # Sort the modules in order of indices
+		idx = child.modules.index(modules) # find the index of the module being replaced in the .modules list
+		del child.modules[idx] # Remove the old module from the list.
+		for new_mod in new_modules:
+			# Add the new module to the .modules and .lookup_modules
+			child.modules.append(new_mod)
+			for idx in new_mod.indices:
+				child.module_lookup[idx] = new_mod
+		child.sort_modules() # Sort the modules so the newly added ones are in the correct order.
+
 			
-	return indels, repeated_indels, acquisition
+	return child
 
 
 def resolve_pairwise_parsimony(array1, array2, all_arrays, array_dict, node_ids, node_count, tree):
@@ -1315,7 +1353,7 @@ def plot_tree(tree, array_dict, filename):
 
 					if n == diff_type.indices[-1]:
 						if diff_type.type != 'shared':
-							if diff_type.type == 'indel_gap' or diff_type.type == 'indel_mm': # or diff_type.type == 'trailer_loss':
+							if diff_type.type == 'indel_gap' or diff_type.type == 'indel_mm' or diff_type.type == 'indel': # or diff_type.type == 'trailer_loss':
 								if spacer == '-':
 									ax.plot([start_pos_x-2*spacer_count*hscale, start_pos_x-2*spacer_count*hscale-2*hscale],[start_pos_y+0.3*vscale, start_pos_y-0.3*vscale], color="#666666", linewidth=3*vscale, solid_capstyle="butt")
 									ax.plot([start_pos_x-2*spacer_count*hscale, start_pos_x-2*spacer_count*hscale-2*hscale],[start_pos_y-0.3*vscale, start_pos_y+0.3*vscale], color="#666666", linewidth=3*vscale, solid_capstyle="butt")
