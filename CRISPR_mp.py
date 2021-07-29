@@ -819,6 +819,10 @@ def count_parsimony_events(child, ancestor, array_dict, tree, parent_comparison)
 		if mod.type == 'duplication':
 			child.events['duplication'] += 1
 			idx = mod.indices[-1] + 1 # Skip the rest of this module.
+		if mod.type == "trailer_loss":
+			child.events['trailer_loss'] += 1
+			idx = mod.indices[-1] + 1
+			pass
 		else:
 			idx += 1
 
