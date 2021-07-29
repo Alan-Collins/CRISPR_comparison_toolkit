@@ -908,6 +908,15 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 									longest_indices = [n for n, _ in enumerate(spacers_to_check) if _ in m.spacers]
 									longest_spacers = [s for s in spacers_to_check if s in m.spacers]
 									partner = array_IDs_of_concern[a]
+									partner_extant = array_dict[array_IDs_of_concern[a]].extant
+								elif len(m.indices) == longest_match:
+									# If the modules are equally long, prefer to keep extant arrays.
+									if not partner_extant and array_dict[array_IDs_of_concern[a]].extant:
+										longest_match = len(m.indices)
+										longest_indices = [n for n, _ in enumerate(spacers_to_check) if _ in m.spacers]
+										longest_spacers = [s for s in spacers_to_check if s in m.spacers]
+										partner = array_IDs_of_concern[a]
+										partner_extant = array_dict[array_IDs_of_concern[a]].extant
 					new_rep_indel_mod = Spacer_Module()
 					new_rep_indel_mod.spacers = longest_spacers
 					new_rep_indel_mod.indices = [module.indices[i] for i in longest_indices]
