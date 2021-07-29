@@ -146,11 +146,13 @@ class Spacer_Module():
 			- shared: Region where both arrays have the same spacers.
 		spacers (list): A list of the spacer IDs in this module.
 		indices (list): A list of the indices in the respective array where this spacer module is located.
+		partner (str): If the type of this module is "repeated_indel", then this stores the ID of the array that was identified as the other instance of this indel.
 	"""
 	def __init__(self):
 		self.type = ""
 		self.spacers = []
 		self.indices = []
+		self.partner = ""
 		
 
 def needle(seq1, seq2, match = 100, mismatch = -1, gap = -2):
