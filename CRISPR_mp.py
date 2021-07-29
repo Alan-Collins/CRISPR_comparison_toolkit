@@ -1304,7 +1304,7 @@ def plot_tree(tree, array_dict, filename):
 
 		if args.branch_lengths:
 			if first_node.edge_length != 0:
-				ax.text(x+(first_node.edge_length/2)*hscale, y-0.7*hscale, first_node.edge_length, ha='center', fontsize=25*hscale)
+				ax.text(x+(first_node.edge_length/2)*hscale, y-1.5*hscale, first_node.edge_length, ha='center', fontsize=30*hscale)
 		
 		# Draw first branch
 		
@@ -1313,7 +1313,7 @@ def plot_tree(tree, array_dict, filename):
 		y1 = node_locs[first_node.taxon.label][1]
 		y2 = node_locs[first_node.taxon.label][1]
 
-		ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1*vscale, solid_capstyle="butt")
+		ax.plot([x1, x2], [y1, y2], color='black', linewidth = 1*vscale, solid_capstyle="butt")
 
 		if len(first_node.sibling_nodes()) == 1:
 			second_node = first_node.sibling_nodes()[0]
@@ -1324,7 +1324,7 @@ def plot_tree(tree, array_dict, filename):
 			y1 = node_locs[second_node.taxon.label][1]
 			y2 = node_locs[second_node.taxon.label][1]
 
-			ax.plot([x1, x2], [y1, y2],color = 'black', linewidth = 1*vscale, solid_capstyle="butt")
+			ax.plot([x1, x2], [y1, y2], color='black', linewidth = 1*vscale, solid_capstyle="butt")
 
 			# draw line between branches
 
@@ -1332,7 +1332,7 @@ def plot_tree(tree, array_dict, filename):
 			y1 = node_locs[first_node.taxon.label][1]
 			y2 = node_locs[second_node.taxon.label][1]
 
-			ax.plot([x2, x2], [y1, y2],color = 'black', linewidth = 1*vscale, solid_capstyle="butt")
+			ax.plot([x2, x2], [y1, y2], color='black', linewidth = 1*vscale, solid_capstyle="butt")
 
 			# Then add spacers and highligh differences
 
@@ -1355,8 +1355,24 @@ def plot_tree(tree, array_dict, filename):
 					if n == diff_type.indices[-1]:
 						if diff_type.type != 'shared':
 							if diff_type.type == "repeated_indel":
-								print(diff_type.partner)
-								sys.exit()
+								# Plot a red box around repeated indels
+								nspacers = len([child.aligned[i] for i in diff_type.indices if child.aligned[i] != '-'])
+								# First bar
+								ax.fill_between([start_pos_x-2*spacer_count*hscale-0.5*hscale, start_pos_x-2*spacer_count*hscale],start_pos_y+0.5*vscale, start_pos_y-0.5*vscale, color="#cc3300", edgecolor='none')
+								# Second bar
+								ax.fill_between([start_pos_x-2*(spacer_count+nspacers)*hscale-0.5*hscale-0.5*hscale, start_pos_x-2*(spacer_count+nspacers)*hscale-0.5*hscale], start_pos_y+0.5*vscale, start_pos_y-0.5*vscale, color="#cc3300", edgecolor='none')
+								# Top bar
+								ax.fill_between([start_pos_x-2*(spacer_count+nspacers)*hscale-0.5*hscale-0.5*hscale, start_pos_x-2*spacer_count*hscale], start_pos_y+0.3*vscale, start_pos_y+0.5*vscale, color="#cc3300", edgecolor='none')
+								# Bottom bar
+								ax.fill_between([start_pos_x-2*(spacer_count+nspacers)*hscale-0.5*hscale-0.5*hscale, start_pos_x-2*spacer_count*hscale], start_pos_y-0.3*vscale, start_pos_y-0.5*vscale, color="#cc3300", edgecolor='none')
+								
+								# Add Array ID of the array in which the spacers of this predicted repeated_indel can be found
+
+								ax.text(start_pos_x-2*(spacer_count+nspacers/2)*hscale-0.5*hscale, start_pos_y-0.8*vscale, diff_type.partner, color="#cc3300", ha='center', fontsize=40*hscale)
+
+								start_pos_x-=0.5*hscale # Shift future spacers a bit to make spacer for this line.
+								# Shift again after the indel region
+								reshift_loc = diff_type.indices[0]-1
 								
 							if diff_type.type == 'indel_gap' or diff_type.type == 'indel_mm' or diff_type.type == 'indel': # or diff_type.type == 'trailer_loss':
 								if spacer == '-':
