@@ -879,19 +879,18 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 			spacer_hits = defaultdict(list)
 			repeated_indel_instances = []
 			repeat_search = True
-			spacers_to_check = module.spacers
+			original_spacers_to_check = spacers_to_check = module.spacers # Store which spacers to look for and an original copy to maintain index information
+			array_IDs_of_concern = non_ancestor_children_ids + other_child_children_ids
+			arrays_of_concern = non_ancestor_children_spacers + other_child_children_spacers
 			while repeat_search:
 				longest_match = 0
 				longest_indices = []
 				arrays_to_check = []
 				# If lost spacers are found in either of these two groups it indicates independent gain of the same spacers in different lineages.
-				array_IDs_of_concern = non_ancestor_children_ids + other_child_children_ids
-				arrays_of_concern = non_ancestor_children_spacers + other_child_children_spacers 
 				for spacer in spacers_to_check:
 					for a, array in enumerate(arrays_of_concern):
 						if spacer in array:
 							arrays_to_check.append(a)
-				arrays_to_check = [i for i in set(arrays_to_check)]
 				if len(arrays_to_check) == 0:
 					repeat_search = False
 				else:
@@ -905,7 +904,7 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 							if m.type == "shared":
 								if len(m.indices) > longest_match:
 									longest_match = len(m.indices)
-									longest_indices = [n for n, _ in enumerate(spacers_to_check) if _ in m.spacers]
+									longest_indices = [original_spacers_to_check.index(s) for s in spacers_to_check if s in original_spacers_to_check]
 									longest_spacers = [s for s in spacers_to_check if s in m.spacers]
 									partner = array_IDs_of_concern[a]
 									partner_extant = array_dict[array_IDs_of_concern[a]].extant
@@ -913,7 +912,7 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 									# If the modules are equally long, prefer to keep extant arrays.
 									if not partner_extant and array_dict[array_IDs_of_concern[a]].extant:
 										longest_match = len(m.indices)
-										longest_indices = [n for n, _ in enumerate(spacers_to_check) if _ in m.spacers]
+										longest_indices = [original_spacers_to_check.index(s) for s in spacers_to_check if s in original_spacers_to_check]
 										longest_spacers = [s for s in spacers_to_check if s in m.spacers]
 										partner = array_IDs_of_concern[a]
 										partner_extant = array_dict[array_IDs_of_concern[a]].extant
