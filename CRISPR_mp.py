@@ -57,7 +57,7 @@ parser.add_argument(
 		help="Specify the parsimony cost of an indel event involving one or more spacers. Default: 1"
 	)
 parser.add_argument(
-	"-z",  dest="rep_indel", type=int, nargs="?", default = 20,
+	"-z",  dest="rep_indel", type=int, nargs="?", default = 50,
 		help="Specify the parsimony cost of an indel event involving one or more spacers that is independently acquired in multiple arrays. Default: 50"
 	)
 parser.add_argument(
