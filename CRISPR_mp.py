@@ -885,6 +885,7 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 				longest_indices = []
 				arrays_to_check = []
 				# If lost spacers are found in either of these two groups it indicates independent gain of the same spacers in different lineages.
+				array_IDs_of_concern = non_ancestor_children_ids + other_child_children_ids
 				arrays_of_concern = non_ancestor_children_spacers + other_child_children_spacers 
 				for spacer in spacers_to_check:
 					for a, array in enumerate(arrays_of_concern):
@@ -906,7 +907,7 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 									longest_match = len(m.indices)
 									longest_indices = [n for n, _ in enumerate(spacers_to_check) if _ in m.spacers]
 									longest_spacers = [s for s in spacers_to_check if s in m.spacers]
-									partner = arrays_of_concern[a]
+									partner = array_IDs_of_concern[a]
 					new_rep_indel_mod = Spacer_Module()
 					new_rep_indel_mod.spacers = longest_spacers
 					new_rep_indel_mod.indices = longest_indices
@@ -1353,6 +1354,10 @@ def plot_tree(tree, array_dict, filename):
 
 					if n == diff_type.indices[-1]:
 						if diff_type.type != 'shared':
+							if diff_type.type == "repeated_indel":
+								print(diff_type.partner)
+								sys.exit()
+								
 							if diff_type.type == 'indel_gap' or diff_type.type == 'indel_mm' or diff_type.type == 'indel': # or diff_type.type == 'trailer_loss':
 								if spacer == '-':
 									ax.plot([start_pos_x-2*spacer_count*hscale, start_pos_x-2*spacer_count*hscale-2*hscale],[start_pos_y+0.3*vscale, start_pos_y-0.3*vscale], color="#666666", linewidth=3*vscale, solid_capstyle="butt")
