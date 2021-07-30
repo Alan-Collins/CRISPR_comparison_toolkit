@@ -41,6 +41,10 @@ parser.add_argument(
 	"-x", dest="extra_args", required = False, default = "",
 	help="If you want to provide any other arguments that are accepted by CRISPR_mp.py then provide them as a quoted string here."
 	)
+parser.add_argument(
+	"-l",  dest="cluster_limit", type=int, nargs="?", default = 50,
+	help="Specify largest cluster you want to analyze. Larger clusters take much longer to build trees so only processing smaller clusters may be desirable. A command to run clusters over this limit will be printed so that you can later run them if desired. Default: 50"
+	)
 
 args = parser.parse_args(sys.argv[1:])
 
@@ -112,7 +116,12 @@ for k,v in list(array_network_dict.items()):
 
 		command = "{} -a {} -r {} -o {} -t {} {} {} > {}".format(args.CRISPR_mp_py_path, infile, args.replicates, out_image, args.num_threads, args.extra_args, " ".join(v), out_file)
 
-		print("\nAligning the {} arrays in cluster {}\nCommand: {}\n".format(len(v), k, command))
+		if len(v) < args.cluster_limit:
 
-		run = subprocess.Popen(command, shell=True)
-		run.wait()
+			print("\nAligning the {} arrays in cluster {}\nCommand: {}\n".format(len(v), k, command))
+
+			run = subprocess.Popen(command, shell=True)
+			run.wait()
+
+		else:
+			print("\nCluster {} is larger than the size limit for processing and will not be run here. It contains {} arrays. If you would like to run this cluster separately, you can do so with the following command:\n{}\n".format(k, len(v), command))
