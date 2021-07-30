@@ -1196,6 +1196,7 @@ def plot_tree(tree, array_dict, filename):
 	spacer_width = 0.1 # Thickness off spacer cartoons.
 	outline = 2 # Thickness of spacer_outline
 	spacing = outline*0.11
+	spacer_size = 3.5
 
 	max_depth = tree_width
 
@@ -1374,17 +1375,17 @@ def plot_tree(tree, array_dict, filename):
 								# Plot a red box around repeated indels
 								nspacers = len([child.aligned[i] for i in diff_type.indices if child.aligned[i] != '-'])
 								# First bar
-								ax.fill_between([start_pos_x-2*spacer_count-0.5-spacing/2, start_pos_x-2*spacer_count-spacing/2],start_pos_y+0.5, start_pos_y-0.5, color="#cc3300", edgecolor='none')
+								ax.fill_between([start_pos_x-spacer_size*spacer_count-0.5-spacing/2, start_pos_x-spacer_size*spacer_count-spacing/2],start_pos_y+0.5, start_pos_y-0.5, color="#cc3300", edgecolor='none')
 								# Second bar
-								ax.fill_between([start_pos_x-2*(spacer_count+nspacers)-0.5-0.5-spacing/2, start_pos_x-2*(spacer_count+nspacers)-0.5-spacing/2], start_pos_y+0.5, start_pos_y-0.5, color="#cc3300", edgecolor='none')
+								ax.fill_between([start_pos_x-spacer_size*(spacer_count+nspacers)-0.5-0.5-spacing/2, start_pos_x-spacer_size*(spacer_count+nspacers)-0.5-spacing/2], start_pos_y+0.5, start_pos_y-0.5, color="#cc3300", edgecolor='none')
 								# Top bar
-								ax.fill_between([start_pos_x-2*(spacer_count+nspacers)-0.5-0.5-spacing/2, start_pos_x-2*spacer_count-spacing/2], start_pos_y+0.3, start_pos_y+0.5, color="#cc3300", edgecolor='none')
+								ax.fill_between([start_pos_x-spacer_size*(spacer_count+nspacers)-0.5-0.5-spacing/2, start_pos_x-spacer_size*spacer_count-spacing/2], start_pos_y+0.3, start_pos_y+0.5, color="#cc3300", edgecolor='none')
 								# Bottom bar
-								ax.fill_between([start_pos_x-2*(spacer_count+nspacers)-0.5-0.5-spacing/2, start_pos_x-2*spacer_count-spacing/2], start_pos_y-0.3, start_pos_y-0.5, color="#cc3300", edgecolor='none')
+								ax.fill_between([start_pos_x-spacer_size*(spacer_count+nspacers)-0.5-0.5-spacing/2, start_pos_x-spacer_size*spacer_count-spacing/2], start_pos_y-0.3, start_pos_y-0.5, color="#cc3300", edgecolor='none')
 
 								# Add Array ID of the array in which the spacers of this predicted repeated_indel can be found
 								if len(diff_type.partner) > 2:
-									ax.text(start_pos_x-2*(spacer_count+nspacers/2)-0.5, start_pos_y-1.3, "\n".join([diff_type.partner[0], "event {}".format(rep_indel_report_count)]), color="#cc3300", ha='center', fontsize=10)
+									ax.text(start_pos_x-spacer_size*(spacer_count+nspacers/2)-0.5, start_pos_y-1.3, "\n".join([diff_type.partner[0], "event {}".format(rep_indel_report_count)]), color="#cc3300", ha='center', fontsize=10)
 									if not rep_indel_message_printed:
 										print("Repeated indels were identified with multiple possible partners. Those cases will be annotated in the tree png file with the one of the arrays identified as a partner followed by an event number corresponding to one of the lists of partner arrays below:\n\n")
 										rep_indel_message_printed = True
@@ -1393,9 +1394,9 @@ def plot_tree(tree, array_dict, filename):
 
 								else:
 									if len(diff_type.partner) == 2:
-										ax.text(start_pos_x-2*(spacer_count+nspacers/2)-0.5, start_pos_y-1.3, "\n".join(diff_type.partner), color="#cc3300", ha='center', fontsize=10)
+										ax.text(start_pos_x-spacer_size*(spacer_count+nspacers/2)-0.5, start_pos_y-1.3, "\n".join(diff_type.partner), color="#cc3300", ha='center', fontsize=10)
 									else:
-										ax.text(start_pos_x-2*(spacer_count+nspacers/2)-0.5, start_pos_y-1, diff_type.partner[0], color="#cc3300", ha='center', fontsize=10)
+										ax.text(start_pos_x-spacer_size*(spacer_count+nspacers/2)-0.5, start_pos_y-1, diff_type.partner[0], color="#cc3300", ha='center', fontsize=10)
 
 								start_pos_x-=0.5 # Shift future spacers a bit to make spacer for this line.
 								# Shift again after the indel region
@@ -1403,19 +1404,19 @@ def plot_tree(tree, array_dict, filename):
 								
 							if diff_type.type == 'indel_gap' or diff_type.type == 'indel_mm' or diff_type.type == 'indel': 
 								if spacer == '-':
-									ax.plot([start_pos_x-2*spacer_count-spacing, start_pos_x-2*spacer_count-2+spacing],[start_pos_y+0.3, start_pos_y-0.3], color="#666666", linewidth=3, solid_capstyle="butt")
-									ax.plot([start_pos_x-2*spacer_count-spacing, start_pos_x-2*spacer_count-2+spacing],[start_pos_y-0.3, start_pos_y+0.3], color="#666666", linewidth=3, solid_capstyle="butt")
+									ax.plot([start_pos_x-spacer_size*spacer_count-spacing, start_pos_x-spacer_size*spacer_count-spacer_size+spacing],[start_pos_y+0.5, start_pos_y-0.5], color="#666666", linewidth=3, solid_capstyle="butt")
+									ax.plot([start_pos_x-spacer_size*spacer_count-spacing, start_pos_x-spacer_size*spacer_count-spacer_size+spacing],[start_pos_y-0.5, start_pos_y+0.5], color="#666666", linewidth=3, solid_capstyle="butt")
 									spacer_count+=1 # Shift future spacers a bit to make spacer for this line.
 								else:
 									nspacers = len([child.aligned[i] for i in diff_type.indices if child.aligned[i] != '-'])
 									# First bar
-									ax.fill_between([start_pos_x-2*spacer_count-0.5-spacing/2, start_pos_x-2*spacer_count-spacing/2],start_pos_y+0.5, start_pos_y-0.5, color="#666666", edgecolor='none')
+									ax.fill_between([start_pos_x-spacer_size*spacer_count-0.5-spacing/2, start_pos_x-spacer_size*spacer_count-spacing/2],start_pos_y+0.5, start_pos_y-0.5, color="#666666", edgecolor='none')
 									# Second bar
-									ax.fill_between([start_pos_x-2*(spacer_count+nspacers)-0.5-0.5-spacing/2, start_pos_x-2*(spacer_count+nspacers)-0.5-spacing/2], start_pos_y+0.5, start_pos_y-0.5, color="#666666", edgecolor='none')
+									ax.fill_between([start_pos_x-spacer_size*(spacer_count+nspacers)-0.5-0.5-spacing/2, start_pos_x-spacer_size*(spacer_count+nspacers)-0.5-spacing/2], start_pos_y+0.5, start_pos_y-0.5, color="#666666", edgecolor='none')
 									# Top bar
-									ax.fill_between([start_pos_x-2*(spacer_count+nspacers)-0.5-0.5-spacing/2, start_pos_x-2*spacer_count-spacing/2], start_pos_y+0.3, start_pos_y+0.5, color="#666666", edgecolor='none')
+									ax.fill_between([start_pos_x-spacer_size*(spacer_count+nspacers)-0.5-0.5-spacing/2, start_pos_x-spacer_size*spacer_count-spacing/2], start_pos_y+0.3, start_pos_y+0.5, color="#666666", edgecolor='none')
 									# Bottom bar
-									ax.fill_between([start_pos_x-2*(spacer_count+nspacers)-0.5-0.5-spacing/2, start_pos_x-2*spacer_count-spacing/2], start_pos_y-0.3, start_pos_y-0.5, color="#666666", edgecolor='none')
+									ax.fill_between([start_pos_x-spacer_size*(spacer_count+nspacers)-0.5-0.5-spacing/2, start_pos_x-spacer_size*spacer_count-spacing/2], start_pos_y-0.3, start_pos_y-0.5, color="#666666", edgecolor='none')
 
 									start_pos_x-=0.5 # Shift future spacers a bit to make spacer for this line.
 									# Shift again after the indel region
@@ -1425,12 +1426,12 @@ def plot_tree(tree, array_dict, filename):
 								nspacers = len(diff_type.indices)
 
 								rcParams['path.sketch'] = (20, 50, 1)
-								ax.plot(np.linspace(start_pos_x-2*(spacer_count+nspacers)+spacing,start_pos_x-2*spacer_count-spacing,3),[start_pos_y-0.4]*3,color="#666666", linewidth=2, solid_capstyle="butt")
+								ax.plot(np.linspace(start_pos_x-spacer_size*(spacer_count+nspacers)+spacing,start_pos_x-spacer_size*spacer_count-spacing,3),[start_pos_y-0.4]*3,color="#666666", linewidth=2, solid_capstyle="butt")
 								rcParams['path.sketch'] = (0, 0, 0)
 
 							elif diff_type.type == "trailer_loss":
 								if spacer == '-': # Draw a single sloped line
-									ax.plot([start_pos_x-2*spacer_count-spacing, start_pos_x-2*spacer_count-2+spacing],[start_pos_y+0.5, start_pos_y-0.5], color="#666666", linewidth=3, solid_capstyle="butt")
+									ax.plot([start_pos_x-spacer_size*spacer_count-spacing, start_pos_x-spacer_size*spacer_count-spacer_size+spacing],[start_pos_y+0.5, start_pos_y-0.5], color="#666666", linewidth=3, solid_capstyle="butt")
 									spacer_count+=1 # Shift future spacers a bit to make spacer for this line.
 
 
@@ -1443,7 +1444,7 @@ def plot_tree(tree, array_dict, filename):
 							spcolour = ("#000000", "#000000") #black
 							sp_width = 0.25*spacer_width
 				
-						ax.fill_between([start_pos_x-2*spacer_count-spacing, start_pos_x-2*spacer_count-spacing-2+spacing], start_pos_y-sp_width, start_pos_y+sp_width, color=spcolour[0], edgecolor=spcolour[1], linewidth=outline, joinstyle='miter')
+						ax.fill_between([start_pos_x-spacer_size*spacer_count-spacing, start_pos_x-spacer_size*spacer_count-spacing-spacer_size+spacing], start_pos_y-sp_width, start_pos_y+sp_width, color=spcolour[0], edgecolor=spcolour[1], linewidth=outline, joinstyle='miter')
 						spacer_count+=1
 
 
@@ -1463,7 +1464,7 @@ def plot_tree(tree, array_dict, filename):
 						spcolour = ("#000000", "#000000") #black
 						sp_width = 0.25*spacer_width
 					
-					ax.fill_between([start_pos_x-2*n-spacing, start_pos_x-2*n-spacing-2+spacing], start_pos_y-sp_width, start_pos_y+sp_width, color=spcolour[0], edgecolor=spcolour[1], linewidth=outline, joinstyle='miter')
+					ax.fill_between([start_pos_x-spacer_size*n-spacing, start_pos_x-spacer_size*n-spacing-spacer_size+spacing], start_pos_y-sp_width, start_pos_y+sp_width, color=spcolour[0], edgecolor=spcolour[1], linewidth=outline, joinstyle='miter')
 
 
 		if not args.emphasize_diffs:
@@ -1479,7 +1480,7 @@ def plot_tree(tree, array_dict, filename):
 					spcolour = ("#000000", "#000000") #black
 					sp_width = 0.25*spacer_width
 				
-				ax.fill_between([start_pos_x-2*n-spacing, start_pos_x-2*n-spacing-2+spacing], start_pos_y-sp_width, start_pos_y+sp_width, color=spcolour[0], edgecolor=spcolour[1], linewidth=outline, joinstyle='miter')
+				ax.fill_between([start_pos_x-spacer_size*n-spacing, start_pos_x-spacer_size*n-spacing-spacer_size+spacing], start_pos_y-sp_width, start_pos_y+sp_width, color=spcolour[0], edgecolor=spcolour[1], linewidth=outline, joinstyle='miter')
 
 	ymin, ymax = ax.get_ylim()
 	xmin, xmax = ax.get_xlim()
