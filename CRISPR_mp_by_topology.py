@@ -7,25 +7,32 @@
 
 import sys
 import argparse
+import dendropy
 import CRISPR_mp
+from random import randint
 
 
-def make_topologies(leaves):
+def make_topologies(leaves, root=False):
 	"""
 	Given a number of leaves for a tree, generate all possible configurations of the rooted bifurcating tree.
 	Args:
 		num_leaves (list): Leaves to be placed in the tree.
-	
+		root (int): The 0 base integer location at which to place the root and generate all tree topologies with that root.
 	Yields:
 		 Newick string of tree or subtree.
 	"""
 	if len(leaves) == 1: # When all nodes have been joined, return the list in a tidied format.
 		yield leaves[0]
 	else:
-		for i in range(1,len(leaves)):
-			for left in make_topologies(leaves[:i]): # Make subtrees to the left of (sub)tree root
-				for right in make_topologies(leaves[i:]): # Make subtrees to the right of (sub)tree root
+		if root:
+			for left in make_topologies(leaves[:root]): # Make subtrees to the left of (sub)tree root
+				for right in make_topologies(leaves[root:]): # Make subtrees to the right of (sub)tree root
 					yield "({},{})".format(left, right)
+		else:
+			for i in range(1,len(leaves)):
+				for left in make_topologies(leaves[:i]): # Make subtrees to the left of (sub)tree root
+					for right in make_topologies(leaves[i:]): # Make subtrees to the right of (sub)tree root
+						yield "({},{})".format(left, right)
 
 
 
@@ -48,8 +55,9 @@ def main():
 
 	args = parser.parse_args(sys.argv[1:])
 
-	for t in make_topologies(args.arrays_to_join):
-		print(t)
+
+	print([t for t in make_topologies(args.arrays_to_join, 2)])
+
 
 
 if __name__ == '__main__':
