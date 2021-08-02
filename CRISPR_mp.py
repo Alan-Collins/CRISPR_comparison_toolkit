@@ -967,6 +967,11 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 								last_n = n 
 								new_indel_mod.indices.append(module.indices[n])
 								new_indel_mod.spacers.append(module.spacers[n])
+				else: # If we haven't found anything then if this was an indel then set the indel count to 1 and move on. If it was an acquisition then the count has already been added so just move on.
+					if module.type in ["indel_gap", "indel_mm"]:
+						indels = 1
+					elif module.type == "acquisition":
+						pass
 			if module.type == 'no_acquisition':
 				# None of the above will have run if this module is just gaps.
 				# In that case we need to check if the absence of those spacers in the child array represents simply not having acquired them or if it would require the loss and regain of the same spacers at different points in the tree.
@@ -1197,6 +1202,7 @@ def plot_tree(tree, array_dict, filename):
 	outline = 2 # Thickness of spacer_outline
 	spacing = outline*0.11
 	spacer_size = 3.5
+	brlen_scale = 0.5
 
 	max_depth = tree_width
 
@@ -1227,7 +1233,7 @@ def plot_tree(tree, array_dict, filename):
 					second_node = first_node.sibling_nodes()[0]
 					highest_y = y2 = nodes_to_revisit[node.taxon.label] # Set the y position reserved for this subtree
 					second_node = first_node.sibling_nodes()[0]
-					node_locs[first_node.taxon.label] = [max_depth-first_node.root_distance,y2]
+					node_locs[first_node.taxon.label] = [(max_depth-first_node.root_distance)*brlen_scale,y2]
 				
 				
 				
@@ -1241,13 +1247,13 @@ def plot_tree(tree, array_dict, filename):
 				first_node = node.child_nodes()[0].leaf_nodes()[0] # start drawing from a random leaf in the subtree
 				second_node = first_node.sibling_nodes()[0]
 				highest_y = y2 = nodes_to_revisit[node.taxon.label] # Set the y position reserved for this subtree
-				node_locs[first_node.taxon.label] = [max_depth-first_node.root_distance,y2]
+				node_locs[first_node.taxon.label] = [(max_depth-first_node.root_distance)*brlen_scale,y2]
 		
 
 		# figure out first branch location
 		
 		x1 = node_locs[first_node.taxon.label][0]
-		x2 = node_locs[first_node.taxon.label][0] + first_node.edge_length 
+		x2 = node_locs[first_node.taxon.label][0] + first_node.edge_length*brlen_scale 
 		y1 = node_locs[first_node.taxon.label][1]
 		y2 = node_locs[first_node.taxon.label][1]
 
@@ -1259,8 +1265,8 @@ def plot_tree(tree, array_dict, filename):
 		if num_internal > 0:  
 			num_internal += num_leaves # - 1 # Counts self so need to subtract 1.
 
-			node_locs[second_node.parent_node.taxon.label] = [
-			max_depth-second_node.parent_node.root_distance,
+			node_locs[second_node.parent_node.taxon.label] = [(
+			max_depth-second_node.parent_node.root_distance)*brlen_scale,
 			highest_y+branch_spacing
 			]
 
@@ -1270,14 +1276,14 @@ def plot_tree(tree, array_dict, filename):
 			highest_y = highest_y+(num_internal+1)*branch_spacing
 
 
-			position = [max_depth-second_node.root_distance ,y2]
+			position = [(max_depth-second_node.root_distance)*brlen_scale ,y2]
 			if second_node.taxon.label not in node_locs.keys():
 				node_locs[second_node.taxon.label] = position
 
 			# figure out second branch location
 
 			x1 = node_locs[second_node.taxon.label][0]
-			x2 = node_locs[second_node.taxon.label][0] + second_node.edge_length 
+			x2 = node_locs[second_node.taxon.label][0] + second_node.edge_length*brlen_scale
 			y1 = node_locs[second_node.taxon.label][1]
 			y2 = node_locs[second_node.taxon.label][1]
 
@@ -1289,20 +1295,20 @@ def plot_tree(tree, array_dict, filename):
 
 			highest_y = y2
 
-			position = [max_depth-second_node.root_distance ,y2]
+			position = [(max_depth-second_node.root_distance)*brlen_scale ,y2]
 			if second_node.taxon.label not in node_locs.keys():
 				node_locs[second_node.taxon.label] = position
 
 			# figure out second branch location
 
 			x1 = node_locs[second_node.taxon.label][0]
-			x2 = node_locs[second_node.taxon.label][0] + second_node.edge_length 
+			x2 = node_locs[second_node.taxon.label][0] + second_node.edge_length*brlen_scale
 			y1 = node_locs[second_node.taxon.label][1]
 			y2 = node_locs[second_node.taxon.label][1]
 
 
 			y1 = node_locs[first_node.taxon.label][1]
-			position = [max_depth-second_node.parent_node.root_distance ,y2-branch_spacing]
+			position = [(max_depth-second_node.parent_node.root_distance)*brlen_scale ,y2-branch_spacing]
 		node = second_node.parent_node
 
 	# Add cartoon arrays to show hypothetical ancestral states
@@ -1321,12 +1327,12 @@ def plot_tree(tree, array_dict, filename):
 
 		if args.branch_lengths:
 			if first_node.edge_length != 0:
-				ax.text(x+(first_node.edge_length/2), y-0.6, first_node.edge_length, ha='center', fontsize=12)
+				ax.text(x+(first_node.edge_length/2)*brlen_scale, y-0.6, first_node.edge_length, ha='center', fontsize=12)
 		
 		# Draw first branch
 		
 		x1 = node_locs[first_node.taxon.label][0]
-		x2 = node_locs[first_node.taxon.label][0] + first_node.edge_length 
+		x2 = node_locs[first_node.taxon.label][0] + first_node.edge_length*brlen_scale
 		y1 = node_locs[first_node.taxon.label][1]
 		y2 = node_locs[first_node.taxon.label][1]
 
@@ -1337,7 +1343,7 @@ def plot_tree(tree, array_dict, filename):
 			# draw second branch
 
 			x1 = node_locs[second_node.taxon.label][0]
-			x2 = node_locs[second_node.taxon.label][0] + second_node.edge_length 
+			x2 = node_locs[second_node.taxon.label][0] + second_node.edge_length*brlen_scale
 			y1 = node_locs[second_node.taxon.label][1]
 			y2 = node_locs[second_node.taxon.label][1]
 
@@ -1345,7 +1351,7 @@ def plot_tree(tree, array_dict, filename):
 
 			# draw line between branches
 
-			x1 = x2 = node_locs[second_node.taxon.label][0] + second_node.edge_length 
+			x1 = x2 = node_locs[second_node.taxon.label][0] + second_node.edge_length*brlen_scale
 			y1 = node_locs[first_node.taxon.label][1]
 			y2 = node_locs[second_node.taxon.label][1]
 
@@ -1425,7 +1431,7 @@ def plot_tree(tree, array_dict, filename):
 							elif diff_type.type == "acquisition":
 								nspacers = len(diff_type.indices)
 
-								rcParams['path.sketch'] = (20, 50, 1)
+								rcParams['path.sketch'] = (5, 25, 1)
 								ax.plot(np.linspace(start_pos_x-spacer_size*(spacer_count+nspacers)+spacing,start_pos_x-spacer_size*spacer_count-spacing,3),[start_pos_y-0.4]*3,color="#666666", linewidth=2, solid_capstyle="butt")
 								rcParams['path.sketch'] = (0, 0, 0)
 
@@ -1489,7 +1495,7 @@ def plot_tree(tree, array_dict, filename):
 
 	plt.axis('off')
 	plt.tight_layout()
-	plt.savefig(filename, dpi=600)
+	plt.savefig(filename, dpi=100)
 
 
 def build_tree_single(arrays, tree_namespace, score, all_arrays):
