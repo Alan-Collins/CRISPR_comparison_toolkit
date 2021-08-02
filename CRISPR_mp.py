@@ -20,75 +20,6 @@ import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import multiprocessing
 
-
-parser = argparse.ArgumentParser(
-	description="Perform maximum parsimony analysis on CRISPR arrays to infer a tree representing their evolutionary relationship."
-	)
-parser.add_argument(
-	"-a", dest="array_file", required = True,
-	help="Specify array representatives file."
-	)
-parser.add_argument(
-	"-p", dest="print_tree", action='store_true',  
-	help="Print a graphical representation of the tree using ascii characters."
-	)
-parser.add_argument(
-	"-x", dest="fix_order", action='store_true',  
-	help="Only build one tree using the provided order of arrays. Good for recreating previously found trees."
-	)
-parser.add_argument(
-	"-e", dest="emphasize_diffs", action='store_true',  
-	help="When plotting a representation of the tree with cartooned arrays, emphasize locations where arrays differ from their hypothetical ancestor."
-	)
-parser.add_argument(
-	"-b", dest="branch_lengths", action='store_true', 
-	help="When plotting a representation of the tree Include branch lengths at midpoint on branches. N.B. This does not control inclusion of branch lengths in newick format tree output, which are always included."
-	)
-parser.add_argument(
-	"-r",  dest="replicates", type=int, nargs="?", default = 1,
-		help="Specify number of replicates of tree building to perform. The more replicates, the greater the chance that a better tree will be found. Default: 1"
-	)
-parser.add_argument(
-	"-q",  dest="acquisition", type=int, nargs="?", default = 1,
-		help="Specify the parsimony cost of a spacer acquisition event. Default: 1"
-	)
-parser.add_argument(
-	"-i",  dest="indel", type=int, nargs="?", default = 1,
-		help="Specify the parsimony cost of an indel event involving one or more spacers. Default: 1"
-	)
-parser.add_argument(
-	"-z",  dest="rep_indel", type=int, nargs="?", default = 50,
-		help="Specify the parsimony cost of an indel event involving one or more spacers that is independently acquired in multiple arrays. Default: 50"
-	)
-parser.add_argument(
-	"-d",  dest="duplication", type=int, nargs="?", default = 1,
-		help="Specify the parsimony cost of a duplication event involving one or more spacers. Default: 1"
-	)
-parser.add_argument(
-	"-l",  dest="trailer_loss", type=int, nargs="?", default = 1,
-		help="Specify the parsimony cost of the loss of a spacer from the trailer end of the array. Default: 1"
-	)
-parser.add_argument(
-	"-o", dest="output_tree", required = False,
-	help="Specify filename for the graphical representation of your tree with hypothetical intermediate arrays as a png."
-	)
-parser.add_argument(
-	"-t",  dest="num_threads", type=int, nargs="?", default = 1,
-		help="Specify number of threads to use for building trees. Using multiple threads will speed up the search for trees when performing many replicates with the -r option. Default: 1"
-	)
-parser.add_argument(
-	"-y", dest="output_arrays", required = False,
-	help="Specify filename for the details of you final arrays with hypothetical intermediate arrays in the same format as your input array_file. If there are multiple best trees, one file will be created per tree numbered in the order they are described in the stdout output."
-	)
-parser.add_argument(
-	"arrays_to_join", nargs="*",  
-	help="Specify the IDs of the arrays you want to join. If none provided, joins all arrays in the provided array representatives file. **If given, must come at the end of your command after all other arguments.**"
-	)
-
-
-
-args = parser.parse_args(sys.argv[1:])
-
 class Array():
 	"""
 	Class to store information about extant and inferred ancestral CRISPR arrays to aid in their comparisons.
@@ -941,7 +872,7 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 	return child
 
 
-def resolve_pairwise_parsimony(array1, array2, all_arrays, array_dict, node_ids, node_count, tree):
+def resolve_pairwise_parsimony(array1, array2, all_arrays, array_dict, node_ids, node_count, tree, event_costs):
 	"""
 	Given two arrays, make a hypothetical ancestral state and calculate parsimony distance of each input array to that ancestor. 
 	Can only build an ancestor state if there are shared spacers so throws an error if none are found.
@@ -953,6 +884,7 @@ def resolve_pairwise_parsimony(array1, array2, all_arrays, array_dict, node_ids,
 		node_ids (list): A list of names to be used to name internal nodes.
 		node_count (int): The index of the name to use in the node_ids list to name this internal node.
 		tree (Deondropy Tree class instance): The tree in which the arrays are located.
+		event_costs (dict): Dict to look up event types and their parsimony costs.
 
 	Returns:
 		(tuple of Array class instances) The input Array class instances with module and distance info added, the ancestral array Array class instance. Tuple order is (array1, array2, ancestor)
@@ -1099,12 +1031,15 @@ def replace_existing_array(existing_array, new_array, current_parent, tree, all_
 		return tree, array_dict, tree_child_dict
 
 
-def plot_tree(tree, array_dict, filename):
+def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False, emphasize_diffs=False):
 	"""
 	Args:
 		tree (dendopy Tree class instance): The tree you want to plot.
 		array_dict (dict): Dict of Array class instances with information about the nodes of your tree.
 		filename (str): Path to the file you want created with this plot.
+		spacer_cols_dict (dict): Dict describing which colours have been assigned as the fill and outline colours for spacers.
+		branch_lengths (bool): Should branch lengths be labeled?
+		emphasize_diffs (bool): Should annotations be added to highlight indels and acquisitions in spacer cartoons?
 	"""
 
 	# Find tree dimensions
@@ -1252,7 +1187,7 @@ def plot_tree(tree, array_dict, filename):
 
 		# First add branch lengths if user desires
 
-		if args.branch_lengths:
+		if branch_lengths:
 			if first_node.edge_length != 0:
 				ax.text(x+(first_node.edge_length/2)*brlen_scale, y-0.6, first_node.edge_length, ha='center', fontsize=12)
 		
@@ -1290,7 +1225,7 @@ def plot_tree(tree, array_dict, filename):
 			child = array_dict[array]
 			child = count_parsimony_events(child, ancestor, array_dict, tree, True)
 
-			if args.emphasize_diffs:
+			if emphasize_diffs:
 				start_pos_x = location[0]-5 # Start a bit to the left to leave room for the label
 				start_pos_y = location[1]
 				spacer_count = 0 # How many spacers have been plotted?
@@ -1384,7 +1319,7 @@ def plot_tree(tree, array_dict, filename):
 
 
 		else: # Draw root ancestral array
-			if args.emphasize_diffs:
+			if emphasize_diffs:
 			# Then add spacers
 				spacers = array_dict[array].spacers
 				start_pos_x = location[0]-5 # Start a bit to the left to leave room for the label
@@ -1400,7 +1335,7 @@ def plot_tree(tree, array_dict, filename):
 					ax.fill_between([start_pos_x-spacer_size*n-spacing, start_pos_x-spacer_size*n-spacing-spacer_size+spacing], start_pos_y-sp_width, start_pos_y+sp_width, color=spcolour[0], edgecolor=spcolour[1], linewidth=outline, joinstyle='miter')
 
 
-		if not args.emphasize_diffs:
+		if not emphasize_diffs:
 			# Then add spacers
 			spacers = array_dict[array].spacers
 			start_pos_x = location[0]-5 # Start a bit to the left to leave room for the label
@@ -1425,7 +1360,7 @@ def plot_tree(tree, array_dict, filename):
 	plt.savefig(filename, dpi=100)
 
 
-def build_tree_single(arrays, tree_namespace, score, all_arrays):
+def build_tree_single(arrays, tree_namespace, score, all_arrays, node_ids, event_costs):
 	"""
 	Search treespace for most parsimonious tree using single process.
 	Args:
@@ -1433,12 +1368,14 @@ def build_tree_single(arrays, tree_namespace, score, all_arrays):
 		tree_namespace (dendropy.TaxonNamespace): Namespace for taxa to add to the tree.
 		score (int): The score to beat. If at any point during tree construction the tree has total branch lengths above this score construction will be aborted
 		all_arrays (list): The list of all arrays so that indels can be resolved to favour keeping spacers found in other arrays.
+		node_ids (list): The names for internal nodes in the tree to be assigned.
+		event_costs (dict): Dict to look up event types and their parsimony costs.
 	
 	Returns:
 		(tuple) Returns array_dict and dendropy.tree object if the tree beats or equals the provide score. Else retuns tuple of (False, False).
 	"""
 
-	tree = dendropy.Tree(taxon_namespace=taxon_namespace)
+	tree = dendropy.Tree(taxon_namespace=tree_namespace)
 
 	array_dict = {}
 	tree_child_dict = {}
@@ -1446,18 +1383,18 @@ def build_tree_single(arrays, tree_namespace, score, all_arrays):
 	# Remove the arrays being compared from checks to see what spacers are in other arrays.
 	# That way we only worry about ancestral states accounting for deletion of spacers in arrays not yet added to the tree.
 	all_arrays = [a for a in all_arrays if a not in [arrays[0].spacers, arrays[1].spacers]]
-	results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, array_dict, node_ids, node_count, tree)
+	results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, array_dict, node_ids, node_count, tree, event_costs)
 
 	while results == "No_ID":
 		arrays.append(arrays[1])
 		del arrays[1]
-		results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays,  array_dict, node_ids, node_count, tree)
+		results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays,  array_dict, node_ids, node_count, tree, event_costs)
 	node_count += 1
 	array1, array2, ancestor = results
 	for a in [array1, array2, ancestor]:
 		# Create tree nodes
 		tree_child_dict[a.id] = dendropy.Node(edge_length=a.distance)
-		tree_child_dict[a.id].taxon = taxon_namespace.get_taxon(a.id)
+		tree_child_dict[a.id].taxon = tree_namespace.get_taxon(a.id)
 		#Store arrays for further comparisons
 		array_dict[a.id] = a
 
@@ -1529,13 +1466,15 @@ def build_tree_single(arrays, tree_namespace, score, all_arrays):
 		return (array_dict, tree)
 
 
-def build_tree_multi(arrays, tree_namespace, all_arrays):
+def build_tree_multi(arrays, tree_namespace, all_arrays, node_ids, event_costs):
 	"""
 	Search treespace for most parsimonious tree using multiple processes.
 	Args:
 		arrays (list): Ordered list of Array class instances of the arrays to analyse. Will be added to the tree in the provided order.
 		tree_namespace (dendropy.TaxonNamespace): Namespace for taxa to add to the tree.
 		all_arrays (list): The list of all arrays so that indels can be resolved to favour keeping spacers found in other arrays.
+		node_ids (list): The names for internal nodes in the tree to be assigned.
+		event_costs (dict): Dict to look up event types and their parsimony costs.
 	
 	Returns:
 		(tuple) Returns array_dict and dendropy.tree object.
@@ -1545,25 +1484,25 @@ def build_tree_multi(arrays, tree_namespace, all_arrays):
 	# That way we only worry about ancestral states accounting for deletion of spacers in arrays not yet added to the tree.
 	all_arrays = [a for a in all_arrays if a not in [arrays[0].spacers, arrays[1].spacers]]
 
-	tree = dendropy.Tree(taxon_namespace=taxon_namespace)
+	tree = dendropy.Tree(taxon_namespace=tree_namespace)
 
 	array_dict = {}
 	tree_child_dict = {}
 	node_count = 0 # Keep track of which internal node ID should be used for each node
 
-	results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, array_dict, node_ids, node_count, tree)
+	results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, array_dict, node_ids, node_count, tree, event_costs)
 	while results == "No_ID":
 
 		arrays.append(arrays[1])
 		del arrays[1]
-		results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, array_dict, node_ids, node_count, tree)
+		results = resolve_pairwise_parsimony(arrays[0], arrays[1], all_arrays, array_dict, node_ids, node_count, tree, event_costs)
 	node_count += 1
 	array1, array2, ancestor = results
 
 	for a in [array1, array2, ancestor]:
 		# Create tree nodes
 		tree_child_dict[a.id] = dendropy.Node(edge_length=a.distance)
-		tree_child_dict[a.id].taxon = taxon_namespace.get_taxon(a.id)
+		tree_child_dict[a.id].taxon = tree_namespace.get_taxon(a.id)
 		#Store arrays for further comparisons
 		array_dict[a.id] = a
 
@@ -1622,266 +1561,340 @@ def build_tree_multi(arrays, tree_namespace, all_arrays):
 			tree.reroot_at_node(tree.seed_node, update_bipartitions=False) # Need to reroot at the seed so that RF distance works
 			return array_dict, tree, arrays
 
+
+def main():
+
+
+	parser = argparse.ArgumentParser(
+		description="Perform maximum parsimony analysis on CRISPR arrays to infer a tree representing their evolutionary relationship."
+		)
+	parser.add_argument(
+		"-a", dest="array_file", required = True,
+		help="Specify array representatives file."
+		)
+	parser.add_argument(
+		"-p", dest="print_tree", action='store_true',  
+		help="Print a graphical representation of the tree using ascii characters."
+		)
+	parser.add_argument(
+		"-x", dest="fix_order", action='store_true',  
+		help="Only build one tree using the provided order of arrays. Good for recreating previously found trees."
+		)
+	parser.add_argument(
+		"-e", dest="emphasize_diffs", action='store_true',  
+		help="When plotting a representation of the tree with cartooned arrays, emphasize locations where arrays differ from their hypothetical ancestor."
+		)
+	parser.add_argument(
+		"-b", dest="branch_lengths", action='store_true', 
+		help="When plotting a representation of the tree Include branch lengths at midpoint on branches. N.B. This does not control inclusion of branch lengths in newick format tree output, which are always included."
+		)
+	parser.add_argument(
+		"-r",  dest="replicates", type=int, nargs="?", default = 1,
+			help="Specify number of replicates of tree building to perform. The more replicates, the greater the chance that a better tree will be found. Default: 1"
+		)
+	parser.add_argument(
+		"-q",  dest="acquisition", type=int, nargs="?", default = 1,
+			help="Specify the parsimony cost of a spacer acquisition event. Default: 1"
+		)
+	parser.add_argument(
+		"-i",  dest="indel", type=int, nargs="?", default = 1,
+			help="Specify the parsimony cost of an indel event involving one or more spacers. Default: 1"
+		)
+	parser.add_argument(
+		"-z",  dest="rep_indel", type=int, nargs="?", default = 50,
+			help="Specify the parsimony cost of an indel event involving one or more spacers that is independently acquired in multiple arrays. Default: 50"
+		)
+	parser.add_argument(
+		"-d",  dest="duplication", type=int, nargs="?", default = 1,
+			help="Specify the parsimony cost of a duplication event involving one or more spacers. Default: 1"
+		)
+	parser.add_argument(
+		"-l",  dest="trailer_loss", type=int, nargs="?", default = 1,
+			help="Specify the parsimony cost of the loss of a spacer from the trailer end of the array. Default: 1"
+		)
+	parser.add_argument(
+		"-o", dest="output_tree", required = False,
+		help="Specify filename for the graphical representation of your tree with hypothetical intermediate arrays as a png."
+		)
+	parser.add_argument(
+		"-t",  dest="num_threads", type=int, nargs="?", default = 1,
+			help="Specify number of threads to use for building trees. Using multiple threads will speed up the search for trees when performing many replicates with the -r option. Default: 1"
+		)
+	parser.add_argument(
+		"-y", dest="output_arrays", required = False,
+		help="Specify filename for the details of you final arrays with hypothetical intermediate arrays in the same format as your input array_file. If there are multiple best trees, one file will be created per tree numbered in the order they are described in the stdout output."
+		)
+	parser.add_argument(
+		"arrays_to_join", nargs="*",  
+		help="Specify the IDs of the arrays you want to join. If none provided, joins all arrays in the provided array representatives file. **If given, must come at the end of your command after all other arguments.**"
+		)
+
+
+
+	args = parser.parse_args(sys.argv[1:])
 	
-print("Running with the following command:\n{}\n".format(" ".join(sys.argv)))
+	print("Running with the following command:\n{}\n".format(" ".join(sys.argv)))
 
-event_costs = { 
-				"acquisition" : args.acquisition,
-				"indel" : args.indel,
-				"repeated_indel" : args.rep_indel,
-				"duplication": args.duplication,
-				"trailer_loss": args.trailer_loss
-				}
+	event_costs = { 
+					"acquisition" : args.acquisition,
+					"indel" : args.indel,
+					"repeated_indel" : args.rep_indel,
+					"duplication": args.duplication,
+					"trailer_loss": args.trailer_loss
+					}
 
-# hex values from this website http://phrogz.net/css/distinct-colors.html
+	# hex values from this website http://phrogz.net/css/distinct-colors.html
 
-Cols_hex_27 = ['#fd5925', '#dbc58e', '#008d40', '#304865', '#934270', '#f7b8a2', '#907500', '#45deb2', '#1f4195', '#d67381', '#8e7166', '#afb200', '#005746', '#a598ff', '#8f0f1b', '#b96000', '#667f42', '#00c7ce', '#9650f0', '#614017', '#59c300', '#1a8298', '#b5a6bd', '#ea9b00', '#bbcbb3', '#00b0ff', '#cd6ec6']
+	Cols_hex_27 = ['#fd5925', '#dbc58e', '#008d40', '#304865', '#934270', '#f7b8a2', '#907500', '#45deb2', '#1f4195', '#d67381', '#8e7166', '#afb200', '#005746', '#a598ff', '#8f0f1b', '#b96000', '#667f42', '#00c7ce', '#9650f0', '#614017', '#59c300', '#1a8298', '#b5a6bd', '#ea9b00', '#bbcbb3', '#00b0ff', '#cd6ec6']
 
-#hex values from https://mokole.com/palette.html
+	#hex values from https://mokole.com/palette.html
 
-Cols_hex_40 = ["#696969","#556b2f","#a0522d","#800000","#006400","#808000","#483d8b","#3cb371","#008080","#bdb76b","#4682b4","#000080","#9acd32","#32cd32","#daa520","#7f007f","#ff4500","#00ced1","#ff8c00","#c71585","#0000cd","#00ff00","#9400d3","#dc143c","#00bfff","#f4a460","#adff2f","#da70d6","#ff00ff","#1e90ff","#db7093","#fa8072","#ffff54","#dda0dd","#7b68ee","#afeeee","#98fb98","#7fffd4","#ffe4c4","#ffc0cb"]
+	Cols_hex_40 = ["#696969","#556b2f","#a0522d","#800000","#006400","#808000","#483d8b","#3cb371","#008080","#bdb76b","#4682b4","#000080","#9acd32","#32cd32","#daa520","#7f007f","#ff4500","#00ced1","#ff8c00","#c71585","#0000cd","#00ff00","#9400d3","#dc143c","#00bfff","#f4a460","#adff2f","#da70d6","#ff00ff","#1e90ff","#db7093","#fa8072","#ffff54","#dda0dd","#7b68ee","#afeeee","#98fb98","#7fffd4","#ffe4c4","#ffc0cb"]
 
-Cols_tol = ["#332288", "#117733", "#44AA99", "#88CCEE", "#DDCC77", "#CC6677", "#AA4499", "#882255"]
+	Cols_tol = ["#332288", "#117733", "#44AA99", "#88CCEE", "#DDCC77", "#CC6677", "#AA4499", "#882255"]
 
-Cols_hex_12 = ["#07001c", "#ff6f8d", "#4c62ff", "#92ffa9", "#810087", "#bcffe6", "#490046", "#00c8ee", "#b53900", "#ff8cf7", "#5b5800", "#14d625"]
+	Cols_hex_12 = ["#07001c", "#ff6f8d", "#4c62ff", "#92ffa9", "#810087", "#bcffe6", "#490046", "#00c8ee", "#b53900", "#ff8cf7", "#5b5800", "#14d625"]
 
-# Generate strings to assign as internal node_IDs (This makes 702)
+	# Generate strings to assign as internal node_IDs (This makes 702)
 
-node_ids = ["Int " + i for i in ascii_lowercase]
-if len(args.arrays_to_join) > 27: # Maximum internal nodes in tree is n-2 so only need more than 26 if n >= 28
-	node_ids += ["Int " + "".join(i) for i in product(ascii_lowercase, repeat=(len(args.arrays_to_join)//26)+1)]
-
-
-array_spacers_dict = {}
-with open(args.array_file, 'r') as fin:
-	for line in fin.readlines():
-		bits = line.split()
-		array_spacers_dict[bits[0]] = bits[2:]
-
-if args.arrays_to_join:
-	arrays = [Array(i, array_spacers_dict[i]) for i in args.arrays_to_join]
-	labels = args.arrays_to_join
-else:
-	arrays = [Array(i, array_spacers_dict[i]) for i in array_spacers_dict.keys()]
-	labels = list(array_spacers_dict.keys())
-
-all_arrays = [array.spacers for array in arrays]
+	node_ids = ["Int " + i for i in ascii_lowercase]
+	if len(args.arrays_to_join) > 27: # Maximum internal nodes in tree is n-2 so only need more than 26 if n >= 28
+		node_ids += ["Int " + "".join(i) for i in product(ascii_lowercase, repeat=(len(args.arrays_to_join)//26)+1)]
 
 
-if len(labels) < 9:
-	array_choices = [list(i) for i in permutations(arrays, len(arrays))]
-	random.shuffle(array_choices)
+	array_spacers_dict = {}
+	with open(args.array_file, 'r') as fin:
+		for line in fin.readlines():
+			bits = line.split()
+			array_spacers_dict[bits[0]] = bits[2:]
 
-
-
-	if len(array_choices) > args.replicates:
-		print("\nThere are {} possible trees to check. If you want to check every possible tree then set -r {}\n".format(len(array_choices), len(array_choices)))
-		array_choices = [array_choices[i] for i in range(args.replicates)]
-
-	elif len(array_choices) < args.replicates:
-		print("\nThere are only {} possible trees to check. You specified a greater number of replicates than there are possible trees. All possible trees will be checked.\n".format(len(array_choices)))
-
+	if args.arrays_to_join:
+		arrays = [Array(i, array_spacers_dict[i]) for i in args.arrays_to_join]
+		labels = args.arrays_to_join
 	else:
-		print("\nYou specified a number of replicates equal to the number of possible trees. All possible trees will be checked.\n")
-else:
-	array_choices = [random.sample(arrays, len(arrays)) for i in range(args.replicates)]
+		arrays = [Array(i, array_spacers_dict[i]) for i in array_spacers_dict.keys()]
+		labels = list(array_spacers_dict.keys())
 
-taxon_namespace = dendropy.TaxonNamespace(labels + node_ids)
+	all_arrays = [array.spacers for array in arrays]
 
-best_score = 99999999
 
-# Keep track of how many times no common spacers are found.
-# If no common spacers are ever found then print an error message saying so
+	if len(labels) < 9:
+		array_choices = [list(i) for i in permutations(arrays, len(arrays))]
+		random.shuffle(array_choices)
 
-no_id_count = 0 
 
-num_threads = args.num_threads if not args.fix_order else 1
 
-if len(array_choices) < num_threads:
-	num_threads = 1
+		if len(array_choices) > args.replicates:
+			print("\nThere are {} possible trees to check. If you want to check every possible tree then set -r {}\n".format(len(array_choices), len(array_choices)))
+			array_choices = [array_choices[i] for i in range(args.replicates)]
 
-if num_threads == 1:
-	for i in range(min([args.replicates, len(array_choices)])):
-		if args.fix_order:
-			if not args.arrays_to_join:
-				print("You must provide the order you want to fix when using the fixed order option!\n\nABORTING.")
-				sys.exit()
-			addition_order = [Array(i, array_spacers_dict[i]) for i in args.arrays_to_join]
+		elif len(array_choices) < args.replicates:
+			print("\nThere are only {} possible trees to check. You specified a greater number of replicates than there are possible trees. All possible trees will be checked.\n".format(len(array_choices)))
+
 		else:
-			addition_order = array_choices[i]
+			print("\nYou specified a number of replicates equal to the number of possible trees. All possible trees will be checked.\n")
+	else:
+		array_choices = [random.sample(arrays, len(arrays)) for i in range(args.replicates)]
 
-		if args.fix_order:
-			if not args.arrays_to_join:
-				print("You must provide the order you want to fix when using the fixed order option!\n\nABORTING.")
-				sys.exit()
-			addition_order = [Array(i, array_spacers_dict[i]) for i in args.arrays_to_join]
-		else:
-			addition_order = array_choices[i]
-		try:
-			array_dict, tree = build_tree_single(addition_order, taxon_namespace, best_score, all_arrays)
-		except Exception as e:
-			print("Failed while trying to build the tree with the following array order:\n{}\n\nError:\n{}".format(" ".join([i.id for i in addition_order]), e))
-			exc_type, exc_obj, exc_tb = sys.exc_info()
-			exc_tb.print_exception()
-			sys.exit()
+	taxon_namespace = dendropy.TaxonNamespace(labels + node_ids)
 
-		if array_dict:
-			score = tree.length()
-			if score < best_score:
-				best_arrays = copy.deepcopy(array_dict) # Keep inferred ancestral states and information
-				best_score = copy.deepcopy(score)
-				best_addition_order = copy.deepcopy(addition_order)
-				# Keep one copy for comparisons as copy.deepcopy makes a new taxon namespace which breaks comparisons.
-				best_tree_comparator = dendropy.Tree(tree)
-				best_tree = copy.deepcopy(tree)
-			elif score == best_score:
-				if isinstance(best_tree, list):
-					# Check this tree isn't identical to one that's already been found
-					if not any([
-						dendropy.calculate.treecompare.weighted_robinson_foulds_distance(good_tree, tree) == 0. for good_tree in best_tree_comparator
-						]):
-						best_tree_comparator.append(dendropy.Tree(tree))
-						best_tree.append(copy.deepcopy(tree))
-						best_arrays.append(copy.deepcopy(array_dict))
-						best_addition_order.append(copy.deepcopy(addition_order))
-				else:
-					# Check this tree isn't identical to the one that's already been found
-					if dendropy.calculate.treecompare.weighted_robinson_foulds_distance(best_tree_comparator, tree) != 0.:
-						best_tree_comparator = [best_tree_comparator, dendropy.Tree(tree)]
-						best_tree = [best_tree, copy.deepcopy(tree)]
-						best_arrays = [best_arrays, copy.deepcopy(array_dict)]
-						best_addition_order = [best_addition_order, copy.deepcopy(addition_order)]
+	best_score = 99999999
+
+	# Keep track of how many times no common spacers are found.
+	# If no common spacers are ever found then print an error message saying so
+
+	no_id_count = 0 
+
+	num_threads = args.num_threads if not args.fix_order else 1
+
+	if len(array_choices) < num_threads:
+		num_threads = 1
+
+	if num_threads == 1:
+		for i in range(min([args.replicates, len(array_choices)])):
 			if args.fix_order:
-				break
-		else:
-			no_id_count += 1
-
-
-else:
-	pool = multiprocessing.Pool(processes=num_threads)
-	chunksize = args.replicates//num_threads
-	options = [(array_list, taxon_namespace, all_arrays) for array_list in array_choices]
-	tree_list = pool.starmap(build_tree_multi, options, chunksize)
-	pool.close()
-	pool.join()
-
-	all_tree_comparators = dendropy.TreeList()
-	for array_dict, tree, addition_order in tree_list:
-		if array_dict:
-			all_tree_comparators.read(data=tree.as_string("newick"), schema="newick")
-			score = tree.length()
-			if score < best_score:
-				best_arrays = copy.deepcopy(array_dict) # Keep inferred ancestral states and information
-				best_score = copy.deepcopy(score)
-				best_addition_order = copy.deepcopy(addition_order)
-				# Keep one copy for comparisons as copy.deepcopy makes a new taxon namespace which breaks comparisons.
-				best_tree_comparator = all_tree_comparators[-1:]
-				best_tree = copy.deepcopy(tree)
-			elif score == best_score:
-				if isinstance(best_tree, list):
-					# Check this tree isn't identical to one that's already been found
-					if not any([
-						dendropy.calculate.treecompare.weighted_robinson_foulds_distance(good_tree, all_tree_comparators[-1]) == 0. for good_tree in best_tree_comparator
-						]):
-						best_tree_comparator.append(all_tree_comparators[-1])
-						best_tree.append(copy.deepcopy(tree))
-						best_arrays.append(copy.deepcopy(array_dict))
-						best_addition_order.append(copy.deepcopy(addition_order))
-				else:
-					# Check this tree isn't identical to the one that's already been found
-					if dendropy.calculate.treecompare.weighted_robinson_foulds_distance(best_tree_comparator[0], all_tree_comparators[-1]) != 0.:
-						best_tree_comparator.append(all_tree_comparators[-1])
-						best_tree = [best_tree, copy.deepcopy(tree)]
-						best_arrays = [best_arrays, copy.deepcopy(array_dict)]
-						best_addition_order = [best_addition_order, copy.deepcopy(addition_order)]
-
-
-if no_id_count == min([args.replicates, len(array_choices)]):
-	print("\nERROR:\n\nUnable to construct any trees as at least one specified array\
-shares no spacers with any other array already in the tree. \n\
-If you have arrays sharing very few spacers and did not use enough replicates\
-to explore all tree space, then consider retrying with more replicates.\n\
-Otherwise, check that you didn't mistype the array IDs to align.\n\
-If not one of these then that may indicate a problem with the program. \
-Please send the data that led to this error to Alan so he can try to figure it out.\n\n")
-	sys.exit()
-
-
-print("\nScore of best tree is: {}\n".format(best_score))
-
-
-# First check how many spacers will need to be coloured
-
-all_spacers = []
-for array in array_choices[0]:
-	all_spacers += array.spacers
-non_singleton_spacers = [spacer for spacer, count in Counter(all_spacers).items() if count >1]
-if len(non_singleton_spacers) > 8:
-	if len(non_singleton_spacers) > 12: 
-		if len(non_singleton_spacers) > 27:
-			if len(non_singleton_spacers) > 40:
-				print("{} spacers found in multiple arrays. Using fill and outline colour combinations to distinguish spacers.".format(len(non_singleton_spacers)))
-				if len(non_singleton_spacers) < 65:
-					col_scheme = Cols_tol
-				elif len(non_singleton_spacers) < 145:
-					col_scheme = Cols_hex_12
-				else:
-					col_scheme = Cols_hex_27
-				colours = []
-				for i in range((len(non_singleton_spacers)+len(col_scheme)-1)//len(col_scheme)): # Repeat the same colour scheme.
-					for j in col_scheme:
-						colours += [(j, col_scheme[i])]
-
+				if not args.arrays_to_join:
+					print("You must provide the order you want to fix when using the fixed order option!\n\nABORTING.")
+					sys.exit()
+				addition_order = [Array(i, array_spacers_dict[i]) for i in args.arrays_to_join]
 			else:
-				colours = [(i, "#000000") for i in Cols_hex_40]
+				addition_order = array_choices[i]
+
+			if args.fix_order:
+				if not args.arrays_to_join:
+					print("You must provide the order you want to fix when using the fixed order option!\n\nABORTING.")
+					sys.exit()
+				addition_order = [Array(i, array_spacers_dict[i]) for i in args.arrays_to_join]
+			else:
+				addition_order = array_choices[i]
+			try:
+				array_dict, tree = build_tree_single(addition_order, taxon_namespace, best_score, all_arrays, node_ids, event_costs)
+			except Exception as e:
+				print("Failed while trying to build the tree with the following array order:\n{}\n\nError:\n{}".format(" ".join([i.id for i in addition_order]), e))
+				exc_type, exc_obj, exc_tb = sys.exc_info()
+				exc_tb.print_exception()
+				sys.exit()
+
+			if array_dict:
+				score = tree.length()
+				if score < best_score:
+					best_arrays = copy.deepcopy(array_dict) # Keep inferred ancestral states and information
+					best_score = copy.deepcopy(score)
+					best_addition_order = copy.deepcopy(addition_order)
+					# Keep one copy for comparisons as copy.deepcopy makes a new taxon namespace which breaks comparisons.
+					best_tree_comparator = dendropy.Tree(tree)
+					best_tree = copy.deepcopy(tree)
+				elif score == best_score:
+					if isinstance(best_tree, list):
+						# Check this tree isn't identical to one that's already been found
+						if not any([
+							dendropy.calculate.treecompare.weighted_robinson_foulds_distance(good_tree, tree) == 0. for good_tree in best_tree_comparator
+							]):
+							best_tree_comparator.append(dendropy.Tree(tree))
+							best_tree.append(copy.deepcopy(tree))
+							best_arrays.append(copy.deepcopy(array_dict))
+							best_addition_order.append(copy.deepcopy(addition_order))
+					else:
+						# Check this tree isn't identical to the one that's already been found
+						if dendropy.calculate.treecompare.weighted_robinson_foulds_distance(best_tree_comparator, tree) != 0.:
+							best_tree_comparator = [best_tree_comparator, dendropy.Tree(tree)]
+							best_tree = [best_tree, copy.deepcopy(tree)]
+							best_arrays = [best_arrays, copy.deepcopy(array_dict)]
+							best_addition_order = [best_addition_order, copy.deepcopy(addition_order)]
+				if args.fix_order:
+					break
+			else:
+				no_id_count += 1
+
+
+	else:
+		pool = multiprocessing.Pool(processes=num_threads)
+		chunksize = args.replicates//num_threads
+		options = [(array_list, taxon_namespace, all_arrays, node_ids, event_costs) for array_list in array_choices]
+		tree_list = pool.starmap(build_tree_multi, options, chunksize)
+		pool.close()
+		pool.join()
+
+		all_tree_comparators = dendropy.TreeList()
+		for array_dict, tree, addition_order in tree_list:
+			if array_dict:
+				all_tree_comparators.read(data=tree.as_string("newick"), schema="newick")
+				score = tree.length()
+				if score < best_score:
+					best_arrays = copy.deepcopy(array_dict) # Keep inferred ancestral states and information
+					best_score = copy.deepcopy(score)
+					best_addition_order = copy.deepcopy(addition_order)
+					# Keep one copy for comparisons as copy.deepcopy makes a new taxon namespace which breaks comparisons.
+					best_tree_comparator = all_tree_comparators[-1:]
+					best_tree = copy.deepcopy(tree)
+				elif score == best_score:
+					if isinstance(best_tree, list):
+						# Check this tree isn't identical to one that's already been found
+						if not any([
+							dendropy.calculate.treecompare.weighted_robinson_foulds_distance(good_tree, all_tree_comparators[-1]) == 0. for good_tree in best_tree_comparator
+							]):
+							best_tree_comparator.append(all_tree_comparators[-1])
+							best_tree.append(copy.deepcopy(tree))
+							best_arrays.append(copy.deepcopy(array_dict))
+							best_addition_order.append(copy.deepcopy(addition_order))
+					else:
+						# Check this tree isn't identical to the one that's already been found
+						if dendropy.calculate.treecompare.weighted_robinson_foulds_distance(best_tree_comparator[0], all_tree_comparators[-1]) != 0.:
+							best_tree_comparator.append(all_tree_comparators[-1])
+							best_tree = [best_tree, copy.deepcopy(tree)]
+							best_arrays = [best_arrays, copy.deepcopy(array_dict)]
+							best_addition_order = [best_addition_order, copy.deepcopy(addition_order)]
+
+
+	if no_id_count == min([args.replicates, len(array_choices)]):
+		print("\nERROR:\n\nUnable to construct any trees as at least one specified array\
+	shares no spacers with any other array already in the tree. \n\
+	If you have arrays sharing very few spacers and did not use enough replicates\
+	to explore all tree space, then consider retrying with more replicates.\n\
+	Otherwise, check that you didn't mistype the array IDs to align.\n\
+	If not one of these then that may indicate a problem with the program. \
+	Please send the data that led to this error to Alan so he can try to figure it out.\n\n")
+		sys.exit()
+
+
+	print("\nScore of best tree is: {}\n".format(best_score))
+
+
+	# First check how many spacers will need to be coloured
+
+	all_spacers = []
+	for array in array_choices[0]:
+		all_spacers += array.spacers
+	non_singleton_spacers = [spacer for spacer, count in Counter(all_spacers).items() if count >1]
+	if len(non_singleton_spacers) > 8:
+		if len(non_singleton_spacers) > 12: 
+			if len(non_singleton_spacers) > 27:
+				if len(non_singleton_spacers) > 40:
+					print("{} spacers found in multiple arrays. Using fill and outline colour combinations to distinguish spacers.".format(len(non_singleton_spacers)))
+					if len(non_singleton_spacers) < 65:
+						col_scheme = Cols_tol
+					elif len(non_singleton_spacers) < 145:
+						col_scheme = Cols_hex_12
+					else:
+						col_scheme = Cols_hex_27
+					colours = []
+					for i in range((len(non_singleton_spacers)+len(col_scheme)-1)//len(col_scheme)): # Repeat the same colour scheme.
+						for j in col_scheme:
+							colours += [(j, col_scheme[i])]
+
+				else:
+					colours = [(i, "#000000") for i in Cols_hex_40]
+			else:
+				colours = [(i, "#000000") for i in Cols_hex_27]
 		else:
-			colours = [(i, "#000000") for i in Cols_hex_27]
+			colours = [(i, "#000000") for i in Cols_hex_12]
 	else:
-		colours = [(i, "#000000") for i in Cols_hex_12]
-else:
-	colours = [(i, "#000000") for i in Cols_tol]
-# build a dictionary with colours assigned to each spacer.
-spacer_cols_dict  = {}
+		colours = [(i, "#000000") for i in Cols_tol]
+	# build a dictionary with colours assigned to each spacer.
+	spacer_cols_dict  = {}
 
-for i, spacer in enumerate(sorted(non_singleton_spacers)):
-	spacer_cols_dict[spacer] = colours[i]
+	for i, spacer in enumerate(sorted(non_singleton_spacers)):
+		spacer_cols_dict[spacer] = colours[i]
 
 
-try:
+	try:
 
-	if isinstance(best_tree, list):
-		print("{} equivalantly parsimonious trees were identified.".format(len(best_tree)))
-		for n, good_tree in enumerate(best_tree):
-			order = [i.id for i in best_addition_order[n]]
-			print("\nThe addition order to make the following tree was: {}\n".format(" ".join(order)))
-			if args.print_tree:
-				print(good_tree.as_ascii_plot(show_internal_node_labels=True))
+		if isinstance(best_tree, list):
+			print("{} equivalantly parsimonious trees were identified.".format(len(best_tree)))
+			for n, good_tree in enumerate(best_tree):
+				order = [i.id for i in best_addition_order[n]]
+				print("\nThe addition order to make the following tree was: {}\n".format(" ".join(order)))
+				if args.print_tree:
+					print(good_tree.as_ascii_plot(show_internal_node_labels=True))
+					print('\n\n')
+				print(good_tree.as_string("newick"))
 				print('\n\n')
-			print(good_tree.as_string("newick"))
-			print('\n\n')
+				if args.output_tree:
+					filename = "{}_{}.png".format(args.output_tree[:-4], n+1)
+					print("Saving image of tree with array diagrams to {}\n".format(filename))
+					plot_tree(good_tree, best_arrays[n], filename, spacer_cols_dict, args.branch_lengths, args.emphasize_diffs)
+				if args.output_arrays:
+					filename = "{}_{}.txt".format(args.output_arrays[:-4], n+1)
+					print("Saving details of arrays to {}\n".format(filename))
+					with open(filename, 'w') as fout:
+						fout.write('\n'.join(["{}\t{}".format(k," ".join(v.spacers)) for k,v in best_arrays[n].items()]))
+		else:
+			order = [i.id for i in best_addition_order]
+			print("\nThe addition order to make the best tree was: {}\n\n".format(" ".join(order)))
+			if args.print_tree:
+				print(best_tree.as_ascii_plot(show_internal_node_labels=True))
+			print(best_tree.as_string("newick"))
 			if args.output_tree:
-				filename = "{}_{}.png".format(args.output_tree[:-4], n+1)
-				print("Saving image of tree with array diagrams to {}\n".format(filename))
-				plot_tree(good_tree, best_arrays[n], filename)
+				print("Saving image of tree with array diagrams to {}\n".format(args.output_tree))
+				plot_tree(best_tree, best_arrays, args.output_tree, spacer_cols_dict, args.branch_lengths, args.emphasize_diffs)
 			if args.output_arrays:
-				filename = "{}_{}.txt".format(args.output_arrays[:-4], n+1)
-				print("Saving details of arrays to {}\n".format(filename))
-				with open(filename, 'w') as fout:
-					fout.write('\n'.join(["{}\t{}".format(k," ".join(v.spacers)) for k,v in best_arrays[n].items()]))
-	else:
-		order = [i.id for i in best_addition_order]
-		print("\nThe addition order to make the best tree was: {}\n\n".format(" ".join(order)))
-		if args.print_tree:
-			print(best_tree.as_ascii_plot(show_internal_node_labels=True))
-		print(best_tree.as_string("newick"))
-		if args.output_tree:
-			print("Saving image of tree with array diagrams to {}\n".format(args.output_tree))
-			plot_tree(best_tree, best_arrays, args.output_tree)
-		if args.output_arrays:
-			print("Saving details of arrays to {}\n".format(args.output_arrays))
-			with open(args.output_arrays, 'w') as fout:
-				fout.write('\n'.join(["{}\t{}".format(k," ".join(v.spacers)) for k,v in best_arrays.items()]))
-except Exception as e:
-	exc_type, exc_obj, exc_tb = sys.exc_info()
-	exc_tb.print_exception()
+				print("Saving details of arrays to {}\n".format(args.output_arrays))
+				with open(args.output_arrays, 'w') as fout:
+					fout.write('\n'.join(["{}\t{}".format(k," ".join(v.spacers)) for k,v in best_arrays.items()]))
+	except Exception as e:
+		exc_type, exc_obj, exc_tb = sys.exc_info()
+		exc_tb.print_exception()
 
+
+if __name__ == '__main__':
+	main()
