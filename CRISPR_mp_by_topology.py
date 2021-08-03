@@ -12,6 +12,8 @@ import CRISPR_mp
 import random
 from math import ceil, factorial
 from itertools import permutations
+from string import ascii_lowercase
+
 
 
 def make_topologies(leaves, root=False, randomize=False):
@@ -62,16 +64,17 @@ def main():
 
 	args = parser.parse_args(sys.argv[1:])
 
-	# array_choices = [random.sample(args.arrays_to_join, len(args.arrays_to_join)) for i in range(args.replicates)]
-	
-	# starting_trees = []
-	# for order in array_choices:
-	# 	t = next(make_topologies(order, randomize=True)) + ";"
-	# 	starting_trees.append(dendropy.Tree.get(data=t, schema="newick"))
+	array_spacers_dict = {}
+	with open(args.array_file, 'r') as fin:
+		for line in fin.readlines():
+			bits = line.split()
+			array_spacers_dict[bits[0]] = bits[2:]
 
-	# for tree in starting_trees:
-	# 	print(tree.as_ascii_plot())
+	node_ids = ["Int " + i for i in ascii_lowercase]
+	if len(args.arrays_to_join) > 27: # Maximum internal nodes in tree is n-2 so only need more than 26 if n >= 28
+		node_ids += ["Int " + "".join(i) for i in product(ascii_lowercase, repeat=(len(args.arrays_to_join)//26)+1)]
 
+	taxon_namespace = dendropy.TaxonNamespace(args.arrays_to_join + node_ids)
 	
 	if len(args.arrays_to_join) < 7:
 		array_orders = [i for i in permutations(args.arrays_to_join)]
@@ -84,7 +87,16 @@ def main():
 		for i in range(args.replicates):
 			trees.append(next(make_topologies(array_orders[i], randomize=True))+";")
 
+	best_score = 9999999999
 
+	for t in trees[:1]:
+		# Initialize tree as dendropy Tree instance
+		tree = dendropy.Tree.get(data=t, schema="newick")
+		# Add internal nodes and infer their states.
+		array_dict = {}
+		for node in tree.seed_node.postorder_iter():
+			if node.taxon:
+				print(node.taxon.label)
 
 
 
