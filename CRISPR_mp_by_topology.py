@@ -84,6 +84,10 @@ def main():
 		help="Specify filename for the graphical representation of your tree with hypothetical intermediate arrays as a png."
 		)
 	parser.add_argument(
+		"-s",  dest="seed", type=int, nargs="?", default = 0,
+			help="Specify the seed to control the generation of the initial tree and leaf order. Use of this option results in the production of a single tree that will always be yielded by this seed value. This overrules the replicates option."
+		)
+	parser.add_argument(
 		"arrays_to_join", nargs="*",  
 		help="Specify the IDs of the arrays you want to join. If none provided, joins all arrays in the provided array representatives file. **If given, must come at the end of your command after all other arguments.**"
 		)
@@ -162,16 +166,26 @@ def main():
 		for order in array_orders:
 			trees += [t + ";" for t in make_topologies(order)]
 	else:
-		array_orders = [random.sample(args.arrays_to_join, len(args.arrays_to_join)) for i in range(args.replicates)]
-		trees = []
-		for i in range(args.replicates):
-			trees.append(next(make_topologies(array_orders[i], randomize=True))+";")
+		if not args.seed:
+			seeds = [random.randint(0,9999999999) for i in range(args.replicates)]
+			print(seeds)
+			sys.exit()
+			trees = []
+			for i in range(args.replicates):
+				random.seed(seeds[i])
+		
+				trees.append(next(make_topologies(random.sample(args.arrays_to_join, len(args.arrays_to_join)), randomize=True))+";")
+		else:
+			random.seed(args.seed)
+			trees = [next(make_topologies(random.sample(args.arrays_to_join, len(args.arrays_to_join)), randomize=True))+";"]
+
 
 
 	best_score = 9999999999
+	best_seed = []
 	best_tree = []
 	best_arrays = []
-	for t in trees:
+	for seed, t in zip(seeds, trees):
 		# Control settings
 		Incomplete_tree = False
 		node_count = 0
@@ -231,16 +245,24 @@ def main():
 		score = tree.length()
 		if score < best_score:
 			best_score = score
+			best_seed = [str(seed)]
 			best_tree = [dendropy.Tree(tree)]
 			best_arrays = [deepcopy(array_dict)]
 		elif score == best_score:
 			if not any([
 						dendropy.calculate.treecompare.weighted_robinson_foulds_distance(good_tree, tree) == 0. for good_tree in best_tree
 						]):
+				best_seed.append(str(seed))
 				best_tree.append(dendropy.Tree(tree))
 				best_arrays.append(deepcopy(array_dict))
 
-	print(best_score)
+	if best_tree == []:
+		print("Unable to generate trees due to lack of identity between arrays. Try increasing the number of replicates used. Otherwise you may want to consider splitting these arrays into smaller groups that share more spacers.")
+		sys.exit()
+
+
+	print("\n\nThe best score for tree(s) was: {}".format(best_score))
+	print("\n\nThe seed values to recreate the best tree(s) are: {}\n\n".format(", ".join(best_seed)))
 	for n, tree in enumerate(best_tree):	
 		print(tree.as_ascii_plot(show_internal_node_labels=True))
 		print(tree.as_string("newick"))
