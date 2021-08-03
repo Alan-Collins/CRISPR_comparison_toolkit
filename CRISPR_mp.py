@@ -917,12 +917,13 @@ def resolve_pairwise_parsimony(array1, array2, all_arrays, array_dict, node_ids,
 		return "No_ID"
 
 
-def find_closest_array(array, array_dict, tree):
+def find_closest_array(array, array_dict, tree, event_costs):
 	"""
 	Args:
 		array (Array class instance): The array you want to find the closest match for.
 		array_dict (dict): The dictionary with values of Array class instances of arrays already in your tree
 		tree (Deondropy Tree class instance): The tree in which the arrays are located.
+		event_costs (dict): Dict to look up event types and their parsimony costs.
 
 	Returns:
 		(Array class instance) The array already in your tree that is the most parsimonious match to the query array.
@@ -962,7 +963,7 @@ def find_closest_array(array, array_dict, tree):
 		return best_match
 
 
-def replace_existing_array(existing_array, new_array, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed):
+def replace_existing_array(existing_array, new_array, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed, event_costs, tree_namespace):
 	"""
 	Given a array already in the tree and an array to be added, finds an ancestral state for the two arrays and replaces the existing array with the following tree structure:
 			   /- existing array
@@ -979,6 +980,8 @@ def replace_existing_array(existing_array, new_array, current_parent, tree, all_
 		array_dict (dict): Dict of arrays in the tree so far.
 		tree_child_dict (dict): Dict of dendopy tree node class instances in the tree.
 		seed (bool): boolean indicating if the parent of the existing array the seed node in the tree.
+		event_costs (dict): Dict to look up event types and their parsimony costs.
+		tree_namespace (dendropy.TaxonNamespace): Namespace for taxa to add to the tree.
 	Returns:
 		(tuple) of the following:
 			(dendropy Tree instance) Tree with the existing array replaced with the newly formed node.
@@ -987,7 +990,7 @@ def replace_existing_array(existing_array, new_array, current_parent, tree, all_
 	"""
 
 	# Make a hypothetical ancestor for the pair of arrays and calculate the distances
-	results = resolve_pairwise_parsimony(existing_array, new_array, all_arrays, array_dict, node_ids, node_count, tree)
+	results = resolve_pairwise_parsimony(existing_array, new_array, all_arrays, array_dict, node_ids, node_count, tree, event_costs)
 	
 	if results == "No_ID":
 		return results
@@ -1009,7 +1012,7 @@ def replace_existing_array(existing_array, new_array, current_parent, tree, all_
 		for a in [new_array, ancestor]:
 			# Create tree nodes
 			tree_child_dict[a.id] = dendropy.Node(edge_length=a.distance)
-			tree_child_dict[a.id].taxon = taxon_namespace.get_taxon(a.id)
+			tree_child_dict[a.id].taxon = tree_namespace.get_taxon(a.id)
 			#Store arrays for further comparisons
 			array_dict[a.id] = a
 		# Build new tree node
@@ -1409,17 +1412,17 @@ def build_tree_single(arrays, tree_namespace, score, all_arrays, node_ids, event
 			all_arrays = [arr for arr in all_arrays if arr != a.spacers]
 			seed = False # To check if we are modifying the child of the seed node
 			# Find the most similar array already in the tree (measured in parsimony score)
-			best_match = find_closest_array(a, array_dict, tree)
+			best_match = find_closest_array(a, array_dict, tree, event_costs)
 			while best_match == "No_ID":
 
 				arrays.append(arrays[i])
 				del arrays[i]
 				a = arrays[i]
-				best_match = find_closest_array(a, array_dict, tree)
+				best_match = find_closest_array(a, array_dict, tree, event_costs)
 			if best_match.extant: # If the closest match is a array then just join them and replace the existing array with the new node
 				current_parent = array_dict[tree_child_dict[best_match.id].parent_node.taxon.label]
 				results = replace_existing_array(
-					best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
+					best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed, event_costs, tree_namespace
 					)
 				tree, array_dict, tree_child_dict = results
 				node_count += 1
@@ -1430,7 +1433,7 @@ def build_tree_single(arrays, tree_namespace, score, all_arrays, node_ids, event
 					seed = True
 					current_parent = None
 				results = replace_existing_array(
-					best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
+					best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed, event_costs, tree_namespace
 					)
 
 				tree, array_dict, tree_child_dict = results
@@ -1516,16 +1519,16 @@ def build_tree_multi(arrays, tree_namespace, all_arrays, node_ids, event_costs):
 		seed = False # To check if we are modifying the child of the seed node
 
 		# Find the most similar array already in the tree (measured in parsimony score)
-		best_match = find_closest_array(a, array_dict, tree)
+		best_match = find_closest_array(a, array_dict, tree, event_costs)
 		while best_match == "No_ID":
 			arrays.append(arrays[i])
 			del arrays[i]
 			a = arrays[i]
-			best_match = find_closest_array(a, array_dict, tree)
+			best_match = find_closest_array(a, array_dict, tree, event_costs)
 		if best_match.extant: # If the closest match is a array then just join them and replace the existing array with the new node
 			current_parent = array_dict[tree_child_dict[best_match.id].parent_node.taxon.label]
 			results = replace_existing_array(
-				best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
+				best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed, event_costs, tree_namespace
 				)
 
 			tree, array_dict, tree_child_dict = results
@@ -1537,7 +1540,7 @@ def build_tree_multi(arrays, tree_namespace, all_arrays, node_ids, event_costs):
 				seed = True
 				current_parent = None
 			results = replace_existing_array(
-				best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed
+				best_match, a, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed, event_costs, tree_namespace
 				)
 
 			tree, array_dict, tree_child_dict = results
