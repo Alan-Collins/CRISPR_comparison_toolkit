@@ -60,6 +60,10 @@ def main():
 			help="Specify number of replicates of tree building to perform. The more replicates, the greater the chance that a better tree will be found. Default: 1"
 		)
 	parser.add_argument(
+		"-w",  dest="leaf_swaps", type=int, nargs="?", default = 0,
+			help="Specify number of times leaves should be swapped when optimising the leaf placement on a tree. Default: 0"
+		)
+	parser.add_argument(
 		"-q",  dest="acquisition", type=int, nargs="?", default = 1,
 			help="Specify the parsimony cost of a spacer acquisition event. Default: 1"
 		)
@@ -168,8 +172,6 @@ def main():
 	else:
 		if not args.seed:
 			seeds = [random.randint(0,9999999999) for i in range(args.replicates)]
-			print(seeds)
-			sys.exit()
 			trees = []
 			for i in range(args.replicates):
 				random.seed(seeds[i])
@@ -221,20 +223,19 @@ def main():
 							node.parent_node.taxon = taxon_namespace.get_taxon(ancestor.id)
 							node.parent_node.edge_length = 0 # Start the ancestor with 0 branch length
 		
+
+		
 		# Repeat iteration now that tree is built to add repeat indels.
-		for node in tree.seed_node.postorder_iter():
-			if node.taxon:
-				if len(node.sibling_nodes()) != 0:
-					sister = node.sibling_nodes()[0]
-					parent = node.parent_node
-					if sister.taxon and parent.taxon:				
-						for child_node in [node, sister]:
-							array_dict[child_node.taxon.label].reset()
-							array_dict[parent.taxon.label].reset()
-							array_dict[child_node.taxon.label] = CRISPR_mp.count_parsimony_events(array_dict[child_node.taxon.label], array_dict[ancestor.id], array_dict, tree, True)
-							for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
-								array_dict[child_node.taxon.label].distance += array_dict[child_node.taxon.label].events[k] * v
-							child_node.edge_length = array_dict[child_node.taxon.label].distance
+		for node in tree:
+			if node.level() != 0:
+				if node.parent_node.level() != 0:
+					parent = node.parent_node				
+					array_dict[node.taxon.label].reset()
+					array_dict[parent.taxon.label].reset()
+					array_dict[node.taxon.label] = CRISPR_mp.count_parsimony_events(array_dict[child_node.taxon.label], array_dict[ancestor.id], array_dict, tree, True)
+					for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
+						array_dict[node.taxon.label].distance += array_dict[child_node.taxon.label].events[k] * v
+					node.edge_length = array_dict[child_node.taxon.label].distance
 								
 		
 		if Incomplete_tree: 

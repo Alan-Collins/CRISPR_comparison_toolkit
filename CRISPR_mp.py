@@ -1440,11 +1440,9 @@ def build_tree_single(arrays, tree_namespace, score, all_arrays, node_ids, event
 				node_count += 1
 
 			# Recheck child - ancestor branch length to find indels that would have to occur multiple times
-			count = 0
 			for node in tree:
 				if node.level() != 0:
 					if node.parent_node.level() != 0:
-						count+=1
 						node_array = array_dict[node.taxon.label]
 						parent_array = array_dict[node.parent_node.taxon.label]
 						node_array.reset()
