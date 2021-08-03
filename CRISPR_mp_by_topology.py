@@ -10,6 +10,8 @@ import argparse
 import dendropy
 import CRISPR_mp
 import random
+from math import ceil, factorial
+from itertools import permutations
 
 
 def make_topologies(leaves, root=False, randomize=False):
@@ -22,20 +24,20 @@ def make_topologies(leaves, root=False, randomize=False):
 	Yields:
 		 Newick string of tree or subtree.
 	"""
-	if len(leaves) == 1: # When all nodes have been joined, return the list in a tidied format.
+	if len(leaves) == 1: # When all nodes have been joined, yield the product.
 		yield leaves[0]
 	else:
 		if randomize:
-			root = random.randint(1,len(leaves)-1) # Root the tree at a random point
-			for left in make_topologies(leaves[:root], random.randint(1, root), True): # Root the subtree to the left at a random point
-				for right in make_topologies(leaves[root:], random.randint(root, len(leaves)-1), True): # Root the subtree to the right at a random point
+			root = random.randint(1,ceil((len(leaves))/2)) # Root the tree at a random point
+			for left in make_topologies(leaves[:root], randomize=True): # Root the subtree to the left at a random point
+				for right in make_topologies(leaves[root:], randomize=True): # Root the subtree to the right at a random point
 					yield "({},{})".format(left, right)
 		elif root:
 			for left in make_topologies(leaves[:root]): # Make subtrees to the left of (sub)tree root
 				for right in make_topologies(leaves[root:]): # Make subtrees to the right of (sub)tree root
 					yield "({},{})".format(left, right)
 		else:
-			for i in range(1,len(leaves)):
+			for i in range(1, ceil((len(leaves)+1)/2)):
 				for left in make_topologies(leaves[:i]): # Make subtrees to the left of (sub)tree root
 					for right in make_topologies(leaves[i:]): # Make subtrees to the right of (sub)tree root
 						yield "({},{})".format(left, right)
@@ -60,15 +62,29 @@ def main():
 
 	args = parser.parse_args(sys.argv[1:])
 
-	array_choices = [random.sample(args.arrays_to_join, len(args.arrays_to_join)) for i in range(args.replicates)]
+	# array_choices = [random.sample(args.arrays_to_join, len(args.arrays_to_join)) for i in range(args.replicates)]
 	
-	starting_trees = []
-	for order in array_choices:
-		t = next(make_topologies(order, randomize=True)) + ";"
-		starting_trees.append(dendropy.Tree.get(data=t, schema="newick"))
+	# starting_trees = []
+	# for order in array_choices:
+	# 	t = next(make_topologies(order, randomize=True)) + ";"
+	# 	starting_trees.append(dendropy.Tree.get(data=t, schema="newick"))
 
-	for tree in starting_trees:
-		print(tree.as_ascii_plot())
+	# for tree in starting_trees:
+	# 	print(tree.as_ascii_plot())
+
+	
+	if len(args.arrays_to_join) < 7:
+		array_orders = [i for i in permutations(args.arrays_to_join)]
+		trees = []
+		for order in array_orders:
+			trees += [t + ";" for t in make_topologies(order)]
+	else:
+		array_orders = [random.sample(args.arrays_to_join, len(args.arrays_to_join)) for i in range(args.replicates)]
+		trees = []
+		for i in range(args.replicates):
+			trees.append(next(make_topologies(array_orders[i], randomize=True))+";")
+
+
 
 
 
