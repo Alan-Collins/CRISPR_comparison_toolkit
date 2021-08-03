@@ -13,6 +13,8 @@ import random
 from math import ceil, factorial
 from itertools import permutations
 from string import ascii_lowercase
+from copy import deepcopy
+from collections import Counter
 
 
 
@@ -78,6 +80,10 @@ def main():
 			help="Specify the parsimony cost of the loss of a spacer from the trailer end of the array. Default: 1"
 		)
 	parser.add_argument(
+		"-o", dest="output_tree", required = False,
+		help="Specify filename for the graphical representation of your tree with hypothetical intermediate arrays as a png."
+		)
+	parser.add_argument(
 		"arrays_to_join", nargs="*",  
 		help="Specify the IDs of the arrays you want to join. If none provided, joins all arrays in the provided array representatives file. **If given, must come at the end of your command after all other arguments.**"
 		)
@@ -102,6 +108,52 @@ def main():
 	if len(args.arrays_to_join) > 27: # Maximum internal nodes in tree is n-2 so only need more than 26 if n >= 28
 		node_ids += ["Int " + "".join(i) for i in product(ascii_lowercase, repeat=(len(args.arrays_to_join)//26)+1)]
 
+	# hex values from this website http://phrogz.net/css/distinct-colors.html
+
+	Cols_hex_27 = ['#fd5925', '#dbc58e', '#008d40', '#304865', '#934270', '#f7b8a2', '#907500', '#45deb2', '#1f4195', '#d67381', '#8e7166', '#afb200', '#005746', '#a598ff', '#8f0f1b', '#b96000', '#667f42', '#00c7ce', '#9650f0', '#614017', '#59c300', '#1a8298', '#b5a6bd', '#ea9b00', '#bbcbb3', '#00b0ff', '#cd6ec6']
+
+	#hex values from https://mokole.com/palette.html
+
+	Cols_hex_40 = ["#696969","#556b2f","#a0522d","#800000","#006400","#808000","#483d8b","#3cb371","#008080","#bdb76b","#4682b4","#000080","#9acd32","#32cd32","#daa520","#7f007f","#ff4500","#00ced1","#ff8c00","#c71585","#0000cd","#00ff00","#9400d3","#dc143c","#00bfff","#f4a460","#adff2f","#da70d6","#ff00ff","#1e90ff","#db7093","#fa8072","#ffff54","#dda0dd","#7b68ee","#afeeee","#98fb98","#7fffd4","#ffe4c4","#ffc0cb"]
+
+	Cols_tol = ["#332288", "#117733", "#44AA99", "#88CCEE", "#DDCC77", "#CC6677", "#AA4499", "#882255"]
+
+	Cols_hex_12 = ["#07001c", "#ff6f8d", "#4c62ff", "#92ffa9", "#810087", "#bcffe6", "#490046", "#00c8ee", "#b53900", "#ff8cf7", "#5b5800", "#14d625"]
+
+	all_spacers = []
+	for array in args.arrays_to_join:
+		all_spacers += array_spacers_dict[array]
+	non_singleton_spacers = [spacer for spacer, count in Counter(all_spacers).items() if count >1]
+	if len(non_singleton_spacers) > 8:
+		if len(non_singleton_spacers) > 12: 
+			if len(non_singleton_spacers) > 27:
+				if len(non_singleton_spacers) > 40:
+					print("{} spacers found in multiple arrays. Using fill and outline colour combinations to distinguish spacers.".format(len(non_singleton_spacers)))
+					if len(non_singleton_spacers) < 65:
+						col_scheme = Cols_tol
+					elif len(non_singleton_spacers) < 145:
+						col_scheme = Cols_hex_12
+					else:
+						col_scheme = Cols_hex_27
+					colours = []
+					for i in range((len(non_singleton_spacers)+len(col_scheme)-1)//len(col_scheme)): # Repeat the same colour scheme.
+						for j in col_scheme:
+							colours += [(j, col_scheme[i])]
+
+				else:
+					colours = [(i, "#000000") for i in Cols_hex_40]
+			else:
+				colours = [(i, "#000000") for i in Cols_hex_27]
+		else:
+			colours = [(i, "#000000") for i in Cols_hex_12]
+	else:
+		colours = [(i, "#000000") for i in Cols_tol]
+	# build a dictionary with colours assigned to each spacer.
+	spacer_cols_dict  = {}
+
+	for i, spacer in enumerate(sorted(non_singleton_spacers)):
+		spacer_cols_dict[spacer] = colours[i]
+
 	taxon_namespace = dendropy.TaxonNamespace(args.arrays_to_join + node_ids)
 	
 	if len(args.arrays_to_join) < 7:
@@ -118,6 +170,7 @@ def main():
 
 	best_score = 9999999999
 	best_tree = []
+	best_arrays = []
 	for t in trees:
 		# Control settings
 		Incomplete_tree = False
@@ -152,24 +205,44 @@ def main():
 
 							array_dict[ancestor.id] = ancestor
 							node.parent_node.taxon = taxon_namespace.get_taxon(ancestor.id)
-							node.edge_length = array_dict[a].distance
-							sister.edge_length = array_dict[b].distance
+							node.parent_node.edge_length = 0 # Start the ancestor with 0 branch length
+							
+							# Now calculate child-ancestor distance including any repeat_indel events
+							for child_node in [node, sister]:
+								array_dict[child_node.taxon.label].reset()
+								array_dict[ancestor.id].reset()
+								array_dict[child_node.taxon.label] = CRISPR_mp.count_parsimony_events(array_dict[child_node.taxon.label], array_dict[ancestor.id], array_dict, tree, True)
+								for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
+									array_dict[child_node.taxon.label].distance += array_dict[child_node.taxon.label].events[k] * v
+								child_node.edge_length = array_dict[child_node.taxon.label].distance
+								
+		
+		if Incomplete_tree: 
+			# If there was no identity between neighbouring arrays in the tree then skip this replicate and try again.
+			continue
 
 		tree.reroot_at_node(tree.seed_node, update_bipartitions=False) # Need to reroot at the seed so that RF distance works					
 		score = tree.length()
 		if score < best_score:
 			best_score = score
 			best_tree = [dendropy.Tree(tree)]
+			best_arrays = [deepcopy(array_dict)]
 		elif score == best_score:
 			if not any([
 						dendropy.calculate.treecompare.weighted_robinson_foulds_distance(good_tree, tree) == 0. for good_tree in best_tree
 						]):
 				best_tree.append(dendropy.Tree(tree))
+				best_arrays.append(deepcopy(array_dict))
 
 	print(best_score)
-	for tree in best_tree:	
+	for n, tree in enumerate(best_tree):	
 		print(tree.as_ascii_plot(show_internal_node_labels=True))
 		print(tree.as_string("newick"))
+		if n > 0:
+			filename = "{}_{}.png".format(args.output_tree[:-4], n+1)
+		else:
+			filename = args.output_tree
+		CRISPR_mp.plot_tree(tree, best_arrays[n], filename, spacer_cols_dict, branch_lengths=True, emphasize_diffs=True)
 
 
 if __name__ == '__main__':
