@@ -115,20 +115,22 @@ def main():
 		for i in range(args.replicates):
 			trees.append(next(make_topologies(array_orders[i], randomize=True))+";")
 
+
 	best_score = 9999999999
-	for t in trees[:3]:
+	best_tree = []
+	for t in trees:
 		# Control settings
 		Incomplete_tree = False
 		node_count = 0
 
 		# Initialize tree as dendropy Tree instance
-		tree = dendropy.Tree.get(data=t, schema="newick")
+		tree = dendropy.Tree.get(data=t, schema="newick", taxon_namespace=taxon_namespace)
 
 		# Initialize array dict
 		array_dict = {}
 		for array in args.arrays_to_join:
 			array_dict[array] = CRISPR_mp.Array(array, array_spacers_dict[array], extant=True)
-		all_arrays = [array for array in array_dict.values()]
+		all_arrays = [array.spacers for array in array_dict.values()]
 
 		# Add internal nodes and infer their states.
 		for node in tree.seed_node.postorder_iter():
@@ -140,7 +142,6 @@ def main():
 					if sister.taxon:
 						b = sister.taxon.label
 						if not parent.taxon: # Only need to add the ancestor once.
-						
 							results = CRISPR_mp.resolve_pairwise_parsimony(array_dict[a], array_dict[b], all_arrays, array_dict, node_ids, node_count, tree, event_costs)
 							if results == "No_ID":
 								Incomplete_tree = True
@@ -154,8 +155,19 @@ def main():
 							node.edge_length = array_dict[a].distance
 							sister.edge_length = array_dict[b].distance
 
+		tree.reroot_at_node(tree.seed_node, update_bipartitions=False) # Need to reroot at the seed so that RF distance works					
 		score = tree.length()
-		print(score)	
+		if score < best_score:
+			best_score = score
+			best_tree = [dendropy.Tree(tree)]
+		elif score == best_score:
+			if not any([
+						dendropy.calculate.treecompare.weighted_robinson_foulds_distance(good_tree, tree) == 0. for good_tree in best_tree
+						]):
+				best_tree.append(dendropy.Tree(tree))
+
+	print(best_score)
+	for tree in best_tree:	
 		print(tree.as_ascii_plot(show_internal_node_labels=True))
 		print(tree.as_string("newick"))
 
