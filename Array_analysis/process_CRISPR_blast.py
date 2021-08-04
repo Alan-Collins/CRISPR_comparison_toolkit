@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-# AUTHOR      :  ALAN COLLINS
-# VERSION     :  v1
-# DATE        :  2021-8-3
+# AUTHOR	  :  ALAN COLLINS
+# VERSION	 :  v1
+# DATE		:  2021-8-3
 # DESCRIPTION :  Process BLAST output of spacers against a blastdb. For results that have cut off due to mismatches, extend the hit to the full length and report mismatches. Report up- and down-stream bases for PAM analysis.
 
 import sys
@@ -55,20 +55,22 @@ class protospacer():
 	Class to store information about predicted protospacers.
 	
 	Attributes:
-		up5 (str): The 5 bases upstream of the protospacer on the targeted strand
-		down5 (str): The 5 bases downstream of the protospacer on the targeted strand
-		protoseq (str): The sequence of the protospacer
-		mismatch (int): The number of mismatch positions between the spacer and protospacer
-		strand (str): ("plus"|"minus") orientation of protospacer relative to the strand represented in your fasta sequence
-		start (int): Index of first base in protospacer in the target sequence
-		stop  (int): Index of last base in protospacer in the target sequence
-		target (str): ID of the target sequence
+		up5 (str): The 5 bases upstream of the protospacer on the targeted strand.
+		down5 (str): The 5 bases downstream of the protospacer on the targeted strand.
+		protoseq (str): The sequence of the protospacer.
+		pid (float): Percent identity between spacer and protospacer over whole length.
+		mismatch (int): The number of mismatch positions between the spacer and protospacer.
+		strand (str): ("plus"|"minus") orientation of protospacer relative to the strand represented in your fasta sequence.
+		start (int): Index of first base in protospacer in the target sequence.
+		stop  (int): Index of last base in protospacer in the target sequence.
+		target (str): ID of the target sequence.
 
 	"""
-	def __init__(self, up5="", down5="", protoseq="", mismatch=0, strand = "", start=0, stop=0, target=""):
+	def __init__(self, up5="", down5="", protoseq="", pid=0., mismatch=0, strand = "", start=0, stop=0, target=""):
 		self.up5 = up5
 		self.down5 = down5
 		self.protoseq = protoseq
+		self.pid = pid
 		self.mismatch = mismatch
 		self.strand = strand
 		self.start = start
@@ -144,8 +146,59 @@ def rev_comp(string):
 	return rev_str
 
 
+def hamming(seq1, seq2):
+	"""
+	Args:
+		seq1 (str): First sequence to compare.
+		seq2 (str): Second sequence to compare.
 
-def fill_info(db, result):
+	Returns:
+		(int) count of positions that differ between the two sequences.
+
+	Raises:
+		ValueError: Sequences must be the same length.
+	"""
+
+	if len(seq1) != len(seq2):
+		raise ValueError("Sequences must be the same length.")
+
+	diff = 0
+	for a,b in zip(seq1, seq2):
+		if a != b:
+			diff+=1
+
+	return diff
+
+
+def fasta_to_dict(FASTA_file):
+	""" Given a file in fasta format, opens the file and reads the headers and sequences into a dict.
+	Args:
+		FASTA_file (str): Path to the fasta file.
+	
+	Returns:
+		(dict) Fasta sequences as values associated with their headers as keys
+	"""
+	fasta_dict = {}
+	with open(FASTA_file, 'r') as f:
+		multifasta = f.read()
+	f.close()
+	fastas = multifasta.split(">")
+	trimmed_fastas = []
+	for i in fastas:
+		if len(i) != 0:
+			trimmed_fastas.append(i)
+
+	fastas = trimmed_fastas
+
+	for i in fastas:
+		header = i.split("\n")[0].split()[0]
+		seq = "".join(i.split("\n")[1:])
+		fasta_dict[header] = seq
+
+	return fasta_dict
+
+
+def fill_info(db, spacer, result):
 	"""
 	Args:
 		result (blast_result class): The blast_result instance to process.
@@ -178,8 +231,8 @@ def fill_info(db, result):
 		batch_locations += '{} {}-{} {} '.format(proto.target, loc[0], loc[1], proto.strand)
 
 	proto.up5, proto.protoseq, proto.down5 = run_blastcmd(db, fstring, batch_locations)
-
-
+	proto.mismatch = hamming(spacer, proto.protoseq)
+	proto.pid = 100-(100*proto.mismatch/result.qlen)
 
 	return proto
 
@@ -222,9 +275,13 @@ def main():
 
 	args = parser.parse_args(sys.argv[1:])
 
+	spacer_dict = fasta_to_dict(args.spacer_file)
+
 	blast_output = run_blastn(args)
 
-	first = fill_info(args.blast_db_path, blast_output[0])
+	test = blast_output[0]
+
+	first = fill_info(args.blast_db_path, spacer_dict[test.qseqid], test)
 
 	print(vars(first))
 
