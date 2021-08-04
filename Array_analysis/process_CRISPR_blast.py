@@ -298,13 +298,22 @@ def main():
 	outcontents = ["Spacer_ID\tTarget_contig\tProtospacer_start\tProtospacer_end\tPercent_identity\tmismatches\tprotospacer_sequence\tupstream_bases\tdownstream_bases\ttarget_strand"]
 	fstring = batch_locations = ""
 	protos = []
+
+	count = 0
+	all_protospacer_infos = []
 	for result in blast_output:
 		p, f, b = fill_initial_info(result)
 		protos.append(p)
 		fstring += f
 		batch_locations += b
+		count += 1
 
-	all_protospacer_infos = run_blastcmd(args.blast_db_path, fstring, batch_locations)
+		if count == 1000:
+			count = 0
+			all_protospacer_infos += run_blastcmd(args.blast_db_path, fstring, batch_locations)
+			fstring = batch_locations = ""
+	if count != 0:
+		all_protospacer_infos += run_blastcmd(args.blast_db_path, fstring, batch_locations)
 
 	p_count = 0
 	for i in range(0,len(all_protospacer_infos),3):
