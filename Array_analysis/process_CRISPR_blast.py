@@ -55,6 +55,7 @@ class protospacer():
 	Class to store information about predicted protospacers.
 	
 	Attributes:
+		spacer (str): The fasta header of the spacer.
 		up5 (str): The 5 bases upstream of the protospacer on the targeted strand.
 		down5 (str): The 5 bases downstream of the protospacer on the targeted strand.
 		protoseq (str): The sequence of the protospacer.
@@ -64,9 +65,10 @@ class protospacer():
 		start (int): Index of first base in protospacer in the target sequence.
 		stop  (int): Index of last base in protospacer in the target sequence.
 		target (str): ID of the target sequence.
-
+		length (int): The length of the spacer.
 	"""
-	def __init__(self, up5="", down5="", protoseq="", pid=0., mismatch=0, strand = "", start=0, stop=0, target=""):
+	def __init__(self, spacer="", up5="", down5="", protoseq="", pid=0., mismatch=0, strand = "", start=0, stop=0, target="", length=0):
+		self.spacer = spacer
 		self.up5 = up5
 		self.down5 = down5
 		self.protoseq = protoseq
@@ -76,6 +78,7 @@ class protospacer():
 		self.start = start
 		self.stop = stop
 		self.target = target
+		self.length = length
 		
 
 def run_blastcmd(db, fstring, batch_locations):
@@ -208,7 +211,7 @@ def fill_info(db, spacer, result):
 	"""
 	# {'qseqid': 'C1S1', 'sseqid': 'DMS3', 'pident': 100.0, 'length': 13, 'mismatch': 0, 'gapopen': '0', 'qstart': 19, 'qend': 31, 'sstart': 31243, 'send': 31231, 'evalue': '0.010', 'bitscore': '26.3', 'qlen': 32, 'slen': 36415, 'strand': 'minus', 'trunc': False, 'sstart_mod': False, 'send_mod': False}
 	
-	proto = protospacer(target=result.sseqid, strand=result.strand)
+	proto = protospacer(spacer=result.qseqid,target=result.sseqid, strand=result.strand, length=result.qlen)
 
 	# Adjust for missing edges due to blast not extending through mismatches. If there are no missing edges this won't add anything.
 	if proto.strand == 'plus':
@@ -232,7 +235,7 @@ def fill_info(db, spacer, result):
 
 	proto.up5, proto.protoseq, proto.down5 = run_blastcmd(db, fstring, batch_locations)
 	proto.mismatch = hamming(spacer, proto.protoseq)
-	proto.pid = 100-(100*proto.mismatch/result.qlen)
+	proto.pid = 100-(100*proto.mismatch/proto.length)
 
 	return proto
 
@@ -279,11 +282,13 @@ def main():
 
 	blast_output = run_blastn(args)
 
-	test = blast_output[0]
+	outcontents = ["Spacer_ID\tTarget_contig\tProtospacer_start\tProtospacer_end\tPercent_identity\tmismatches\tprotospacer_sequence\tupstream_bases\tdownstream_bases\ttarget_strand"]
+	for result in blast_output:
+		p = fill_info(args.blast_db_path, spacer_dict[result.qseqid], result)
+		outcontents.append("\t".join([str(_) for _ in [p.spacer, p.target, p.start, p.stop, p.pid, p.mismatch, p.protoseq, p.up5, p.down5, p.strand]]))
 
-	first = fill_info(args.blast_db_path, spacer_dict[test.qseqid], test)
-
-	print(vars(first))
+	with open(args.outfile, 'w') as fout:
+		fout.write("\n".join(outcontents) + "\n")
 
 
 if __name__ == '__main__':
