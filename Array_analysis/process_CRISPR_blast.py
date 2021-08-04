@@ -30,9 +30,6 @@ class blast_result():
 		qlen (int):  length of query sequence
 		slen (int):  length of subject sequence
 		strand (str):	Whether the blast hit was on the top (plus) or bottom (minus) strand of the DNA
-		trunc (bool):	Whether match might be truncated (i.e. blast result wasn't full qlen)
-		sstart_mod (bool/int):   If match appears tuncated, store revised genome locations here
-		send_mod (bool/int): If match appears tuncated, store revised genome locations here
 	"""
 	def __init__(self, blast_line):
 		bits = blast_line.split('\t')
@@ -51,9 +48,6 @@ class blast_result():
 		self.qlen = int(bits[12])
 		self.slen = int(bits[13])
 		self.strand = 'plus' if self.sstart < self.send else 'minus'
-		self.trunc = False 
-		self.sstart_mod = False 
-		self.send_mod = False
 
 
 class protospacer():
@@ -63,7 +57,7 @@ class protospacer():
 	Attributes:
 		up5 (str): The 5 bases upstream of the protospacer on the targeted strand
 		down5 (str): The 5 bases downstream of the protospacer on the targeted strand
-		protospacer (str): The sequence of the protospacer
+		protoseq (str): The sequence of the protospacer
 		mismatch (int): The number of mismatch positions between the spacer and protospacer
 		strand (str): ("plus"|"minus") orientation of protospacer relative to the strand represented in your fasta sequence
 		start (int): Index of first base in protospacer in the target sequence
@@ -71,11 +65,10 @@ class protospacer():
 		target (str): ID of the target sequence
 
 	"""
-	def __init__(self, up5="", down5="", protospacer="", mismatch=0, strand = "", start=0, stop=0, target=""):
-		
+	def __init__(self, up5="", down5="", protoseq="", mismatch=0, strand = "", start=0, stop=0, target=""):
 		self.up5 = up5
 		self.down5 = down5
-		self.protospacer = protospacer
+		self.protoseq = protoseq
 		self.mismatch = mismatch
 		self.strand = strand
 		self.start = start
@@ -133,7 +126,26 @@ def run_blastn(args):
 	return blast_lines
 
 
-def fill_info(result):
+def rev_comp(string):
+	"""Converts As, Ts, Cs, and Gs, to their reverse complement nucleotide. Skips any characters that are not A, T, C, or G. Can work with upper or lower case sequence and returns the same case that was provided.
+	Args:
+		string (str): The sequence for which you want the reverse complement.
+	
+	Returns:
+		(str) The reverse complement of the input sequence..
+	"""
+	rev_str = ''
+	rev_comp_lookup = {"A" : "T", "T" : "A", "C" : "G", "G" : "C", "a" : "t", "t" : "a", "c" : "g", "g" : "c"}
+	for i in reversed(string):
+		if i in "ATCGatcg":
+			rev_str += rev_comp_lookup[i]
+		else:
+			rev_str += i
+	return rev_str
+
+
+
+def fill_info(db, result):
 	"""
 	Args:
 		result (blast_result class): The blast_result instance to process.
@@ -141,8 +153,35 @@ def fill_info(result):
 	Returns:
 		(protospacer class) This is a description of what is returned.
 	"""
+	# {'qseqid': 'C1S1', 'sseqid': 'DMS3', 'pident': 100.0, 'length': 13, 'mismatch': 0, 'gapopen': '0', 'qstart': 19, 'qend': 31, 'sstart': 31243, 'send': 31231, 'evalue': '0.010', 'bitscore': '26.3', 'qlen': 32, 'slen': 36415, 'strand': 'minus', 'trunc': False, 'sstart_mod': False, 'send_mod': False}
+	
+	proto = protospacer(target=result.sseqid, strand=result.strand)
+
+	# Adjust for missing edges due to blast not extending through mismatches. If there are no missing edges this won't add anything.
+	if proto.strand == 'plus':
+		proto.start = result.sstart - (result.qstart - 1) # Adjust for 1 base counting
+		proto.stop = result.send + (result.qlen - result.qend)
+		up5_coords = (proto.start - 5, proto.start - 1)
+		down5_coords = (proto.stop + 1, proto.stop + 5)
+	else:
+		proto.start = result.send - (result.qlen - result.qend)
+		proto.stop = result.sstart + (result.qstart -1) # Adjust for 1 base counting
+		up5_coords = (proto.stop + 1, proto.stop + 5)
+		down5_coords = (proto.start - 5, proto.start - 1)	
+
+	# Build blastdbcmd inputs
+	fstring = ""
+	batch_locations = ""
+
+	for loc in [up5_coords, (proto.start, proto.stop), down5_coords]:
+		fstring += '%s %s %s\n'
+		batch_locations += '{} {}-{} {} '.format(proto.target, loc[0], loc[1], proto.strand)
+
+	proto.up5, proto.protoseq, proto.down5 = run_blastcmd(db, fstring, batch_locations)
 
 
+
+	return proto
 
 
 
@@ -185,10 +224,11 @@ def main():
 
 	blast_output = run_blastn(args)
 
-	first = fill_info(blast_output[0])
+	first = fill_info(args.blast_db_path, blast_output[0])
 
-	# print(vars(first))
+	print(vars(first))
 
 
 if __name__ == '__main__':
 	main()
+
