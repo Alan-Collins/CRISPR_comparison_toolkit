@@ -27,12 +27,12 @@ class blast_result():
 		send (int): end of alignment in subject
 		evalue (str):   expect value
 		bitscore (float):   bit score
-		qlen (int)  length of query sequence
-		slen (int)  length of subject sequence
-		strand (str)	Whether the blast hit was on the top (plus) or bottom (minus) strand of the DNA
-		trunc (bool)	Whether match might be truncated (i.e. blast result wasn't full qlen)
-		sstart_mod (bool/int)   If match appears tuncated, store revised genome locations here
-		send_mod (bool/int) If match appears tuncated, store revised genome locations here
+		qlen (int):  length of query sequence
+		slen (int):  length of subject sequence
+		strand (str):	Whether the blast hit was on the top (plus) or bottom (minus) strand of the DNA
+		trunc (bool):	Whether match might be truncated (i.e. blast result wasn't full qlen)
+		sstart_mod (bool/int):   If match appears tuncated, store revised genome locations here
+		send_mod (bool/int): If match appears tuncated, store revised genome locations here
 	"""
 	def __init__(self, blast_line):
 		bits = blast_line.split('\t')
@@ -55,6 +55,33 @@ class blast_result():
 		self.sstart_mod = False 
 		self.send_mod = False
 
+
+class protospacer():
+	"""
+	Class to store information about predicted protospacers.
+	
+	Attributes:
+		up5 (str): The 5 bases upstream of the protospacer on the targeted strand
+		down5 (str): The 5 bases downstream of the protospacer on the targeted strand
+		protospacer (str): The sequence of the protospacer
+		mismatch (int): The number of mismatch positions between the spacer and protospacer
+		strand (str): ("plus"|"minus") orientation of protospacer relative to the strand represented in your fasta sequence
+		start (int): Index of first base in protospacer in the target sequence
+		stop  (int): Index of last base in protospacer in the target sequence
+		target (str): ID of the target sequence
+
+	"""
+	def __init__(self, up5="", down5="", protospacer="", mismatch=0, strand = "", start=0, stop=0, target=""):
+		
+		self.up5 = up5
+		self.down5 = down5
+		self.protospacer = protospacer
+		self.mismatch = mismatch
+		self.strand = strand
+		self.start = start
+		self.stop = stop
+		self.target = target
+		
 
 def run_blastcmd(db, fstring, batch_locations):
 	"""
@@ -99,7 +126,6 @@ def run_blastn(args):
 	"""	
 	blastn_command = "blastn -query {} -db {} -task blastn-short -outfmt '6 std qlen slen' -num_threads {} -max_target_seqs {} -evalue {} {}".format(args.spacer_file, args.blast_db_path, args.num_threads, args.max_target_seqs, args.evalue, args.other_blast_options)
 	blast_run = subprocess.run(blastn_command, shell=True, universal_newlines = True, capture_output=True)
-	# blast_lines = [blast_result(i) for i in subprocess.run(blastn_command, shell=True, universal_newlines = True, capture_output=True).stdout.split('\n') if len(i) > 0]
 	if blast_run.stderr:
 		print("ERROR running blast on {}:\n{}".format(args.blast_db_path, blast_run.stderr))
 		sys.exit()
@@ -107,42 +133,62 @@ def run_blastn(args):
 	return blast_lines
 
 
-parser = argparse.ArgumentParser(
-	description="Process BLAST output of spacers against a blastdb. For results that have cut off due to mismatches, extend the hit to the full length and report mismatches. Report up- and down-stream bases for PAM analysis."
-	)
-parser.add_argument(
-	"-d", dest="blast_db_path", required = True,
-	help="path to blast db files (not including the file extensions). The blastdb must have been made with the option '-parse_seqids' for this script to function."
-	)
-parser.add_argument(
-	"-s", dest="spacer_file", required = True,
-	help="The file with your spacers in fasta format."
-	)
-parser.add_argument(
-	"-o", dest="outfile", required = True,
-	help="path to output file."
-	)
-parser.add_argument(
-	"-e", dest="evalue", required = False, default='10',
-	help="DEFAULT: 10. set the evalue cutoff below which blastn will keep blast hits when looking for CRISPR repeats in your blast database. Useful for reducing inclusion of low quality blast hits with big databases in combination with the -m option."
-	)
-parser.add_argument(
-	"-m", dest="max_target_seqs", required = False, default='10000',
-	help="DEFAULT: 10000. Set the max_target_seqs option for blastn when looking for CRISPR repeats in your blast database. Blast stops looking for hits after finding and internal limit (N_i) sequences for each query sequence, where N_i=2*N+50. These are just the first N_i sequences with better evalue scores than the cutoff, not the best N_i hits. Because of the nature of the blast used here (small number of queries with many expected hits) it may be necessary to increase the max_target_seqs value to avoid blast ceasing to search for repeats before all have been found. The blast default value is 500. The default used here is 10,000. You may want to reduce it to increase speed or increase it to make sure every repeat is being found. If increasing this value (e.g. doubling it) finds no new spacers then you can be confident that this is not an issue with your dataset."
-	)
-parser.add_argument(
-	"-t", dest="num_threads", required = False, default=1, type=int,
-	help="DEFAULT: 1. Number of threads you want to use for the blastn step of this script."
-	)
-parser.add_argument(
-	"-x", dest="other_blast_options", required = False, default='',
-	help="DEFAULT: none. If you want to include any other options to control the blastn command, you can add them here. Options you should not provide here are: blastn -query -db -task -outfmt -num_threads -max_target_seqs -evalue"
-	)
-
-
-args = parser.parse_args(sys.argv[1:])
-
-blast_output = run_blastn(args)
+def fill_info(result):
+	"""
+	Args:
+		result (blast_result class): The blast_result instance to process.
+	
+	Returns:
+		(protospacer class) This is a description of what is returned.
+	"""
 
 
 
+
+
+def main():
+
+	parser = argparse.ArgumentParser(
+		description="Process BLAST output of spacers against a blastdb. For results that have cut off due to mismatches, extend the hit to the full length and report mismatches. Report up- and down-stream bases for PAM analysis."
+		)
+	parser.add_argument(
+		"-d", dest="blast_db_path", required = True,
+		help="path to blast db files (not including the file extensions). The blastdb must have been made with the option '-parse_seqids' for this script to function."
+		)
+	parser.add_argument(
+		"-s", dest="spacer_file", required = True,
+		help="The file with your spacers in fasta format."
+		)
+	parser.add_argument(
+		"-o", dest="outfile", required = True,
+		help="path to output file."
+		)
+	parser.add_argument(
+		"-e", dest="evalue", required = False, default='10',
+		help="DEFAULT: 10. set the evalue cutoff below which blastn will keep blast hits when looking for CRISPR repeats in your blast database. Useful for reducing inclusion of low quality blast hits with big databases in combination with the -m option."
+		)
+	parser.add_argument(
+		"-m", dest="max_target_seqs", required = False, default='10000',
+		help="DEFAULT: 10000. Set the max_target_seqs option for blastn when looking for CRISPR repeats in your blast database. Blast stops looking for hits after finding and internal limit (N_i) sequences for each query sequence, where N_i=2*N+50. These are just the first N_i sequences with better evalue scores than the cutoff, not the best N_i hits. Because of the nature of the blast used here (small number of queries with many expected hits) it may be necessary to increase the max_target_seqs value to avoid blast ceasing to search for repeats before all have been found. The blast default value is 500. The default used here is 10,000. You may want to reduce it to increase speed or increase it to make sure every repeat is being found. If increasing this value (e.g. doubling it) finds no new spacers then you can be confident that this is not an issue with your dataset."
+		)
+	parser.add_argument(
+		"-t", dest="num_threads", required = False, default=1, type=int,
+		help="DEFAULT: 1. Number of threads you want to use for the blastn step of this script."
+		)
+	parser.add_argument(
+		"-x", dest="other_blast_options", required = False, default='',
+		help="DEFAULT: none. If you want to include any other options to control the blastn command, you can add them here. Options you should not provide here are: blastn -query -db -task -outfmt -num_threads -max_target_seqs -evalue"
+		)
+
+
+	args = parser.parse_args(sys.argv[1:])
+
+	blast_output = run_blastn(args)
+
+	first = fill_info(blast_output[0])
+
+	# print(vars(first))
+
+
+if __name__ == '__main__':
+	main()
