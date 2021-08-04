@@ -201,15 +201,14 @@ def fasta_to_dict(FASTA_file):
 	return fasta_dict
 
 
-def fill_info(db, spacer, result):
+def fill_initial_info(result):
 	"""
 	Args:
 		result (blast_result class): The blast_result instance to process.
 	
 	Returns:
-		(protospacer class) This is a description of what is returned.
+		tuple(protospacer class, str, str) protospacer class instance with some info added and the fstring and batch_locations for the protospacer and flanking sequence
 	"""
-	# {'qseqid': 'C1S1', 'sseqid': 'DMS3', 'pident': 100.0, 'length': 13, 'mismatch': 0, 'gapopen': '0', 'qstart': 19, 'qend': 31, 'sstart': 31243, 'send': 31231, 'evalue': '0.010', 'bitscore': '26.3', 'qlen': 32, 'slen': 36415, 'strand': 'minus', 'trunc': False, 'sstart_mod': False, 'send_mod': False}
 	
 	proto = protospacer(spacer=result.qseqid,target=result.sseqid, strand=result.strand, length=result.qlen)
 
@@ -233,7 +232,21 @@ def fill_info(db, spacer, result):
 		fstring += '%s %s %s\n'
 		batch_locations += '{} {}-{} {} '.format(proto.target, loc[0], loc[1], proto.strand)
 
-	proto.up5, proto.protoseq, proto.down5 = run_blastcmd(db, fstring, batch_locations)
+	return proto, fstring, batch_locations
+
+
+def fill_remaining_info(proto, spacer, blastdbcmd_output):
+	"""
+	Args:
+		proto (protospacer class) protospacer instance containing initial information that you want to fill.
+		spacer (str): sequence of the spacer.
+		blastdbcmd_output (list): elements of the blastdbcmd output for this protospacer.
+	
+	Returns:
+		(protospacer class) protospacer instance with the rest of the information filled in.
+	"""
+
+	proto.up5, proto.protoseq, proto.down5 = blastdbcmd_output 
 	proto.mismatch = hamming(spacer, proto.protoseq)
 	proto.pid = 100-(100*proto.mismatch/proto.length)
 
@@ -283,9 +296,24 @@ def main():
 	blast_output = run_blastn(args)
 
 	outcontents = ["Spacer_ID\tTarget_contig\tProtospacer_start\tProtospacer_end\tPercent_identity\tmismatches\tprotospacer_sequence\tupstream_bases\tdownstream_bases\ttarget_strand"]
+	fstring = batch_locations = ""
+	protos = []
 	for result in blast_output:
-		p = fill_info(args.blast_db_path, spacer_dict[result.qseqid], result)
+		p, f, b = fill_initial_info(result)
+		protos.append(p)
+		fstring += f
+		batch_locations += b
+
+	all_protospacer_infos = run_blastcmd(args.blast_db_path, fstring, batch_locations)
+
+	p_count = 0
+	for i in range(0,len(all_protospacer_infos),3):
+		p = protos[p_count]
+		p = fill_remaining_info(p, spacer_dict[p.spacer], all_protospacer_infos[i:i+3])
+		
 		outcontents.append("\t".join([str(_) for _ in [p.spacer, p.target, p.start, p.stop, p.pid, p.mismatch, p.protoseq, p.up5, p.down5, p.strand]]))
+
+		p_count += 1
 
 	with open(args.outfile, 'w') as fout:
 		fout.write("\n".join(outcontents) + "\n")
