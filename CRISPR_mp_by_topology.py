@@ -64,6 +64,8 @@ def swap_leaves(tree, num_swaps, seed, array_dict, all_arrays, event_costs):
 	swap_count = 0
 	best_score = tree.length()
 	best_tree = dendropy.Tree(tree)
+	best_arrays = deepcopy(array_dict)
+
 	while swap_count < num_swaps:
 		random.seed(seed)
 		leaf_a = random.choice(tree.leaf_nodes())
@@ -82,6 +84,7 @@ def swap_leaves(tree, num_swaps, seed, array_dict, all_arrays, event_costs):
 		parent_a.set_child_nodes([leaf_b, sib_a])
 		parent_b.set_child_nodes([leaf_a, sib_b])
 
+		Incomplete_tree = False # Catch instances of sibling nodes sharing 0 spacers and abort the round of leaf swapping.
 		for node in [leaf_a, leaf_b]: # For both leaves work back to root and recalculate all ancestors and branch lengths.
 			while node.level() != 0:
 				node_id = node.taxon.label
@@ -89,21 +92,41 @@ def swap_leaves(tree, num_swaps, seed, array_dict, all_arrays, event_costs):
 				sib_id = sib.taxon.label
 				parent = node.parent_node
 				parent_id = parent.taxon.label
-				print(parent_id, array_dict[parent_id].spacers)
 				results = CRISPR_mp.resolve_pairwise_parsimony(array_dict[node_id], array_dict[sib_id], all_arrays, array_dict, [0], 0, tree, event_costs)
 				if results == "No_ID":
 					Incomplete_tree = True
 					break
-				else:
-					array_dict[node_id], array_dict[sib_id], ancestor = results
+				
+				array_dict[node_id].reset()
+				array_dict[sib_id].reset()
+				array_dict[node_id], array_dict[sib_id], ancestor = results
+				array_dict[parent_id] = ancestor
+				array_dict[parent_id].id = parent_id # Want to change everything except the ID
 
-					array_dict[parent_id].spacers = ancestor.spacers # Only want the spacers of the new ancestral state.
-				print(parent_id, array_dict[parent_id].spacers)
-				sys.exit()
+				# calculate branches including context of arrays elsewhere in the tree.
+				array_dict[node_id] = CRISPR_mp.count_parsimony_events(array_dict[node_id], array_dict[parent_id], array_dict, tree, True)
+				array_dict[sib_id] = CRISPR_mp.count_parsimony_events(array_dict[sib_id], array_dict[parent_id], array_dict, tree, True)
+
+				# Refresh branch lengths of the children of the newly inferred ancestor
+				for n, n_id in [(node, node_id), (sib, sib_id)]:
+					for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
+						array_dict[n_id].distance += array_dict[n_id].events[k] * v
+					n.edge_length = array_dict[n_id].distance
+
+				# Set node to its parent to work up towards the root node.
+				node = node.parent_node
 			if Incomplete_tree:
 				break
+		
+		if tree.length() < best_score:
+			swap_count = 0
+			best_score = tree.length()
+			best_tree = dendropy.Tree(tree)
+			best_arrays = deepcopy(array_dict)
+		else:
+			swap_count += 1
 
-	return best_tree, array_dict
+	return best_tree, best_arrays
 
 
 def main():
@@ -280,14 +303,19 @@ def main():
 								array_dict[a], array_dict[b], ancestor = results
 								node_count+=1
 
+							for n, n_id in [(node, a), (sister, b)]:
+								for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
+									array_dict[n_id].distance += array_dict[n_id].events[k] * v
+								n.edge_length = array_dict[n_id].distance
+
 							array_dict[ancestor.id] = ancestor
 							node.parent_node.taxon = taxon_namespace.get_taxon(ancestor.id)
 							node.parent_node.edge_length = 0 # Start the ancestor with 0 branch length
 		
-		if args.leaf_swaps:
-			tree, array_dict = swap_leaves(tree, args.leaf_swaps, seed, array_dict, all_arrays, event_costs)
+		if Incomplete_tree: 
+			# If there was no identity between neighbouring arrays in the tree then skip this replicate and try again.
+			continue
 
-		
 		# Repeat iteration now that tree is built to add repeat indels.
 		for node in tree:
 			if node.level() != 0:
@@ -298,11 +326,15 @@ def main():
 				for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
 					array_dict[node.taxon.label].distance += array_dict[node.taxon.label].events[k] * v
 				node.edge_length = array_dict[node.taxon.label].distance
-								
 		
-		if Incomplete_tree: 
-			# If there was no identity between neighbouring arrays in the tree then skip this replicate and try again.
-			continue
+		# If user requested leaf swapping to optimize leaf positions, do that.
+
+		if args.leaf_swaps:
+			print(tree.as_ascii_plot(show_internal_node_labels=True))
+			tree, array_dict = swap_leaves(tree, args.leaf_swaps, seed, array_dict, all_arrays, event_costs)
+			print(tree.as_ascii_plot(show_internal_node_labels=True))
+		
+		
 		tree.reroot_at_node(tree.seed_node, update_bipartitions=False) # Need to reroot at the seed so that RF distance works					
 		score = tree.length()
 		if score < best_score:
