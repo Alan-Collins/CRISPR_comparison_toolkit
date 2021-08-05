@@ -15,7 +15,7 @@ from itertools import permutations, product
 from string import ascii_lowercase
 from copy import deepcopy
 from collections import Counter
-
+import time
 
 
 def make_topologies(leaves, root=False, randomize=False):
@@ -130,6 +130,7 @@ def swap_leaves(tree, num_swaps, seed, array_dict, all_arrays, event_costs):
 
 
 def main():
+	start = time.time()
 
 	parser = argparse.ArgumentParser(
 		description="Generate random bifircating tree topologies and calculate parsimony of each then return the best.")
@@ -366,6 +367,8 @@ def main():
 		else:
 			filename = args.output_tree
 		CRISPR_mp.plot_tree(tree, best_arrays[n], filename, spacer_cols_dict, branch_lengths=True, emphasize_diffs=True)
+
+	print("Total time taken to run was {0:.1f} seconds".format(time.time() - start))
 
 
 if __name__ == '__main__':
