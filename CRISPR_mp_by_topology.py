@@ -10,7 +10,7 @@ import argparse
 import dendropy
 import CRISPR_mp
 import random
-from math import ceil, factorial
+from math import ceil, log
 from itertools import permutations, product
 from string import ascii_lowercase
 from copy import deepcopy
@@ -196,8 +196,9 @@ def main():
 			array_spacers_dict[bits[0]] = bits[2:]
 
 	node_ids = ["Int " + i for i in ascii_lowercase]
+
 	if len(args.arrays_to_join) > 27: # Maximum internal nodes in tree is n-2 so only need more than 26 if n >= 28
-		node_ids += ["Int " + "".join(i) for i in product(ascii_lowercase, repeat=(len(args.arrays_to_join)//26)+1)]
+		node_ids += ["Int " + "".join(i) for i in product(ascii_lowercase, repeat=(ceil(log(len(args.arrays_to_join), 26))))]
 
 	# hex values from this website http://phrogz.net/css/distinct-colors.html
 
@@ -215,6 +216,7 @@ def main():
 	for array in args.arrays_to_join:
 		all_spacers += array_spacers_dict[array]
 	non_singleton_spacers = [spacer for spacer, count in Counter(all_spacers).items() if count >1]
+
 	if len(non_singleton_spacers) > 8:
 		if len(non_singleton_spacers) > 12: 
 			if len(non_singleton_spacers) > 27:
@@ -245,6 +247,7 @@ def main():
 	for i, spacer in enumerate(sorted(non_singleton_spacers)):
 		spacer_cols_dict[spacer] = colours[i]
 
+
 	taxon_namespace = dendropy.TaxonNamespace(args.arrays_to_join + node_ids)
 	
 	if len(args.arrays_to_join) < 7 and not args.seed:
@@ -265,9 +268,7 @@ def main():
 			random.seed(args.seed)
 			seeds = [args.seed]
 			trees = [next(make_topologies(random.sample(args.arrays_to_join, len(args.arrays_to_join)), randomize=True))+";"]
-
-
-
+	
 	best_score = 9999999999
 	best_seed = []
 	best_tree = []

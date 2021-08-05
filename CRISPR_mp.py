@@ -19,6 +19,7 @@ from itertools import permutations
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import multiprocessing
+from math import ceil, log
 
 class Array():
 	"""
@@ -1661,7 +1662,7 @@ def main():
 
 	node_ids = ["Int " + i for i in ascii_lowercase]
 	if len(args.arrays_to_join) > 27: # Maximum internal nodes in tree is n-2 so only need more than 26 if n >= 28
-		node_ids += ["Int " + "".join(i) for i in product(ascii_lowercase, repeat=(len(args.arrays_to_join)//26)+1)]
+		node_ids += ["Int " + "".join(i) for i in product(ascii_lowercase, repeat=(ceil(log(len(args.arrays_to_join), 26))))]
 
 
 	array_spacers_dict = {}
