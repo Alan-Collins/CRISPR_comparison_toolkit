@@ -47,6 +47,21 @@ def make_topologies(leaves, root=False, randomize=False):
 						yield "({},{})".format(left, right)
 
 
+def swap_leaves(tree, num_swaps, seed):
+	""" Swap 2 random leaves on the tree and recalculate ancestral states and total branch lengths. If improved, keep the tree, if not try another 2 random leaves. Try until consecutive failures to improve tree reaches num_swaps.
+	Args:
+		tree (dendropy Tree class): The tree to be modified.
+		num_swaps (int): Number of leaf swaps that need to not yield improvement before the search is aborted.
+		seed (int): seed value for random choices of leaves to swap.
+	
+	Returns:
+		(dendropy Tree class) Best tree found during leaf-swapping search.
+	"""
+	
+
+	return tree
+
+
 def main():
 
 	parser = argparse.ArgumentParser(
@@ -177,6 +192,7 @@ def main():
 				random.seed(seeds[i])
 		
 				trees.append(next(make_topologies(random.sample(args.arrays_to_join, len(args.arrays_to_join)), randomize=True))+";")
+				seeds = [0 for _ in trees]
 		else:
 			random.seed(args.seed)
 			seeds = [args.seed]
@@ -224,6 +240,8 @@ def main():
 							node.parent_node.taxon = taxon_namespace.get_taxon(ancestor.id)
 							node.parent_node.edge_length = 0 # Start the ancestor with 0 branch length
 		
+		if args.leaf_swaps:
+			tree = swap_leaves(tree, args.leaf_swaps, seed)
 
 		
 		# Repeat iteration now that tree is built to add repeat indels.
@@ -245,14 +263,16 @@ def main():
 		score = tree.length()
 		if score < best_score:
 			best_score = score
-			best_seed = [str(seed)]
+			if seed:
+				best_seed = [str(seed)]
 			best_tree = [dendropy.Tree(tree)]
 			best_arrays = [deepcopy(array_dict)]
 		elif score == best_score:
 			if not any([
 						dendropy.calculate.treecompare.weighted_robinson_foulds_distance(good_tree, tree) == 0. for good_tree in best_tree
 						]):
-				best_seed.append(str(seed))
+				if seed:
+					best_seed.append(str(seed))
 				best_tree.append(dendropy.Tree(tree))
 				best_arrays.append(deepcopy(array_dict))
 
@@ -262,7 +282,8 @@ def main():
 
 
 	print("\n\nThe best score for tree(s) was: {}".format(best_score))
-	print("\n\nThe seed values to recreate the best tree(s) are: {}\n\n".format(", ".join(best_seed)))
+	if best_seed != []:
+		print("\n\nThe seed values to recreate the best tree(s) are: {}\n\n".format(", ".join(best_seed)))
 	for n, tree in enumerate(best_tree):	
 		print(tree.as_ascii_plot(show_internal_node_labels=True))
 		print(tree.as_string("newick"))
