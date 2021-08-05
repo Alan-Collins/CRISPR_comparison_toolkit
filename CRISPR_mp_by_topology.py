@@ -164,7 +164,7 @@ def main():
 
 	taxon_namespace = dendropy.TaxonNamespace(args.arrays_to_join + node_ids)
 	
-	if len(args.arrays_to_join) < 7:
+	if len(args.arrays_to_join) < 7 and not args.seed:
 		array_orders = [i for i in permutations(args.arrays_to_join)]
 		trees = []
 		for order in array_orders:
@@ -179,6 +179,7 @@ def main():
 				trees.append(next(make_topologies(random.sample(args.arrays_to_join, len(args.arrays_to_join)), randomize=True))+";")
 		else:
 			random.seed(args.seed)
+			seeds = [args.seed]
 			trees = [next(make_topologies(random.sample(args.arrays_to_join, len(args.arrays_to_join)), randomize=True))+";"]
 
 
@@ -228,20 +229,18 @@ def main():
 		# Repeat iteration now that tree is built to add repeat indels.
 		for node in tree:
 			if node.level() != 0:
-				if node.parent_node.level() != 0:
-					parent = node.parent_node				
-					array_dict[node.taxon.label].reset()
-					array_dict[parent.taxon.label].reset()
-					array_dict[node.taxon.label] = CRISPR_mp.count_parsimony_events(array_dict[child_node.taxon.label], array_dict[ancestor.id], array_dict, tree, True)
-					for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
-						array_dict[node.taxon.label].distance += array_dict[child_node.taxon.label].events[k] * v
-					node.edge_length = array_dict[child_node.taxon.label].distance
+				parent = node.parent_node				
+				array_dict[node.taxon.label].reset()
+				array_dict[parent.taxon.label].reset()
+				array_dict[node.taxon.label] = CRISPR_mp.count_parsimony_events(array_dict[node.taxon.label], array_dict[parent.taxon.label], array_dict, tree, True)
+				for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
+					array_dict[node.taxon.label].distance += array_dict[node.taxon.label].events[k] * v
+				node.edge_length = array_dict[node.taxon.label].distance
 								
 		
 		if Incomplete_tree: 
 			# If there was no identity between neighbouring arrays in the tree then skip this replicate and try again.
 			continue
-
 		tree.reroot_at_node(tree.seed_node, update_bipartitions=False) # Need to reroot at the seed so that RF distance works					
 		score = tree.length()
 		if score < best_score:
