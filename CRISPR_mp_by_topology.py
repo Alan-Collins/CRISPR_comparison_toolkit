@@ -63,15 +63,18 @@ def swap_leaves(tree, num_swaps, seed):
 	while swap_count < num_swaps:
 		random.seed(seed)
 		leaf_a = random.choice(tree.leaf_nodes())
+		sib_a = leaf_a.sibling_nodes()[0]
 		seed += 1
 		random.seed(seed)
 		leaf_b = random.choice(tree.leaf_nodes())
 		seed += 1
-		while leaf_a == leaf_b:
+		print(leaf_a, leaf_b)
+		while leaf_a == leaf_b or sib_a == leaf_b:
 			random.seed(seed)
 			leaf_b = random.choice(tree.leaf_nodes())
 			seed += 1
 		print(leaf_a, leaf_b)
+		print(sib_a)
 		sys.exit()
 			
 	
