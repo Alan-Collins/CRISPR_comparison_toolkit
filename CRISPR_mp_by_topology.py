@@ -47,12 +47,15 @@ def make_topologies(leaves, root=False, randomize=False):
 						yield "({},{})".format(left, right)
 
 
-def swap_leaves(tree, num_swaps, seed):
+def swap_leaves(tree, num_swaps, seed, array_dict, all_arrays, event_costs):
 	""" Swap 2 random leaves on the tree and recalculate ancestral states and total branch lengths. If improved, keep the tree, if not try another 2 random leaves. Try until consecutive failures to improve tree reaches num_swaps.
 	Args:
 		tree (dendropy Tree class): The tree to be modified.
 		num_swaps (int): Number of leaf swaps that need to not yield improvement before the search is aborted.
 		seed (int): seed value for random choices of leaves to swap.
+		array_dict (dict): The Array class instances of the arrays in the tree.
+		all_arrays (list): List of lists of the spacers in each array. [[spacer, in, array1], [spacers, in, array2]]
+		event_costs (dict): Parsimony costs of different events.
 	
 	Returns:
 		(dendropy Tree class) Best tree found during leaf-swapping search.
@@ -60,6 +63,7 @@ def swap_leaves(tree, num_swaps, seed):
 
 	swap_count = 0
 	best_score = tree.length()
+	best_tree = dendropy.Tree(tree)
 	while swap_count < num_swaps:
 		random.seed(seed)
 		leaf_a = random.choice(tree.leaf_nodes())
@@ -75,17 +79,31 @@ def swap_leaves(tree, num_swaps, seed):
 		sib_b = leaf_b.sibling_nodes()[0]
 		parent_a = leaf_a.parent_node
 		parent_b = leaf_b.parent_node
-		print(parent_a.child_nodes())
-		print(tree.as_ascii_plot(show_internal_node_labels=True))
 		parent_a.set_child_nodes([leaf_b, sib_a])
 		parent_b.set_child_nodes([leaf_a, sib_b])
-		print(tree.as_ascii_plot(show_internal_node_labels=True))
-		print(parent_a.child_nodes())
-		sys.exit()
-			
-	
 
-	return tree
+		for node in [leaf_a, leaf_b]: # For both leaves work back to root and recalculate all ancestors and branch lengths.
+			while node.level() != 0:
+				node_id = node.taxon.label
+				sib = node.sibling_nodes()[0]
+				sib_id = sib.taxon.label
+				parent = node.parent_node
+				parent_id = parent.taxon.label
+				print(parent_id, array_dict[parent_id].spacers)
+				results = CRISPR_mp.resolve_pairwise_parsimony(array_dict[node_id], array_dict[sib_id], all_arrays, array_dict, [0], 0, tree, event_costs)
+				if results == "No_ID":
+					Incomplete_tree = True
+					break
+				else:
+					array_dict[node_id], array_dict[sib_id], ancestor = results
+
+					array_dict[parent_id].spacers = ancestor.spacers # Only want the spacers of the new ancestral state.
+				print(parent_id, array_dict[parent_id].spacers)
+				sys.exit()
+			if Incomplete_tree:
+				break
+
+	return best_tree, array_dict
 
 
 def main():
@@ -267,7 +285,7 @@ def main():
 							node.parent_node.edge_length = 0 # Start the ancestor with 0 branch length
 		
 		if args.leaf_swaps:
-			tree = swap_leaves(tree, args.leaf_swaps, seed)
+			tree, array_dict = swap_leaves(tree, args.leaf_swaps, seed, array_dict, all_arrays, event_costs)
 
 		
 		# Repeat iteration now that tree is built to add repeat indels.
