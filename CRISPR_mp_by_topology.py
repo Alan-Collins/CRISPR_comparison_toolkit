@@ -57,6 +57,23 @@ def swap_leaves(tree, num_swaps, seed):
 	Returns:
 		(dendropy Tree class) Best tree found during leaf-swapping search.
 	"""
+
+	swap_count = 0
+	best_score = tree.length()
+	while swap_count < num_swaps:
+		random.seed(seed)
+		leaf_a = random.choice(tree.leaf_nodes())
+		seed += 1
+		random.seed(seed)
+		leaf_b = random.choice(tree.leaf_nodes())
+		seed += 1
+		while leaf_a == leaf_b:
+			random.seed(seed)
+			leaf_b = random.choice(tree.leaf_nodes())
+			seed += 1
+		print(leaf_a, leaf_b)
+		sys.exit()
+			
 	
 
 	return tree
