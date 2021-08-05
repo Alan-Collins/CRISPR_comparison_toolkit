@@ -251,6 +251,7 @@ def main():
 		trees = []
 		for order in array_orders:
 			trees += [t + ";" for t in make_topologies(order)]
+			seeds = [0 for _ in trees]
 	else:
 		if not args.seed:
 			seeds = [random.randint(0,9999999999) for i in range(args.replicates)]
@@ -259,7 +260,6 @@ def main():
 				random.seed(seeds[i])
 		
 				trees.append(next(make_topologies(random.sample(args.arrays_to_join, len(args.arrays_to_join)), randomize=True))+";")
-				seeds = [0 for _ in trees]
 		else:
 			random.seed(args.seed)
 			seeds = [args.seed]
@@ -330,9 +330,7 @@ def main():
 		# If user requested leaf swapping to optimize leaf positions, do that.
 
 		if args.leaf_swaps:
-			print(tree.as_ascii_plot(show_internal_node_labels=True))
 			tree, array_dict = swap_leaves(tree, args.leaf_swaps, seed, array_dict, all_arrays, event_costs)
-			print(tree.as_ascii_plot(show_internal_node_labels=True))
 		
 		
 		tree.reroot_at_node(tree.seed_node, update_bipartitions=False) # Need to reroot at the seed so that RF distance works					
