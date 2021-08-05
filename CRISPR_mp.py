@@ -735,7 +735,8 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 			other_child_children_spacers = [array_dict[array].spacers for array in other_child_children_ids]
 
 			repeat_search = True
-			original_spacers_to_check = spacers_to_check = module.spacers # Store which spacers to look for and an original copy to maintain index information
+			original_spacers_to_check = copy.deepcopy(module.spacers) 
+			spacers_to_check = copy.deepcopy(module.spacers) # Store which spacers to look for and an original copy to maintain index information
 			array_IDs_of_concern = non_ancestor_children_ids + other_child_children_ids
 			arrays_of_concern = non_ancestor_children_spacers + other_child_children_spacers
 			while repeat_search:
@@ -745,8 +746,8 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 				# If lost spacers are found in either of these two groups it indicates independent gain of the same spacers in different lineages.
 				for spacer in spacers_to_check:
 					for a, array in enumerate(arrays_of_concern):
-						if spacer in array:
-							arrays_to_check.append(a)		
+						if spacer in set(array):
+							arrays_to_check.append(a)
 				if len(arrays_to_check) == 0:
 					repeat_search = False 
 				else:
