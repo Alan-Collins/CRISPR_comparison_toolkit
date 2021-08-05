@@ -11,7 +11,7 @@ import dendropy
 import CRISPR_mp
 import random
 from math import ceil, factorial
-from itertools import permutations
+from itertools import permutations, product
 from string import ascii_lowercase
 from copy import deepcopy
 from collections import Counter
