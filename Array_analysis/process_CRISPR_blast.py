@@ -284,6 +284,10 @@ def main():
 		help="DEFAULT: 1. Number of threads you want to use for the blastn step of this script."
 		)
 	parser.add_argument(
+		"-b", dest="blastdbcmd_batch_size", required = False, default=1000, type=int,
+		help="DEFAULT: 1000. This runs quicker if it calls blastdbcmd fewer times. To get the sequences of protospacers and flanking sequence, locations are retrieved from blastdbcmd in batches. The larger the batch, the quicker this runs. However, your OS may have a limit on the number that can be used. If you get an error like 'OSError: [Errno 7] Argument list too long: '/bin/sh'' then decrease this value and try again."
+		)
+	parser.add_argument(
 		"-x", dest="other_blast_options", required = False, default='',
 		help="DEFAULT: none. If you want to include any other options to control the blastn command, you can add them here. Options you should not provide here are: blastn -query -db -task -outfmt -num_threads -max_target_seqs -evalue"
 		)
@@ -308,7 +312,7 @@ def main():
 		batch_locations += b
 		count += 1
 
-		if count == 1000:
+		if count == args.blastdbcmd_batch_size:
 			count = 0
 			all_protospacer_infos += run_blastcmd(args.blast_db_path, fstring, batch_locations)
 			fstring = batch_locations = ""
