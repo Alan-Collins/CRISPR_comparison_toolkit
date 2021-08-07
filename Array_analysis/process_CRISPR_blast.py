@@ -224,6 +224,9 @@ def fill_initial_info(result):
 		up5_coords = (proto.stop + 1, proto.stop + 5)
 		down5_coords = (proto.start - 5, proto.start - 1)	
 
+	if any([i < 6 for i in [proto.start, proto.stop]]) or any([i > result.slen-6 for i in [proto.start, proto.stop]]): # If the protospacer is within 5 bases of the end of the phage then we can't retrieve 5bp flanking.
+		return None, None, None
+
 	# Build blastdbcmd inputs
 	fstring = ""
 	batch_locations = ""
@@ -251,7 +254,6 @@ def fill_remaining_info(proto, spacer, blastdbcmd_output):
 	proto.pid = 100-(100*proto.mismatch/proto.length)
 
 	return proto
-
 
 
 def main():
@@ -307,6 +309,8 @@ def main():
 	all_protospacer_infos = []
 	for result in blast_output:
 		p, f, b = fill_initial_info(result)
+		if p == None: # If the match couldn't be extended because it is at the end of the contig then skip this one.
+			continue
 		protos.append(p)
 		fstring += f
 		batch_locations += b
