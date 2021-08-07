@@ -209,6 +209,9 @@ def fill_initial_info(result):
 	Returns:
 		tuple(protospacer class, str, str) protospacer class instance with some info added and the fstring and batch_locations for the protospacer and flanking sequence
 	"""
+
+	if int(result.gapopen) > 0: # If there are gaps between spacer and protospacer then ignore.
+		return None, None, None
 	
 	proto = protospacer(spacer=result.qseqid,target=result.sseqid, strand=result.strand, length=result.qlen)
 
