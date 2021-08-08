@@ -20,6 +20,8 @@ import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import multiprocessing
 from math import ceil, log
+import time
+from datetime import timedelta
 
 class Array():
 	"""
@@ -1381,7 +1383,7 @@ def build_tree_single(arrays, tree_namespace, score, all_arrays, node_ids, event
 	"""
 
 	tree = dendropy.Tree(taxon_namespace=tree_namespace)
-
+	actual_addition_order = []
 	array_dict = {}
 	tree_child_dict = {}
 	node_count = 0 # Keep track of which internal node ID should be used for each node
@@ -1402,6 +1404,8 @@ def build_tree_single(arrays, tree_namespace, score, all_arrays, node_ids, event
 		tree_child_dict[a.id].taxon = tree_namespace.get_taxon(a.id)
 		#Store arrays for further comparisons
 		array_dict[a.id] = a
+
+	actual_addition_order += [arrays[0], arrays[1]]
 
 	# Add initial relationships to the tree.
 	tree.seed_node.add_child(tree_child_dict[ancestor.id])
@@ -1441,6 +1445,8 @@ def build_tree_single(arrays, tree_namespace, score, all_arrays, node_ids, event
 				tree, array_dict, tree_child_dict = results
 				node_count += 1
 
+			actual_addition_order.append(arrays[i])
+
 			# Recheck child - ancestor branch length to find indels that would have to occur multiple times
 			for node in tree:
 				if node.level() != 0:
@@ -1457,16 +1463,16 @@ def build_tree_single(arrays, tree_namespace, score, all_arrays, node_ids, event
 		
 			brlen = tree.length()
 			if brlen > score:
-				return (False, False)
+				return (False, False, False)
 
 					
 			if a == arrays[-1]:
 				tree.reroot_at_node(tree.seed_node, update_bipartitions=False) # Need to reroot at the seed so that RF distance works
-				return (array_dict, tree)
+				return (array_dict, tree, actual_addition_order)
 
 
 	else:
-		return (array_dict, tree)
+		return (array_dict, tree, actual_addition_order)
 
 
 def build_tree_multi(arrays, tree_namespace, all_arrays, node_ids, event_costs):
@@ -1545,7 +1551,6 @@ def build_tree_multi(arrays, tree_namespace, all_arrays, node_ids, event_costs):
 
 			tree, array_dict, tree_child_dict = results
 			node_count += 1
-
 		
 		if a == arrays[-1]:
 			# Recheck child - ancestor branch length to find indels that would have to occur multiple times
@@ -1566,6 +1571,8 @@ def build_tree_multi(arrays, tree_namespace, all_arrays, node_ids, event_costs):
 
 
 def main():
+
+	start_time = time.time()
 
 
 	parser = argparse.ArgumentParser(
@@ -1731,7 +1738,7 @@ def main():
 			else:
 				addition_order = array_choices[i]
 			try:
-				array_dict, tree = build_tree_single(addition_order, taxon_namespace, best_score, all_arrays, node_ids, event_costs)
+				array_dict, tree, addition_order = build_tree_single(addition_order, taxon_namespace, best_score, all_arrays, node_ids, event_costs)
 			except Exception as e:
 				print("Failed while trying to build the tree with the following array order:\n{}\n\nError:\n{}".format(" ".join([i.id for i in addition_order]), e))
 				exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -1898,6 +1905,10 @@ def main():
 		exc_type, exc_obj, exc_tb = sys.exc_info()
 		exc_tb.print_exception()
 
+	end_time = time.time()
+	time_taken = timedelta(seconds=end_time-start_time)
+
+	print("Total run time: {}".format(time_taken))
 
 if __name__ == '__main__':
 	main()
