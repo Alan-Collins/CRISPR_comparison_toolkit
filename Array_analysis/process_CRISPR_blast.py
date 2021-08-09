@@ -201,10 +201,11 @@ def fasta_to_dict(FASTA_file):
 	return fasta_dict
 
 
-def fill_initial_info(result):
+def fill_initial_info(result, flanking_n):
 	"""
 	Args:
 		result (blast_result class): The blast_result instance to process.
+		flanking_n (int): How many bases upstream and downstream do you want?
 	
 	Returns:
 		tuple(protospacer class, str, str) protospacer class instance with some info added and the fstring and batch_locations for the protospacer and flanking sequence
@@ -219,15 +220,15 @@ def fill_initial_info(result):
 	if proto.strand == 'plus':
 		proto.start = result.sstart - (result.qstart - 1) # Adjust for 1 base counting
 		proto.stop = result.send + (result.qlen - result.qend)
-		up5_coords = (proto.start - 5, proto.start - 1)
-		down5_coords = (proto.stop + 1, proto.stop + 5)
+		up5_coords = (proto.start - flanking_n, proto.start - 1)
+		down5_coords = (proto.stop + 1, proto.stop + flanking_n)
 	else:
 		proto.start = result.send - (result.qlen - result.qend)
 		proto.stop = result.sstart + (result.qstart -1) # Adjust for 1 base counting
-		up5_coords = (proto.stop + 1, proto.stop + 5)
-		down5_coords = (proto.start - 5, proto.start - 1)	
+		up5_coords = (proto.stop + 1, proto.stop + flanking_n)
+		down5_coords = (proto.start - flanking_n, proto.start - 1)	
 
-	if any([i < 6 for i in [proto.start, proto.stop]]) or any([i > result.slen-6 for i in [proto.start, proto.stop]]): # If the protospacer is within 5 bases of the end of the phage then we can't retrieve 5bp flanking.
+	if any([i < flanking_n+1 for i in [proto.start, proto.stop]]) or any([i > result.slen-(flanking_n+1) for i in [proto.start, proto.stop]]): # If the protospacer is within 5 bases of the end of the phage then we can't retrieve 5bp flanking.
 		return None, None, None
 
 	# Build blastdbcmd inputs
@@ -277,6 +278,10 @@ def main():
 		help="path to output file."
 		)
 	parser.add_argument(
+		"-n", dest="flanking_n", required = False, default=5, type=int,
+		help="DEFAULT: 5. Number of bases you want returned from the 5' and 3' sequences flanking your protospacers. N.B. In order to consistently return these sequences, protospacers that are closer to the end of the target sequence than the number specified here will be discarded."
+		)
+	parser.add_argument(
 		"-e", dest="evalue", required = False, default='10',
 		help="DEFAULT: 10. set the evalue cutoff below which blastn will keep blast hits when looking for CRISPR repeats in your blast database. Useful for reducing inclusion of low quality blast hits with big databases in combination with the -m option."
 		)
@@ -311,7 +316,7 @@ def main():
 	count = 0
 	all_protospacer_infos = []
 	for result in blast_output:
-		p, f, b = fill_initial_info(result)
+		p, f, b = fill_initial_info(result, args.flanking_n)
 		if p == None: # If the match couldn't be extended because it is at the end of the contig then skip this one.
 			continue
 		protos.append(p)
