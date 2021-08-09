@@ -1687,7 +1687,19 @@ def main():
 
 	all_arrays = [array.spacers for array in arrays]
 
-
+	# Check if any arrays share no spacers with any others. If so, exit with error message.
+	all_spacers = [spacer for array in all_arrays for spacer in set(array)]
+	all_non_singleton_spacers = set([spacer for spacer, count in Counter(all_spacers).items() if count >1])
+	no_id = False
+	no_id_arrays = []
+	for array in arrays:
+		if len(set(array.spacers).intersection(all_non_singleton_spacers)) == 0:
+			no_id = True
+			no_id_arrays.append(array.id)
+	if no_id:
+		print("No shared spacers were found between array(s) {} and the other arrays in this dataset. Please ensure that all arrays share at least 1 spacer with another array. If there are no shared spacers between 1 or a group of arrays and another group of arrays then this script will fail".format(", ".join(no_id_arrays)))
+		sys.exit()
+		
 	if len(labels) < 9:
 		array_choices = [list(i) for i in permutations(arrays, len(arrays))]
 		random.shuffle(array_choices)
