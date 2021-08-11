@@ -274,13 +274,17 @@ def main():
 		help="The file with your spacers in fasta format."
 		)
 	parser.add_argument(
-		"-o", dest="outfile", required = True,
-		help="path to output file."
+		"-o", dest="outfile", required = False,
+		help="path to output file. If none provided, outputs to stdout."
 		)
 	parser.add_argument(
 		"-n", dest="flanking_n", required = False, default=5, type=int,
 		help="DEFAULT: 5. Number of bases you want returned from the 5' and 3' sequences flanking your protospacers. N.B. In order to consistently return these sequences, protospacers that are closer to the end of the target sequence than the number specified here will be discarded."
 		)
+	parser.add_argument(
+		"-p", dest="pid", required = False, default=0, type=float,
+		help="DEFAULT: 0. Minimum percent identity between spacer and protospacer in order for the result to be output. Default is output all protospacers that are returned by BLAST."
+		)	
 	parser.add_argument(
 		"-e", dest="evalue", required = False, default='10',
 		help="DEFAULT: 10. set the evalue cutoff below which blastn will keep blast hits when looking for CRISPR repeats in your blast database. Useful for reducing inclusion of low quality blast hits with big databases in combination with the -m option."
@@ -335,13 +339,16 @@ def main():
 	for i in range(0,len(all_protospacer_infos),3):
 		p = protos[p_count]
 		p = fill_remaining_info(p, spacer_dict[p.spacer], all_protospacer_infos[i:i+3])
-		
-		outcontents.append("\t".join([str(_) for _ in [p.spacer, p.target, p.start, p.stop, p.pid, p.mismatch, p.protoseq, p.up5, p.down5, p.strand]]))
+		if p.pid >= args.pid:
+			outcontents.append("\t".join([str(_) for _ in [p.spacer, p.target, p.start, p.stop, p.pid, p.mismatch, p.protoseq, p.up5, p.down5, p.strand]]))
 
 		p_count += 1
 
-	with open(args.outfile, 'w') as fout:
-		fout.write("\n".join(outcontents) + "\n")
+	if args.outfile:
+		with open(args.outfile, 'w') as fout:
+			fout.write("\n".join(outcontents) + "\n")
+	else:
+		print("\n".join(outcontents))
 
 
 if __name__ == '__main__':
