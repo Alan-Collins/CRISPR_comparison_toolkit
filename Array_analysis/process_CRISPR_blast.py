@@ -301,7 +301,7 @@ def main():
 		)
 	parser.add_argument(
 		"-b", "--batch_size", dest="blastdbcmd_batch_size", required = False, default=1000, type=int,
-		help="DEFAULT: 1000. This runs quicker if it calls blastdbcmd fewer times. To get the sequences of protospacers and flanking sequence, locations are retrieved from blastdbcmd in batches. The larger the batch, the quicker this runs. However, your OS may have a limit on the number that can be used. If you get an error like 'OSError: [Errno 7] Argument list too long: '/bin/sh'' then decrease this value and try again."
+		help="DEFAULT: 1000. This runs quicker if it calls blastdbcmd fewer times. To get the sequences of protospacers and flanking sequence, locations are retrieved from blastdbcmd in batches. The larger the batch, the quicker this runs. However, your OS may have a limit on the number that can be used. If you get an error like 'OSError: [Errno 7] Argument list too long: '/bin/sh'' then decrease this value and try again. In my experience, 500 often works."
 		)
 	parser.add_argument(
 		"-r", "--mask_regions", dest="mask_regions", required = False,
