@@ -333,6 +333,17 @@ def main():
 
 	spacer_dict = fasta_to_dict(args.spacer_file)
 
+	mask_dict = {}
+	if args.mask_regions:
+		with open(args.mask_regions, 'r') as fin:
+			for line in fin.readlines():
+				bits = line.split()
+				if len(bits) != 3:
+					print("Error: Number of columns in your mask_regions bed file must be 3:\nFasta_header\tstart\tstop")
+					sys.exit()
+				mask_dict[bits[0]] = [int(_) for _ in bits[1:]]
+
+
 	blast_output = run_blastn(args)
 
 	outcontents = ["Spacer_ID\tTarget_contig\tProtospacer_start\tProtospacer_end\tPercent_identity\tmismatches\tprotospacer_sequence\tupstream_bases\tdownstream_bases\ttarget_strand"]
@@ -362,6 +373,14 @@ def main():
 		p = protos[p_count]
 		p = fill_remaining_info(p, spacer_dict[p.spacer], all_protospacer_infos[i:i+3])
 		if p.pid >= args.pid:
+			if p.target in mask_dict.keys():
+				start, stop = mask_dict[p.target]
+				if start > stop:
+					start, stop = stop, start
+				mask_region = [_ for _ in range(start, stop)]
+				if p.start in mask_region or p.stop in mask_region:
+					p_count += 1
+					continue
 			outcontents.append("\t".join([str(_) for _ in [p.spacer, p.target, p.start, p.stop, p.pid, p.mismatch, p.protoseq, p.up5, p.down5, p.strand]]))
 
 		p_count += 1
