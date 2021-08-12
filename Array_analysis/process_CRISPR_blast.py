@@ -340,6 +340,10 @@ def main():
 		help="path to output file. If none provided, outputs to stdout."
 		)
 	out_options.add_argument(
+		"-q", "--no_pam_out", dest="no_pam_outfile", required = False,
+		help="path to output file for protospacers with no PAM if desired."
+		)
+	out_options.add_argument(
 		"-n", "--flanking", dest="flanking_n", required = False, default=0, type=int,
 		help="DEFAULT: 0. Number of bases you want returned from the 5' and 3' sequences flanking your protospacers. N.B. In order to consistently return these sequences, protospacers that are closer to the end of the target sequence than the number specified here will be discarded."
 		)
@@ -427,6 +431,7 @@ def main():
 	blast_output = run_blastn(args)
 
 	outcontents = ["Spacer_ID\tTarget_contig\tProtospacer_start\tProtospacer_end\tPercent_identity\tmismatches\tprotospacer_sequence\tupstream_bases\tdownstream_bases\ttarget_strand"]
+	no_pam_outcontents = ["Spacer_ID\tTarget_contig\tProtospacer_start\tProtospacer_end\tPercent_identity\tmismatches\tprotospacer_sequence\tupstream_bases\tdownstream_bases\ttarget_strand"]
 	fstring = batch_locations = ""
 	protos = []
 
@@ -465,21 +470,6 @@ def main():
 		else:
 			p = fill_remaining_info(p, spacer_dict[p.spacer], ['', all_protospacer_infos[i], ''])
 
-		# Check for PAM if user requested
-		if args.pam or args.regex_pam:
-			if args.pam_location == 'up':
-					seq = p.up
-			else:
-				seq = p.down
-			if args.pam:
-				if not find_pam(args.pam, seq, False):
-					p_count += 1
-					continue
-			else:
-				if not find_pam(args.regex_pam, seq, True):
-					p_count += 1
-					continue
-
 		if p.pid >= args.pid:
 			if p.target in mask_dict.keys():
 				start, stop = mask_dict[p.target]
@@ -489,6 +479,22 @@ def main():
 				if p.start in mask_region or p.stop in mask_region:
 					p_count += 1
 					continue
+			# Check for PAM if user requested
+			if args.pam or args.regex_pam:
+				if args.pam_location == 'up':
+						seq = p.up
+				else:
+					seq = p.down
+				if args.pam:
+					if not find_pam(args.pam, seq, False):
+						no_pam_outcontents.append("\t".join([str(_) for _ in [p.spacer, p.target, p.start, p.stop, p.pid, p.mismatch, p.protoseq, p.up, p.down, p.strand]]))
+						p_count += 1
+						continue
+				else:
+					if not find_pam(args.regex_pam, seq, True):
+						no_pam_outcontents.append("\t".join([str(_) for _ in [p.spacer, p.target, p.start, p.stop, p.pid, p.mismatch, p.protoseq, p.up, p.down, p.strand]]))
+						p_count += 1
+						continue
 			outcontents.append("\t".join([str(_) for _ in [p.spacer, p.target, p.start, p.stop, p.pid, p.mismatch, p.protoseq, p.up, p.down, p.strand]]))
 
 		p_count += 1
@@ -498,6 +504,10 @@ def main():
 			fout.write("\n".join(outcontents) + "\n")
 	else:
 		print("\n".join(outcontents))
+
+	if args.no_pam_outfile:
+		with open(args.no_pam_outfile, 'w') as fout:
+			fout.write("\n".join(no_pam_outcontents) + "\n")
 
 
 if __name__ == '__main__':
