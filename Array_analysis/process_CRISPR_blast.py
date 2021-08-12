@@ -57,8 +57,8 @@ class protospacer():
 	
 	Attributes:
 		spacer (str): The fasta header of the spacer.
-		up5 (str): The 5 bases upstream of the protospacer on the targeted strand.
-		down5 (str): The 5 bases downstream of the protospacer on the targeted strand.
+		up (str): The bases upstream of the protospacer on the targeted strand.
+		down (str): The bases downstream of the protospacer on the targeted strand.
 		protoseq (str): The sequence of the protospacer.
 		pid (float): Percent identity between spacer and protospacer over whole length.
 		mismatch (int): The number of mismatch positions between the spacer and protospacer.
@@ -68,10 +68,10 @@ class protospacer():
 		target (str): ID of the target sequence.
 		length (int): The length of the spacer.
 	"""
-	def __init__(self, spacer="", up5="", down5="", protoseq="", pid=0., mismatch=0, strand = "", start=0, stop=0, target="", length=0):
+	def __init__(self, spacer="", up="", down="", protoseq="", pid=0., mismatch=0, strand = "", start=0, stop=0, target="", length=0):
 		self.spacer = spacer
-		self.up5 = up5
-		self.down5 = down5
+		self.up = up
+		self.down = down
 		self.protoseq = protoseq
 		self.pid = pid
 		self.mismatch = mismatch
@@ -264,7 +264,7 @@ def fill_remaining_info(proto, spacer, blastdbcmd_output):
 		(protospacer class) protospacer instance with the rest of the information filled in.
 	"""
 
-	proto.up5, proto.protoseq, proto.down5 = blastdbcmd_output 
+	proto.up, proto.protoseq, proto.down = blastdbcmd_output 
 	proto.mismatch = hamming(spacer, proto.protoseq)
 	proto.pid = 100-(100*proto.mismatch/proto.length)
 
@@ -407,9 +407,6 @@ def main():
 			print("Please provide both a PAM pattern using -P/--pam or -R/--regex_pam AND a location to search for the PAM using -l/--pam_location.")
 			sys.exit()
 
-	print(find_pam(args.pam, 'ATGcC', False))
-	sys.exit()
-
 	spacer_dict = fasta_to_dict(args.spacer_file)
 	if args.flanking_n:
 		flanking_n = (args.flanking_n, args.flanking_n)
@@ -458,6 +455,7 @@ def main():
 	for i in range(0,len(all_protospacer_infos),increment):
 		p = protos[p_count]
 		# Depending on which flanking sequence was requested, fill in unrequested sequence with empty string.
+
 		if flanking_n[0] and flanking_n[1]:
 			p = fill_remaining_info(p, spacer_dict[p.spacer], all_protospacer_infos[i:i+3])
 		elif flanking_n[0]:
@@ -466,6 +464,21 @@ def main():
 			p = fill_remaining_info(p, spacer_dict[p.spacer], ['']+all_protospacer_infos[i:i+2])
 		else:
 			p = fill_remaining_info(p, spacer_dict[p.spacer], ['', all_protospacer_infos[i], ''])
+
+		# Check for PAM if user requested
+		if args.pam or args.regex_pam:
+			if args.pam_location == 'up':
+					seq = p.up
+			else:
+				seq = p.down
+			if args.pam:
+				if not find_pam(args.pam, seq, False):
+					p_count += 1
+					continue
+			else:
+				if not find_pam(args.regex_pam, seq, True):
+					p_count += 1
+					continue
 
 		if p.pid >= args.pid:
 			if p.target in mask_dict.keys():
@@ -476,7 +489,7 @@ def main():
 				if p.start in mask_region or p.stop in mask_region:
 					p_count += 1
 					continue
-			outcontents.append("\t".join([str(_) for _ in [p.spacer, p.target, p.start, p.stop, p.pid, p.mismatch, p.protoseq, p.up5, p.down5, p.strand]]))
+			outcontents.append("\t".join([str(_) for _ in [p.spacer, p.target, p.start, p.stop, p.pid, p.mismatch, p.protoseq, p.up, p.down, p.strand]]))
 
 		p_count += 1
 
