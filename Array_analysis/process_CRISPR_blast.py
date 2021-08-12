@@ -132,24 +132,6 @@ def run_blastn(args):
 	return blast_lines
 
 
-def rev_comp(string):
-	"""Converts As, Ts, Cs, and Gs, to their reverse complement nucleotide. Skips any characters that are not A, T, C, or G. Can work with upper or lower case sequence and returns the same case that was provided.
-	Args:
-		string (str): The sequence for which you want the reverse complement.
-	
-	Returns:
-		(str) The reverse complement of the input sequence..
-	"""
-	rev_str = ''
-	rev_comp_lookup = {"A" : "T", "T" : "A", "C" : "G", "G" : "C", "a" : "t", "t" : "a", "c" : "g", "g" : "c"}
-	for i in reversed(string):
-		if i in "ATCGatcg":
-			rev_str += rev_comp_lookup[i]
-		else:
-			rev_str += i
-	return rev_str
-
-
 def hamming(seq1, seq2):
 	"""
 	Args:
@@ -303,7 +285,6 @@ def find_pam(pattern, sequence, is_regex):
 		pat=re.compile(pattern, re.IGNORECASE)
 
 	return bool(pat.match(sequence))
-
 
 
 def main():
