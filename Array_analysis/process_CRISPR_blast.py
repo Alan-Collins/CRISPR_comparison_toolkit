@@ -284,19 +284,25 @@ def find_pam(pattern, sequence, is_regex):
 	Raises:
 		ValueError: Your regex could not be parsed.
 		ValueError: Your pattern and sequence are different lengths.
+		ValueError: Your non-regex pattern can only contain the following characters: N, A, T, C, G.
 	"""
 	if is_regex:
 		try:
-			pat=re.compile(pattern)
+			pat=re.compile(pattern, re.IGNORECASE)
 		except Exception as e:
 			raise ValueError("Your regex could not be parsed. Please check the following problem: {}".format(e))
 	
 	else:
 		if len(pattern) != len(sequence):
 			raise ValueError("Your pattern and sequence are different lengths. Make sure your pattern is the same number of bases as are retrieved from the flanking region of your protospacer. You provided a pattern of {} bp and a flanking sequence of {} bp".format(len(pattern), len(sequence)))
-
-
 		
+		if any([i.upper() not in ["N", "A", "T", "C", "G"] for i in pattern]):
+			raise ValueError("Your non-regex pattern can only contain the following characters: N, A, T, C, G.")
+
+		pattern = pattern.upper().replace("N", ".")
+		pat=re.compile(pattern, re.IGNORECASE)
+
+	return bool(pat.match(sequence))
 
 
 
@@ -401,7 +407,7 @@ def main():
 			print("Please provide both a PAM pattern using -P/--pam or -R/--regex_pam AND a location to search for the PAM using -l/--pam_location.")
 			sys.exit()
 
-	print(find_pam('nnncc', 'ATGCC', False))
+	print(find_pam(args.pam, 'ATGcC', False))
 	sys.exit()
 
 	spacer_dict = fasta_to_dict(args.spacer_file)
@@ -483,4 +489,3 @@ def main():
 
 if __name__ == '__main__':
 	main()
-
