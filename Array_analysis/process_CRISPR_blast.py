@@ -205,7 +205,7 @@ def fill_initial_info(result, flanking_n):
 	"""
 	Args:
 		result (blast_result class): The blast_result instance to process.
-		flanking_n (int): How many bases upstream and downstream do you want?
+		flanking_n (tuple): How many bases upstream and downstream do you want?
 	
 	Returns:
 		tuple(protospacer class, str, str) protospacer class instance with some info added and the fstring and batch_locations for the protospacer and flanking sequence
@@ -215,27 +215,37 @@ def fill_initial_info(result, flanking_n):
 		return None, None, None
 	
 	proto = protospacer(spacer=result.qseqid,target=result.sseqid, strand=result.strand, length=result.qlen)
-
+	up_n, down_n = flanking_n
 	# Adjust for missing edges due to blast not extending through mismatches. If there are no missing edges this won't add anything.
 	if proto.strand == 'plus':
 		proto.start = result.sstart - (result.qstart - 1) # Adjust for 1 base counting
 		proto.stop = result.send + (result.qlen - result.qend)
-		up5_coords = (proto.start - flanking_n, proto.start - 1)
-		down5_coords = (proto.stop + 1, proto.stop + flanking_n)
+		up_coords = (proto.start - up_n, proto.start - 1)
+		down_coords = (proto.stop + 1, proto.stop + down_n)
+
 	else:
 		proto.start = result.send - (result.qlen - result.qend)
 		proto.stop = result.sstart + (result.qstart -1) # Adjust for 1 base counting
-		up5_coords = (proto.stop + 1, proto.stop + flanking_n)
-		down5_coords = (proto.start - flanking_n, proto.start - 1)	
+		up_coords = (proto.stop + 1, proto.stop + up_n)
+		down_coords = (proto.start - down_n, proto.start - 1)	
 
-	if any([i < flanking_n+1 for i in [proto.start, proto.stop]]) or any([i > result.slen-(flanking_n+1) for i in [proto.start, proto.stop]]): # If the protospacer is within 5 bases of the end of the phage then we can't retrieve 5bp flanking.
+	if any([i < 1 for i in [up_coords[0], up_coords[1], down_coords[0], down_coords[1]]]) or any([i > result.slen-1 for i in [up_coords[0], up_coords[1], down_coords[0], down_coords[1]]]): # If the requested flanking region goes beyond the ends of the target sequence then it can't be returned.
 		return None, None, None
 
 	# Build blastdbcmd inputs
 	fstring = ""
 	batch_locations = ""
 
-	for loc in [up5_coords, (proto.start, proto.stop), down5_coords]:
+	if up_n and down_n:
+		coords_list = [up_coords, (proto.start, proto.stop), down_coords]
+	elif up_n:
+		coords_list = [up_coords, (proto.start, proto.stop)]
+	elif down_n:
+		coords_list = [(proto.start, proto.stop), down_coords]
+	else:
+		coords_list = [(proto.start, proto.stop)]
+	
+	for loc in coords_list:
 		fstring += '%s %s %s\n'
 		batch_locations += '{} {}-{} {} '.format(proto.target, loc[0], loc[1], proto.strand)
 
@@ -292,8 +302,16 @@ def main():
 		help="path to output file. If none provided, outputs to stdout."
 		)
 	parser.add_argument(
-		"-n", "--flanking", dest="flanking_n", required = False, default=5, type=int,
-		help="DEFAULT: 5. Number of bases you want returned from the 5' and 3' sequences flanking your protospacers. N.B. In order to consistently return these sequences, protospacers that are closer to the end of the target sequence than the number specified here will be discarded."
+		"-n", "--flanking", dest="flanking_n", required = False, default=0, type=int,
+		help="DEFAULT: 0. Number of bases you want returned from the 5' and 3' sequences flanking your protospacers. N.B. In order to consistently return these sequences, protospacers that are closer to the end of the target sequence than the number specified here will be discarded."
+		)
+	parser.add_argument(
+		"-u", "--upstream", dest="upstream_n", required = False, default=0, type=int,
+		help="DEFAULT: 0. Number of bases you want returned from the 5' sequences flanking your protospacers. N.B. In order to consistently return these sequences, protospacers that are closer to the end of the target sequence than the number specified here will be discarded."
+		)
+	parser.add_argument(
+		"-w", "--downstream", dest="downstream_n", required = False, default=0, type=int,
+		help="DEFAULT: 0. Number of bases you want returned from the 3' sequences flanking your protospacers. N.B. In order to consistently return these sequences, protospacers that are closer to the end of the target sequence than the number specified here will be discarded."
 		)
 	parser.add_argument(
 		"-p", "--percent_id", dest="pid", required = False, default=0, type=float,
@@ -332,6 +350,10 @@ def main():
 	args = parser.parse_args(sys.argv[1:])
 
 	spacer_dict = fasta_to_dict(args.spacer_file)
+	if args.flanking_n:
+		flanking_n = (args.flanking_n, args.flanking_n)
+	else:
+		flanking_n = (args.upstream_n, args.downstream_n)
 
 	mask_dict = {}
 	if args.mask_regions:
@@ -353,7 +375,7 @@ def main():
 	count = 0
 	all_protospacer_infos = []
 	for result in blast_output:
-		p, f, b = fill_initial_info(result, args.flanking_n)
+		p, f, b = fill_initial_info(result, flanking_n)
 		if p == None: # If the match couldn't be extended because it is at the end of the contig then skip this one.
 			continue
 		protos.append(p)
@@ -369,9 +391,21 @@ def main():
 		all_protospacer_infos += run_blastcmd(args.blast_db_path, fstring, batch_locations)
 
 	p_count = 0
-	for i in range(0,len(all_protospacer_infos),3):
+
+	# Want to work through the 
+	increment = 1 + int(bool(flanking_n[0])) + int(bool(flanking_n[1]))
+	for i in range(0,len(all_protospacer_infos),increment):
 		p = protos[p_count]
-		p = fill_remaining_info(p, spacer_dict[p.spacer], all_protospacer_infos[i:i+3])
+		# Depending on which flanking sequence was requested, fill in unrequested sequence with empty string.
+		if flanking_n[0] and flanking_n[1]:
+			p = fill_remaining_info(p, spacer_dict[p.spacer], all_protospacer_infos[i:i+3])
+		elif flanking_n[0]:
+			p = fill_remaining_info(p, spacer_dict[p.spacer], all_protospacer_infos[i:i+2]+[''])
+		elif flanking_n[1]:
+			p = fill_remaining_info(p, spacer_dict[p.spacer], ['']+all_protospacer_infos[i:i+2])
+		else:
+			p = fill_remaining_info(p, spacer_dict[p.spacer], ['', all_protospacer_infos[i], ''])
+
 		if p.pid >= args.pid:
 			if p.target in mask_dict.keys():
 				start, stop = mask_dict[p.target]
