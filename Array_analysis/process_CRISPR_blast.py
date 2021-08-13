@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-# AUTHOR	  :  ALAN COLLINS
-# VERSION	 :  v1
-# DATE		:  2021-8-3
-# DESCRIPTION :  Process BLAST output of spacers against a blastdb. For results that have cut off due to mismatches, extend the hit to the full length and report mismatches. Report up- and down-stream bases for PAM analysis.
+# AUTHOR		:  ALAN COLLINS
+# VERSION		:  v1
+# DATE			:  2021-8-3
+# DESCRIPTION	:  Process BLAST output of spacers against a blastdb. For results that have cut off due to mismatches, extend the hit to the full length and report mismatches. Report up- and down-stream bases for PAM analysis.
 
 import sys
 import argparse
@@ -484,7 +484,11 @@ def main():
 		with open(args.outfile, 'w') as fout:
 			fout.write("\n".join(outcontents) + "\n")
 	else:
-		print("\n".join(outcontents))
+		for line in outcontents:
+			try: # Prevents Broken pipe error if the user pipes output
+				print(line)
+			except:
+				sys.exit()
 
 	if args.no_pam_outfile:
 		with open(args.no_pam_outfile, 'w') as fout:
