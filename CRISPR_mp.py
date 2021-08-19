@@ -1069,7 +1069,7 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 	branch_spacing = 2 # Space between branches in tree.
 	spacer_width = 0.1 # Thickness off spacer cartoons.
 	outline = 2 # Thickness of spacer_outline
-	spacing = outline*0.11
+	spacing = outline*0.15
 	spacer_size = 3.5
 	brlen_scale = 0.5
 
