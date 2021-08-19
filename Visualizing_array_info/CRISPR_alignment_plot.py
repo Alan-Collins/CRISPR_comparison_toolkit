@@ -335,13 +335,13 @@ def main():
 
 	largest_array_size = max([len(x) for x in [array_dict[y] for y in array_network]])
 
-	dim_y = len(array_network)*0.5
+	dim_y = max(len(array_network)*0.5, 2)
 	if args.legend:
 		ratio_of_heights = ((len(imp_spacers)+1)*0.2)/dim_y
 		ncols = int(1+ ratio_of_heights)
-		dim_x = largest_array_size*0.2 + 1.2*ncols
+		dim_x = max(largest_array_size*0.2 + 1.2*ncols, 3)
 	else:
-		dim_x = largest_array_size*0.2
+		dim_x = max(largest_array_size*0.2, 2)
 	
 
 
