@@ -404,8 +404,7 @@ def main():
 		vert_pad = ((dim_y - h_leg)/2)/dim_y # Add blank space half the difference in height between legend and y axis to approximately center the legend relative to y axis. Then scale that on 0-1 relative to y axis size.
 		# Build the legend manually as the automatic legend included duplicates as spacers are plotted once per array they are in.
 		colors = list(spacer_colours.values()) 
-		lines = [plt.fill_between([0, 0], 0, 0, color = c[0], edgecolor=c[1]) for c in colors]
-		# lines = [plt.Line2D([0], [0], color=c, linewidth=3, linestyle='--') for c in colors]
+		lines = [plt.fill_between([1, 1], 1, 1, color = c[0], edgecolor=c[1]) for c in colors]
 		labels = list(spacer_colours.keys())
 		plt.legend(lines, labels, ncol=ncols, loc=(1.01,vert_pad), title="Spacer IDs") # Alternative legend positioning methods that don't work: bbox_to_anchor=(1.05, 1) loc="best",
 
