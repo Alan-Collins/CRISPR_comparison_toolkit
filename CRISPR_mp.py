@@ -1308,6 +1308,11 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 								if spacer == '-': # Draw a single sloped line
 									ax.plot([start_pos_x-spacer_size*spacer_count-spacing, start_pos_x-spacer_size*spacer_count-spacer_size+spacing],[start_pos_y+0.5, start_pos_y-0.5], color="#666666", linewidth=3, solid_capstyle="butt")
 									spacer_count+=1 # Shift future spacers a bit to make spacer for this line.
+							elif diff_type.type == "duplication":
+								nspacers = len(diff_type.indices)
+
+								ax.plot(np.linspace(start_pos_x-spacer_size*(spacer_count+nspacers)+spacing,start_pos_x-spacer_size*spacer_count-spacing,3),[start_pos_y-0.5]*3,color="#666666", linewidth=3, solid_capstyle="butt")
+								
 
 
 					# Plot spacer cartoon
