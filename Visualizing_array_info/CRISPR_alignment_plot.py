@@ -220,7 +220,7 @@ def main():
 		help="Specify file with custom colour list (Optional). Colours must be hex codes. One colour per line with no header line in file. e.g. #fd5925."
 		)
 	parser.add_argument(
-		"-q", dest="colour_scheme_outfile", required = False, 
+		"-m", dest="colour_scheme_outfile", required = False, 
 		help="Specify output file to store json format dictionary of the colour schemes used for spacers in this run."
 		)
 	parser.add_argument(
