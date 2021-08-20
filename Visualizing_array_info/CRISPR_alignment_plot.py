@@ -8,6 +8,7 @@ from itertools import permutations
 from random import sample
 from random import randrange
 import argparse
+import json
 
 
 def get_list_score(arrays_dict, arrays_order):
@@ -219,6 +220,14 @@ def main():
 		help="Specify file with custom colour list (Optional). Colours must be hex codes. One colour per line with no header line in file. e.g. #fd5925."
 		)
 	parser.add_argument(
+		"-q", dest="colour_scheme_outfile", required = False, 
+		help="Specify output file to store json format dictionary of the colour schemes used for spacers in this run."
+		)
+	parser.add_argument(
+		"-s", dest="colour_scheme_infile", required = False, 
+		help="Specify input file containing json format dictionary of the colour scheme to be used for spacers in this run. Any spacers not in the input file will be coloured according to the normal process."
+		)
+	parser.add_argument(
 		"-i", "--iter", dest="iterations", nargs="?", default = 10, type=int,
 		help="(Default = 10) If you are aligning fewer than 9 arrays, a good order will be found using a repeated shuffling search method. Set the number of replicates of this search you want performed. Higher numbers more likely to find the best possible ordering, but take longer."
 		)
@@ -326,11 +335,30 @@ def main():
 		else:
 			colours = [(i, "#000000") for i in Cols_tol]
 
-	# build a dictionary with colours assigned to each spacer.
-	spacer_colours  = {}
+	# if provided, read in colour scheme.
 
-	for i, spacer in enumerate(sorted(imp_spacers)):
-		spacer_colours[spacer] = colours[i]
+	if args.colour_scheme_infile:
+		with open(args.colour_scheme_infile, 'r') as fin:
+			spacer_colours = json.load(fin)
+		if any([s not in spacer_colours.keys() for s in imp_spacers]):
+			colour_idx = 0
+			for s in imp_spacers:
+				if s not in spacer_colours.keys():
+					while colours[colour_idx] in spacer_colours.values():
+						colour_idx += 1
+					spacer_colours[s] = colours[colour_idx]
+					colour_idx += 1
+	else:
+		# build a dictionary with colours assigned to each spacer.
+		spacer_colours  = {}
+
+		for i, spacer in enumerate(sorted(imp_spacers)):
+			spacer_colours[spacer] = colours[i]
+
+
+	if args.colour_scheme_outfile:
+		with open(args.colour_scheme_outfile, 'w', encoding='utf-8') as fout:
+			json.dump(spacer_colours, fout, ensure_ascii=False, indent=4)
 
 
 	largest_array_size = max([len(x) for x in [array_dict[y] for y in array_network]])
