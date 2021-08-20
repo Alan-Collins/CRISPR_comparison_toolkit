@@ -219,7 +219,7 @@ def main():
 		help="Specify file with custom colour list (Optional). Colours must be hex codes. One colour per line with no header line in file. e.g. #fd5925."
 		)
 	parser.add_argument(
-		"-iter", dest="iterations", nargs="?", default = 10, type=int,
+		"-i", "--iter", dest="iterations", nargs="?", default = 10, type=int,
 		help="(Default = 10) If you are aligning fewer than 9 arrays, a good order will be found using a repeated shuffling search method. Set the number of replicates of this search you want performed. Higher numbers more likely to find the best possible ordering, but take longer."
 		)
 	parser.add_argument(
@@ -227,11 +227,11 @@ def main():
 		help="Include a legend in the output plot (Highly recommended to use spacer IDs rather than sequences with this setting). N.B. Spacer order in the legend is the same as the order of first instance of spacers working from bottom to top, right to left along your plotted arrays."
 		)
 	parser.add_argument(
-		"-preordered", dest="preordered", action='store_true',  
+		"--preordered", dest="preordered", action='store_true',  
 		help="Declare that the array order you provided is the one you want plotted."
 		)
 	parser.add_argument(
-		"-approxordered", dest="approxordered", action='store_true',  
+		"--approxordered", dest="approxordered", action='store_true',  
 		help="Declare that the array order you provided should be optimized slightly before plotting. Optimization involves switching order of adjacent arrays in list as long as that increases the total number of shared spacers among all neighbours."
 		)
 	parser.add_argument(
