@@ -1381,9 +1381,8 @@ def build_tree_single(arrays, tree_namespace, score, all_arrays, node_ids, event
 	Returns:
 		(tuple) Returns array_dict and dendropy.tree object if the tree beats or equals the provide score. Else retuns tuple of (False, False).
 	"""
-
+	initial_arrays = copy.deepcopy(arrays)
 	tree = dendropy.Tree(taxon_namespace=tree_namespace)
-	actual_addition_order = []
 	array_dict = {}
 	tree_child_dict = {}
 	node_count = 0 # Keep track of which internal node ID should be used for each node
@@ -1405,7 +1404,6 @@ def build_tree_single(arrays, tree_namespace, score, all_arrays, node_ids, event
 		#Store arrays for further comparisons
 		array_dict[a.id] = a
 
-	actual_addition_order += [arrays[0], arrays[1]]
 
 	# Add initial relationships to the tree.
 	tree.seed_node.add_child(tree_child_dict[ancestor.id])
@@ -1445,7 +1443,6 @@ def build_tree_single(arrays, tree_namespace, score, all_arrays, node_ids, event
 				tree, array_dict, tree_child_dict = results
 				node_count += 1
 
-			actual_addition_order.append(arrays[i])
 
 			# Recheck child - ancestor branch length to find indels that would have to occur multiple times
 			for node in tree:
@@ -1468,11 +1465,11 @@ def build_tree_single(arrays, tree_namespace, score, all_arrays, node_ids, event
 					
 			if a == arrays[-1]:
 				tree.reroot_at_node(tree.seed_node, update_bipartitions=False) # Need to reroot at the seed so that RF distance works
-				return (array_dict, tree, actual_addition_order)
+				return (array_dict, tree, initial_arrays)
 
 
 	else:
-		return (array_dict, tree, actual_addition_order)
+		return (array_dict, tree, initial_arrays)
 
 
 def build_tree_multi(arrays, tree_namespace, all_arrays, node_ids, event_costs):
@@ -1492,7 +1489,7 @@ def build_tree_multi(arrays, tree_namespace, all_arrays, node_ids, event_costs):
 	# Remove the arrays being compared from checks to see what spacers are in other arrays.
 	# That way we only worry about ancestral states accounting for deletion of spacers in arrays not yet added to the tree.
 	all_arrays = [a for a in all_arrays if a not in [arrays[0].spacers, arrays[1].spacers]]
-
+	initial_arrays = copy.deepcopy(arrays)
 	tree = dendropy.Tree(taxon_namespace=tree_namespace)
 
 	array_dict = {}
@@ -1567,7 +1564,7 @@ def build_tree_multi(arrays, tree_namespace, all_arrays, node_ids, event_costs):
 						node.edge_length = node_array.distance
 
 			tree.reroot_at_node(tree.seed_node, update_bipartitions=False) # Need to reroot at the seed so that RF distance works
-			return array_dict, tree, arrays
+			return array_dict, tree, initial_arrays
 
 
 def main():
