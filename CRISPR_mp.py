@@ -1604,8 +1604,8 @@ def main():
 			help="Specify the parsimony cost of a spacer acquisition event. Default: 1"
 		)
 	parser.add_argument(
-		"-i",  dest="indel", type=int, nargs="?", default = 1,
-			help="Specify the parsimony cost of an indel event involving one or more spacers. Default: 1"
+		"-i",  dest="indel", type=int, nargs="?", default = 10,
+			help="Specify the parsimony cost of an indel event involving one or more spacers. Default: 10"
 		)
 	parser.add_argument(
 		"-z",  dest="rep_indel", type=int, nargs="?", default = 50,
