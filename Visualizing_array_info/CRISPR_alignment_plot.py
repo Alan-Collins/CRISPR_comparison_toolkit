@@ -236,6 +236,10 @@ def main():
 		help="Include a legend in the output plot (Highly recommended to use spacer IDs rather than sequences with this setting). N.B. Spacer order in the legend is the same as the order of first instance of spacers working from bottom to top, right to left along your plotted arrays."
 		)
 	parser.add_argument(
+		"--trailer_align", dest="trailer_align", action='store_true',  
+		help="Declare that you want the plot to line up all the trailer ends instead of the default of lining up the leader ends."
+		)
+	parser.add_argument(
 		"--preordered", dest="preordered", action='store_true',  
 		help="Declare that the array order you provided is the one you want plotted."
 		)
@@ -380,10 +384,16 @@ def main():
 
 	### Plot array alignments
 
+	if args.trailer_align:
+		longest_array = max([len(arrays_of_interest_dict[i]) for i in array_order])
+		pad_dict = {array: longest_array-len(arrays_of_interest_dict[array]) for array in array_order}
+
+	else:
+		pad_dict = {array:0 for array in array_order}
 
 	arcount = 1 # count of which array we are on (i.e. y axis value to plot at)
 	for array in array_order:
-		spcount = 0 # count of which spacer in array we are on (i.e. which x-axis value to plot at)
+		spcount = 0+pad_dict[array] # count of which spacer in array we are on (i.e. which x-axis value to plot at)
 		for spacer in arrays_of_interest_dict[array]:
 			if spacer in imp_spacers:
 				line_width= 0.1
@@ -407,9 +417,9 @@ def main():
 			array2_indices = find_indices(array2, spacer)
 			for a in array1_indices:
 				for b in array2_indices:
-					sp_x1 = a+1
+					sp_x1 = a+1+pad_dict[array_order[i]]
 					sp_y1 = i+1
-					sp_x2 = b+1
+					sp_x2 = b+1+pad_dict[array_order[i+1]]
 					sp_y2 = i+2
 					spcolour = spacer_colours[spacer]
 					ax.plot([sp_x1, sp_x2],[sp_y1+0.1, sp_y2-0.1], color = spcolour[0], linewidth = 1.0, solid_capstyle="butt", label=spacer, zorder=1)
@@ -418,11 +428,13 @@ def main():
 
 	axes = plt.gca()
 	plt.yticks(range(1, len(arrays_of_interest_dict.keys())+1, 1))
-	plt.xticks(range(1, max([len(x) for x in arrays_of_interest_dict.values()])+1, 1))
+	if args.trailer_align:
+		plt.tick_params(axis='x', which='both', bottom=False, labelbottom=False)
+	else:
+		plt.xticks(range(1, max([len(x) for x in arrays_of_interest_dict.values()])+1, 1))
+		plt.xlabel("Spacer in array", fontsize=11)
+		
 	ax.set_yticklabels(array_order)
-
-
-	plt.xlabel("Spacer in array", fontsize=11)
 	plt.ylabel("Array ID", fontsize=11)
 
 	if args.legend:
