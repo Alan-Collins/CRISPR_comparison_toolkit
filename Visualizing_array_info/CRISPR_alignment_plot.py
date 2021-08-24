@@ -197,9 +197,6 @@ def main():
 
 	Cols_hex_27 = ["#fd5925", "#dbc58e", "#008d40", "#304865", "#934270", "#f7b8a2", "#907500", "#45deb2", "#1f4195", "#d67381", "#8e7166", "#afb200", "#005746", "#a598ff", "#8f0f1b", "#b96000", "#667f42", "#00c7ce", "#9650f0", "#614017", "#59c300", "#1a8298", "#b5a6bd", "#ea9b00", "#bbcbb3", "#00b0ff", "#cd6ec6"]
 
-	#hex values from https://mokole.com/palette.html
-
-	Cols_hex_40 = ["#696969","#556b2f","#a0522d","#800000","#006400","#808000","#483d8b","#3cb371","#008080","#bdb76b","#4682b4","#000080","#9acd32","#32cd32","#daa520","#7f007f","#ff4500","#00ced1","#ff8c00","#c71585","#0000cd","#00ff00","#9400d3","#dc143c","#00bfff","#f4a460","#adff2f","#da70d6","#ff00ff","#1e90ff","#db7093","#fa8072","#ffff54","#dda0dd","#7b68ee","#afeeee","#98fb98","#7fffd4","#ffe4c4","#ffc0cb"]
 
 	Cols_tol = ["#332288", "#117733", "#44AA99", "#88CCEE", "#DDCC77", "#CC6677", "#AA4499", "#882255"]
 
@@ -317,21 +314,18 @@ def main():
 		if len(imp_spacers) > 8:
 			if len(imp_spacers) > 12: 
 				if len(imp_spacers) > 27:
-					if len(imp_spacers) > 40:
-						print("{} spacers found in multiple arrays. Using fill and outline colour combinations to distinguish spacers.".format(len(imp_spacers)))
-						if len(imp_spacers) < 65:
-							col_scheme = Cols_tol
-						elif len(imp_spacers) < 145:
-							col_scheme = Cols_hex_12
-						else:
-							col_scheme = Cols_hex_27
-						colours = []
-						for i in range((len(imp_spacers)+len(col_scheme)-1)//len(col_scheme)): # Repeat the same colour scheme.
-							for j in col_scheme:
-								colours += [(j, col_scheme[i])]
-
+					print("{} spacers found in multiple arrays. Using fill and outline colour combinations to distinguish spacers.".format(len(imp_spacers)))
+					if len(imp_spacers) < 65:
+						col_scheme = Cols_tol
+					elif len(imp_spacers) < 145:
+						col_scheme = Cols_hex_12
 					else:
-						colours = [(i, "#000000") for i in Cols_hex_40]
+						col_scheme = Cols_hex_27
+					colours = []
+					for i in range((len(imp_spacers)+len(col_scheme)-1)//len(col_scheme)): # Repeat the same colour scheme.
+						for j in col_scheme:
+							colours += [(j, col_scheme[i])]
+
 				else:
 					colours = [(i, "#000000") for i in Cols_hex_27]
 			else:
@@ -433,7 +427,7 @@ def main():
 	else:
 		plt.xticks(range(1, max([len(x) for x in arrays_of_interest_dict.values()])+1, 1))
 		plt.xlabel("Spacer in array", fontsize=11)
-		
+
 	ax.set_yticklabels(array_order)
 	plt.ylabel("Array ID", fontsize=11)
 
