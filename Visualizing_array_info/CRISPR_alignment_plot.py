@@ -250,6 +250,10 @@ def main():
 		help="The order of outline and fill colours assigned to spacers is semi-random. Change it by providing a number here to change which colours are assigned to each spacer."
 		)
 	parser.add_argument(
+		"--connection_outline", dest="connection_outline", action='store_true',
+		help="Identical spacers in arrays plotted adjacent to one another are connected by a line with the fill colour of the spacer by default. If you would like the line connecting those spacers to have the same outline as the spacers as well then use this option."
+		)
+	parser.add_argument(
 		"arrays_to_align", nargs="+",  
 		help="Specify the arrays for which you want to plot an alignment. **Must come at the end of your command after all other arguments.**"
 		)
@@ -427,6 +431,8 @@ def main():
 					sp_x2 = b+1+pad_dict[array_order[i+1]]
 					sp_y2 = i+2
 					spcolour = spacer_colours[spacer]
+					if args.connection_outline:
+						ax.plot([sp_x1, sp_x2],[sp_y1+0.1, sp_y2-0.1], color = spcolour[1], linewidth = 2.0, label=spacer, zorder=0)
 					ax.plot([sp_x1, sp_x2],[sp_y1+0.1, sp_y2-0.1], color = spcolour[0], linewidth = 1.0, solid_capstyle="butt", label=spacer, zorder=1)
 
 
