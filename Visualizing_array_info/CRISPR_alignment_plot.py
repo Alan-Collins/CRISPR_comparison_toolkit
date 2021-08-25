@@ -7,6 +7,7 @@ from itertools import combinations
 from itertools import permutations
 from random import sample
 from random import randrange
+from random import seed
 import argparse
 import json
 
@@ -245,6 +246,10 @@ def main():
 		help="Declare that the array order you provided should be optimized slightly before plotting. Optimization involves switching order of adjacent arrays in list as long as that increases the total number of shared spacers among all neighbours."
 		)
 	parser.add_argument(
+		"--seed", dest="seed", type=int, required = False, default = 2,
+		help="The order of outline and fill colours assigned to spacers is semi-random. Change it by providing a number here to change which colours are assigned to each spacer."
+		)
+	parser.add_argument(
 		"arrays_to_align", nargs="+",  
 		help="Specify the arrays for which you want to plot an alignment. **Must come at the end of your command after all other arguments.**"
 		)
@@ -321,10 +326,16 @@ def main():
 						col_scheme = Cols_hex_12
 					else:
 						col_scheme = Cols_hex_27
-					colours = []
-					for i in range((len(imp_spacers)+len(col_scheme)-1)//len(col_scheme)): # Repeat the same colour scheme.
-						for j in col_scheme:
-							colours += [(j, col_scheme[i])]
+					seed(args.seed)
+					combos = [i for i in permutations(col_scheme, 2)]
+					combos += [(i,i) for i in col_scheme]
+					colours = sample(combos, len(combos))
+					seed(None)
+					# colours = []
+					# for i in range((len(imp_spacers)+len(col_scheme)-1)//len(col_scheme)): # Repeat the same colour scheme.
+					# 	for j in col_scheme:
+					# 		colours += [(j, edge_colours[i])]
+					
 
 				else:
 					colours = [(i, "#000000") for i in Cols_hex_27]
