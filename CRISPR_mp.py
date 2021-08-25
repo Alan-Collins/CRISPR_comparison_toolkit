@@ -1646,6 +1646,10 @@ def main():
 		help="Specify input file containing json format dictionary of the colour scheme to be used for spacers in this run. Any spacers not in the input file will be coloured according to the normal process."
 		)
 	parser.add_argument(
+		"--seed", dest="seed", type=int, required = False, default = 2,
+		help="The order of outline and fill colours assigned to spacers is semi-random. Change it by providing a number here to change which colours are assigned to each spacer."
+		)
+	parser.add_argument(
 		"arrays_to_join", nargs="*",  
 		help="Specify the IDs of the arrays you want to join. If none provided, joins all arrays in the provided array representatives file. **If given, must come at the end of your command after all other arguments.**"
 		)
@@ -1870,10 +1874,16 @@ def main():
 						col_scheme = Cols_hex_12
 					else:
 						col_scheme = Cols_hex_27
-					colours = []
-					for i in range((len(non_singleton_spacers)+len(col_scheme)-1)//len(col_scheme)): # Repeat the same colour scheme.
-						for j in col_scheme:
-							colours += [(j, col_scheme[i])]
+					
+					seed(args.seed)
+					combos = [i for i in permutations(col_scheme, 2)]
+					combos += [(i,i) for i in col_scheme]
+					colours = sample(combos, len(combos))
+					seed(None)
+					# colours = []
+					# for i in range((len(non_singleton_spacers)+len(col_scheme)-1)//len(col_scheme)): # Repeat the same colour scheme.
+					# 	for j in col_scheme:
+					# 		colours += [(j, col_scheme[i])]
 
 				else:
 					colours = [(i, "#000000") for i in Cols_hex_40]
