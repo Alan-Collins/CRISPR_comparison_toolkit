@@ -1875,11 +1875,11 @@ def main():
 					else:
 						col_scheme = Cols_hex_27
 					
-					seed(args.seed)
+					random.seed(args.seed)
 					combos = [i for i in permutations(col_scheme, 2)]
 					combos += [(i,i) for i in col_scheme]
 					colours = sample(combos, len(combos))
-					seed(None)
+					random.seed(None)
 					# colours = []
 					# for i in range((len(non_singleton_spacers)+len(col_scheme)-1)//len(col_scheme)): # Repeat the same colour scheme.
 					# 	for j in col_scheme:
