@@ -367,7 +367,7 @@ def find_modules(array1, array2):
 						module2.indices.append(n)
 						module2.spacers.append(b)
 					else:
-						if n == len(array1.aligned)-1: # If this is the last spacer, call it trailer loss
+						if n == len(array1.aligned)-1 and module1.type not in ["indel_mm", "indel_gap"]: # If this is the last spacer and not a continuation of an indel, call it trailer loss
 							array1.modules.append(module1)
 							for k in module1.indices:
 								array1.module_lookup[k] = module1
