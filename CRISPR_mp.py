@@ -307,7 +307,8 @@ def find_modules(array1, array2):
 				module2.spacers.append(b)
 			else:
 				# Check if duplication
-				if a != b and Counter(array2.aligned)[b] > 1 and b != '-':
+				# Only call it a duplication if the comparator has the spacers, otherwise prefer calling this an insertion.
+				if a != b and Counter(array2.aligned)[b] > 1 and b != '-' and b in array1.spacers:
 					# If this spacer is in multiple copies and aligns with a gap it means the comparator array has no or fewer copies of this spacer.
 					if module2.type != "duplication" and module2.type != "":
 						array2.modules.append(module2)
@@ -326,7 +327,7 @@ def find_modules(array1, array2):
 					module1.type = "duplication"
 					module1.indices.append(n)
 					module1.spacers.append(a)
-				elif a != b and Counter(array1.aligned)[a] > 1  and a != '-':
+				elif a != b and Counter(array1.aligned)[a] > 1 and a != '-' and a in array2.spacers:
 					if module1.type != "duplication" and module1.type != "":
 						array1.modules.append(module1)
 						for k in module1.indices:
