@@ -1040,7 +1040,7 @@ def replace_existing_array(existing_array, new_array, current_parent, tree, all_
 		return tree, array_dict, tree_child_dict
 
 
-def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False, emphasize_diffs=False):
+def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False, emphasize_diffs=False, dpi=600):
 	"""
 	Args:
 		tree (dendopy Tree class instance): The tree you want to plot.
@@ -1371,7 +1371,7 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 
 	plt.axis('off')
 	plt.tight_layout()
-	plt.savefig(filename, dpi=100)
+	plt.savefig(filename, dpi=dpi)
 
 
 def build_tree_single(arrays, tree_namespace, score, all_arrays, node_ids, event_costs):
@@ -1651,6 +1651,10 @@ def main():
 		help="The order of outline and fill colours assigned to spacers is semi-random. Change it by providing a number here to change which colours are assigned to each spacer."
 		)
 	parser.add_argument(
+		"--dpi", dest="dpi", type=int, required = False, default = 600,
+		help="The desired resolution of the output image."
+		)
+	parser.add_argument(
 		"arrays_to_join", nargs="*",  
 		help="Specify the IDs of the arrays you want to join. If none provided, joins all arrays in the provided array representatives file. **If given, must come at the end of your command after all other arguments.**"
 		)
@@ -1927,7 +1931,7 @@ def main():
 				if args.output_tree:
 					filename = "{}_{}.png".format(args.output_tree[:-4], n+1)
 					print("Saving image of tree with array diagrams to {}\n".format(filename))
-					plot_tree(good_tree, best_arrays[n], filename, spacer_cols_dict, args.branch_lengths, args.emphasize_diffs)
+					plot_tree(good_tree, best_arrays[n], filename, spacer_cols_dict, args.branch_lengths, args.emphasize_diffs, args.dpi)
 				if args.output_arrays:
 					filename = "{}_{}.txt".format(args.output_arrays[:-4], n+1)
 					print("Saving details of arrays to {}\n".format(filename))
@@ -1941,7 +1945,7 @@ def main():
 			print(best_tree.as_string("newick"))
 			if args.output_tree:
 				print("Saving image of tree with array diagrams to {}\n".format(args.output_tree))
-				plot_tree(best_tree, best_arrays, args.output_tree, spacer_cols_dict, args.branch_lengths, args.emphasize_diffs)
+				plot_tree(best_tree, best_arrays, args.output_tree, spacer_cols_dict, args.branch_lengths, args.emphasize_diffs, args.dpi)
 			if args.output_arrays:
 				print("Saving details of arrays to {}\n".format(args.output_arrays))
 				with open(args.output_arrays, 'w') as fout:
