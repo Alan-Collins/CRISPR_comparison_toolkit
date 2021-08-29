@@ -51,7 +51,8 @@ class Array():
 						"indel" : 0,
 						"repeated_indel" : 0,
 						"duplication": 0,
-						"trailer_loss": 0
+						"trailer_loss": 0,
+						"no_ident": 0
 						}
 
 	def sort_modules(self):
@@ -64,7 +65,8 @@ class Array():
 						"indel" : 0,
 						"repeated_indel" : 0,
 						"duplication": 0,
-						"trailer_loss": 0
+						"trailer_loss": 0,
+						"no_ident" : 0
 						}
 
 
@@ -203,6 +205,24 @@ def find_modules(array1, array2):
 
 	module1 = Spacer_Module()
 	module2 = Spacer_Module()
+
+	# If the two arrays being compared have no shared spacers, a high-cost event should be assigned.
+
+	if not any([a==b for a,b in zip(array1.aligned, array2.aligned)]):
+		module1.type = "no_ident"
+		module1.indices = [n for n in range(len(array1.aligned))]
+		module1.spacers = [a for a in array1.aligned]
+		for k in module1.indices:
+			array1.module_lookup[k] = module1
+		
+		module2.type = "no_ident"
+		module2.indices = [n for n in range(len(array2.aligned))]
+		module2.spacers = [b for b in array2.aligned]
+		for k in module2.indices:
+			array2.module_lookup[k] = module1
+
+		return array1, array2
+
 
 	# Identify modules in aligned arrays
 
@@ -687,6 +707,9 @@ def count_parsimony_events(child, ancestor, array_dict, tree, parent_comparison)
 			child.events['trailer_loss'] += 1
 			idx = mod.indices[-1] + 1
 			pass
+		elif mod.type == "no_ident":
+			child.events['no_ident'] += 1
+			idx = mod.indices[-1] + 1
 		else:
 			idx += 1
 	return child
@@ -1248,6 +1271,21 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 
 					if n == diff_type.indices[-1]:
 						if diff_type.type != 'shared':
+							if diff_type.type == "no_ident":
+								# Plot a blue box around the offending arrays
+								nspacers = len([child.aligned[i] for i in diff_type.indices if child.aligned[i] != '-'])
+								# First bar
+								ax.fill_between([start_pos_x-spacer_size*spacer_count-0.5-spacing/2, start_pos_x-spacer_size*spacer_count-spacing/2],start_pos_y+spacer_width+0.4, start_pos_y-spacer_width-0.4, color="#02a8b1", edgecolor='none')
+								# Second bar
+								ax.fill_between([start_pos_x-spacer_size*(spacer_count+nspacers)-0.5-0.5-spacing/2, start_pos_x-spacer_size*(spacer_count+nspacers)-0.5-spacing/2], start_pos_y+spacer_width+0.4, start_pos_y-spacer_width-0.4, color="#02a8b1", edgecolor='none')
+								# Top bar
+								ax.fill_between([start_pos_x-spacer_size*(spacer_count+nspacers)-0.5-0.5-spacing/2, start_pos_x-spacer_size*spacer_count-spacing/2], start_pos_y+spacer_width+0.2, start_pos_y+spacer_width+0.4, color="#02a8b1", edgecolor='none')
+								# Bottom bar
+								ax.fill_between([start_pos_x-spacer_size*(spacer_count+nspacers)-0.5-0.5-spacing/2, start_pos_x-spacer_size*spacer_count-spacing/2], start_pos_y-spacer_width-0.2, start_pos_y-spacer_width-0.4, color="#02a8b1", edgecolor='none')
+
+								start_pos_x-=0.5 # Shift future spacers a bit to make spacer for this line.
+								# Shift again after the indel region
+							
 							if diff_type.type == "repeated_indel":
 								# Plot a red box around repeated indels
 								nspacers = len([child.aligned[i] for i in diff_type.indices if child.aligned[i] != '-'])
@@ -1627,6 +1665,10 @@ def main():
 			help="Specify the parsimony cost of the loss of a spacer from the trailer end of the array. Default: 1"
 		)
 	parser.add_argument(
+		"-n",  dest="no_ident", type=int, nargs="?", default = 100,
+			help="Specify the parsimony cost of a tree in which an array is predicted to have descended from another array with which it shares no spacers. Default: 100"
+		)
+	parser.add_argument(
 		"-o", dest="output_tree", required = False,
 		help="Specify filename for the graphical representation of your tree with hypothetical intermediate arrays as a png."
 		)
@@ -1670,7 +1712,8 @@ def main():
 					"indel" : args.indel,
 					"repeated_indel" : args.rep_indel,
 					"duplication": args.duplication,
-					"trailer_loss": args.trailer_loss
+					"trailer_loss": args.trailer_loss,
+					"no_ident": args.no_ident
 					}
 
 	# hex values from this website http://phrogz.net/css/distinct-colors.html
