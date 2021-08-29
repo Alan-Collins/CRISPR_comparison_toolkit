@@ -349,7 +349,7 @@ def find_modules(array1, array2):
 				else:
 					if a != '-' and b != '-':
 						# Module1 processing for indel module where mismatched
-						if module1.type != "indel_mm" and module1.type != "":
+						if module1.type not in ["indel_mm", "indel_gap"] and module1.type != "":
 							array1.modules.append(module1)
 							for k in module1.indices:
 								array1.module_lookup[k] = module1
@@ -358,7 +358,7 @@ def find_modules(array1, array2):
 						module1.indices.append(n)
 						module1.spacers.append(a)
 						# Module2 processing for indel module where mismatched
-						if module2.type != "indel_mm" and module2.type != "":
+						if module2.type not in ["indel_mm", "indel_gap"] and module2.type != "":
 							array2.modules.append(module2)
 							for k in module2.indices:
 								array2.module_lookup[k] = module2
@@ -384,21 +384,21 @@ def find_modules(array1, array2):
 							module2.spacers.append(b)
 						else:
 							# Module1 processing for indel module where one is gap
-							if module1.type != "indel_gap" and module1.type != "":
+							if module1.type not in ["indel_mm", "indel_gap"] and module1.type != "":
 								array1.modules.append(module1)
 								for k in module1.indices:
 									array1.module_lookup[k] = module1
 								module1 = Spacer_Module()
-							module1.type = "indel_gap"
+								module1.type = "indel_gap"
 							module1.indices.append(n)
 							module1.spacers.append(a)
 							# Module2 processing for indel module where one is gap
-							if module2.type != "indel_gap" and module2.type != "":
+							if module2.type not in ["indel_mm", "indel_gap"] and module2.type != "":
 								array2.modules.append(module2)
 								for k in module2.indices:
 									array2.module_lookup[k] = module2
 								module2 = Spacer_Module()
-							module2.type = "indel_gap"
+								module2.type = "indel_gap"
 							module2.indices.append(n)
 							module2.spacers.append(b)
 
