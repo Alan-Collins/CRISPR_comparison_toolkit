@@ -1072,6 +1072,7 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 		spacer_cols_dict (dict): Dict describing which colours have been assigned as the fill and outline colours for spacers.
 		branch_lengths (bool): Should branch lengths be labeled?
 		emphasize_diffs (bool): Should annotations be added to highlight indels and acquisitions in spacer cartoons?
+		dpi (int): The resolution of the output plot
 	"""
 
 	# Find tree dimensions
