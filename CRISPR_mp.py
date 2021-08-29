@@ -1063,7 +1063,7 @@ def replace_existing_array(existing_array, new_array, current_parent, tree, all_
 		return tree, array_dict, tree_child_dict
 
 
-def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False, emphasize_diffs=False, dpi=600):
+def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False, emphasize_diffs=False, dpi=600, align_cartoons=True):
 	"""
 	Args:
 		tree (dendopy Tree class instance): The tree you want to plot.
@@ -1073,6 +1073,7 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 		branch_lengths (bool): Should branch lengths be labeled?
 		emphasize_diffs (bool): Should annotations be added to highlight indels and acquisitions in spacer cartoons?
 		dpi (int): The resolution of the output plot
+		align_cartoons(bool): Should cartoons of arrays be aligned such that their trailer-most spacers have the same x position?
 	"""
 
 	# Find tree dimensions
@@ -1259,7 +1260,12 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 			child = count_parsimony_events(child, ancestor, array_dict, tree, True)
 
 			if emphasize_diffs:
-				start_pos_x = location[0]-5 # Start a bit to the left to leave room for the label
+				if align_cartoons:
+					if location[0] != 0:
+						ax.plot([-4, location[0]-5], [location[1], location[1]], linestyle='--', color='black', linewidth = 1, dashes=(10, 2), alpha=0.5)
+					start_pos_x = -5
+				else:
+					start_pos_x = location[0]-5 # Start a bit to the left to leave room for the label
 				start_pos_y = location[1]
 				spacer_count = 0 # How many spacers have been plotted?
 				reshift_loc = 1000
@@ -1375,7 +1381,12 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 			if emphasize_diffs:
 			# Then add spacers
 				spacers = array_dict[array].spacers
-				start_pos_x = location[0]-5 # Start a bit to the left to leave room for the label
+				if align_cartoons:
+					if location[0] != 0:
+						ax.plot([-4, location[0]-5], [location[1], location[1]], linestyle='--', color='black', linewidth = 1, dashes=(10, 2), alpha=0.5)
+					start_pos_x = -5
+				else:
+					start_pos_x = location[0]-5 # Start a bit to the left to leave room for the label
 				start_pos_y = location[1] 
 				for n, spacer in enumerate(reversed(spacers)): # work backwards through the array plotting from right to left
 					if spacer in spacer_cols_dict.keys():
@@ -1391,7 +1402,12 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 		if not emphasize_diffs:
 			# Then add spacers
 			spacers = array_dict[array].spacers
-			start_pos_x = location[0]-5 # Start a bit to the left to leave room for the label
+			if align_cartoons:
+				if location[0] != 0:
+					ax.plot([-4, location[0]-5], [location[1], location[1]], linestyle='--', color='black', linewidth = 1, dashes=(10, 2), alpha=0.5)
+				start_pos_x = -5
+			else:
+				start_pos_x = location[0]-5 # Start a bit to the left to leave room for the label
 			start_pos_y = location[1] 
 			for n, spacer in enumerate(reversed(spacers)): # work backwards through the array plotting from right to left
 				if spacer in spacer_cols_dict.keys():
@@ -1640,6 +1656,10 @@ def main():
 	parser.add_argument(
 		"-b", dest="branch_lengths", action='store_true', 
 		help="When plotting a representation of the tree Include branch lengths at midpoint on branches. N.B. This does not control inclusion of branch lengths in newick format tree output, which are always included."
+		)
+	parser.add_argument(
+		"-g", dest="align_cartoons", action='store_true', 
+		help="When plotting a representation of the tree with cartooned arrays, this option controls whether those cartoons are aligned at the trailer end. By default cartoons will be drawn next to the corresponding node in the tree."
 		)
 	parser.add_argument(
 		"-r",  dest="replicates", type=int, nargs="?", default = 1,
@@ -1975,7 +1995,7 @@ def main():
 				if args.output_tree:
 					filename = "{}_{}.png".format(args.output_tree[:-4], n+1)
 					print("Saving image of tree with array diagrams to {}\n".format(filename))
-					plot_tree(good_tree, best_arrays[n], filename, spacer_cols_dict, args.branch_lengths, args.emphasize_diffs, args.dpi)
+					plot_tree(good_tree, best_arrays[n], filename, spacer_cols_dict, args.branch_lengths, args.emphasize_diffs, args.dpi, args.align_cartoons)
 				if args.output_arrays:
 					filename = "{}_{}.txt".format(args.output_arrays[:-4], n+1)
 					print("Saving details of arrays to {}\n".format(filename))
@@ -1989,7 +2009,7 @@ def main():
 			print(best_tree.as_string("newick"))
 			if args.output_tree:
 				print("Saving image of tree with array diagrams to {}\n".format(args.output_tree))
-				plot_tree(best_tree, best_arrays, args.output_tree, spacer_cols_dict, args.branch_lengths, args.emphasize_diffs, args.dpi)
+				plot_tree(best_tree, best_arrays, args.output_tree, spacer_cols_dict, args.branch_lengths, args.emphasize_diffs, args.dpi, args.align_cartoons)
 			if args.output_arrays:
 				print("Saving details of arrays to {}\n".format(args.output_arrays))
 				with open(args.output_arrays, 'w') as fout:
