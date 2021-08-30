@@ -606,7 +606,7 @@ def find_dupes(child, ancestor):
 	dupe_indices = []
 
 	for k,v in spacer_counts.items():
-		if k != '-':
+		if k != '-' and k in ancestor.aligned:
 			if v > 1:
 				indices = [idx for idx, el in enumerate(child.aligned) if el == k]
 				dupe_indices.append(indices)
