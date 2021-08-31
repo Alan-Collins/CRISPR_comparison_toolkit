@@ -1164,7 +1164,7 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 
 	# hscale = (dim_x+1)/(tree_width + max([len(array.spacers) for array in array_dict.values()])) # Factor to scale all branch lengths to fit them in the plot
 	# vscale = (dim_y+1)/tree_height
-	branch_spacing = 2 # Space between branches in tree.
+	branch_spacing = 2.3 # Space between branches in tree.
 	spacer_width = 0.3 # Thickness off spacer cartoons.
 	outline = 3 # Thickness of spacer_outline
 	spacing = outline*0.15
@@ -1381,7 +1381,7 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 
 								# Add Array ID of the array in which the spacers of this predicted repeated_indel can be found
 								if len(diff_type.partner) > 2:
-									ax.text(start_pos_x-spacer_size*(spacer_count+nspacers/2)-0.5, start_pos_y-1.3, "\n".join([diff_type.partner[0], "event {}".format(rep_indel_report_count)]), color="#cc3300", ha='center', fontsize=10)
+									ax.text(start_pos_x-spacer_size*(spacer_count+nspacers/2)-0.5, start_pos_y-spacer_width/2-1.3, "\n".join([diff_type.partner[0], "event {}".format(rep_indel_report_count)]), color="#cc3300", ha='center', fontsize=10)
 									if not rep_indel_message_printed:
 										print("Repeated indels were identified with multiple possible partners. Those cases will be annotated in the tree png file with the one of the arrays identified as a partner followed by an event number corresponding to one of the lists of partner arrays below:\n\n")
 										rep_indel_message_printed = True
@@ -1390,9 +1390,9 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 
 								else:
 									if len(diff_type.partner) == 2:
-										ax.text(start_pos_x-spacer_size*(spacer_count+nspacers/2)-0.5, start_pos_y-1.3, "\n".join(diff_type.partner), color="#cc3300", ha='center', fontsize=10)
+										ax.text(start_pos_x-spacer_size*(spacer_count+nspacers/2)-0.5, start_pos_y-spacer_width/2-1.3, "\n".join(diff_type.partner), color="#cc3300", ha='center', fontsize=10)
 									else:
-										ax.text(start_pos_x-spacer_size*(spacer_count+nspacers/2)-0.5, start_pos_y-1, diff_type.partner[0], color="#cc3300", ha='center', fontsize=10)
+										ax.text(start_pos_x-spacer_size*(spacer_count+nspacers/2)-0.5, start_pos_y-spacer_width/2-1, diff_type.partner[0], color="#cc3300", ha='center', fontsize=10)
 
 								start_pos_x-=0.5 # Shift future spacers a bit to make spacer for this line.
 								# Shift again after the indel region
@@ -2046,7 +2046,7 @@ def main():
 			colour_idx = 0
 			for s in non_singleton_spacers:
 				if s not in spacer_cols_dict.keys():
-					while colours[colour_idx] in spacer_cols_dict.values():
+					while list(colours[colour_idx]) in spacer_cols_dict.values():
 						colour_idx += 1
 					spacer_cols_dict[s] = colours[colour_idx]
 					colour_idx += 1
