@@ -437,7 +437,7 @@ def find_modules(array1, array2):
 	return array1, array2
 
 
-def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
+def infer_ancestor(array1, array2, all_arrays, node_ids, node_count, existing_ancestor):
 	"""
 	Based on the modules found in two aligned arrays, construct a hypothethetical ancestral state of the two arrays
 	Args:
@@ -446,6 +446,7 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 		all_arrays (list): The list of all arrays so that indels can be resolved to favour keeping spacers found in other arrays.
 		node_ids (list): A list of names to be used to name internal nodes.
 		node_count (int): The index of the name to use in the node_ids list to name this internal node.
+		existing_ancestor(Array class instance): The existing ancestor array if there is one
 	
 	Returns:
 		(str or list) A hypothesis of the ancestral state of the provided sequences.
@@ -520,7 +521,50 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count):
 					idx = mod1.indices[-1] + 1
 				else:
 					# If both modules contain spacers then this may be two deletions from a larger ancestor or a recombination event.
-					# First check if all these spacers exits in another array
+					# If there is an existing ancestor to consider, use it to resolve this event
+					if existing_ancestor:
+						# First check if both modules exist in the existing ancestral array. If they do then keep the portion of the ancestor that they align with.
+						if all([s in existing_ancestor.spacers for s in mod1.spacers if s != '-']) and all([s in existing_ancestor.spacers for s in mod2.spacers if s != '-']):
+							existing_ancestor_indices = sorted([existing_ancestor.spacers.index(s) for s in mod1.spacers + mod2.spacers if s != '-'])
+							new_module = Spacer_Module()
+							new_module.spacers = existing_ancestor[existing_ancestor_indices[0]:existing_ancestor_indices[-1]+1]
+							ancestor.modules.append(new_module)
+							idx = mod1.indices[-1] + 1 
+							continue
+
+						#Otherwise check if either module exist in the existing ancestral array. If one does then keep that one.
+						elif all([s in existing_ancestor.spacers for s in mod1.spacers if s != '-']):
+							new_module = Spacer_Module()
+							new_module.spacers = [s for s in mod1.spacers if s != '-']
+							ancestor.modules.append(new_module)
+							idx = mod1.indices[-1] + 1
+							continue
+
+						elif all([s in existing_ancestor.spacers for s in mod2.spacers if s != '-']):
+							new_module = Spacer_Module()
+							new_module.spacers = [s for s in mod2.spacers if s != '-']
+							ancestor.modules.append(new_module)
+							idx = mod2.indices[-1] + 1
+							continue
+
+						else: # If either has any spacers in the ancestor pick the one with the most
+							if any([s in existing_ancestor.spacers for s in mod1.spacers+mod2.spacers if s != '-']):
+								n1 = len([s in existing_ancestor.spacers for s in mod1.spacers if s != '-'])
+								n2 = len([s in existing_ancestor.spacers for s in mod2.spacers if s != '-'])
+								if n1 > n2:
+									new_module = Spacer_Module()
+									new_module.spacers = [s for s in mod1.spacers if s != '-']
+									ancestor.modules.append(new_module)
+									idx = mod1.indices[-1] + 1
+									continue
+								else:
+									new_module = Spacer_Module()
+									new_module.spacers = [s for s in mod2.spacers if s != '-']
+									ancestor.modules.append(new_module)
+									idx = mod2.indices[-1] + 1
+									continue
+
+					# Next check if all these spacers exits in another array
 					spacers_to_check = mod1.spacers + mod2.spacers
 					found_array = False # If we find all the spacers in an array keep it to determine order
 					for array in all_arrays:
@@ -784,7 +828,7 @@ def identify_repeat_indels(child, ancestor, array_dict, module, ancestor_module,
 				if len(arrays_to_check) == 0:
 					repeat_search = False 
 				else:
-					for a in arrays_to_check:
+					for a in set(arrays_to_check):
 						x = Array("x", spacers_to_check)
 						y = Array("y", arrays_of_concern[a])
 						x.aligned, y.aligned = needle(x.spacers, y.spacers) # Find where the match is by aligning
@@ -931,11 +975,27 @@ def resolve_pairwise_parsimony(array1, array2, all_arrays, array_dict, node_ids,
 
 		array1, array2 = find_modules(array1, array2)
 
+		if len(tree) > 1:
+			if tree.find_node_with_taxon_label(array1.id):
+				try:
+					existing_ancestor = array_dict[tree.find_node_with_taxon_label(array1.id).parent_node.taxon.label]
+				except: #root is parent
+					existing_ancestor = False
+			elif tree.find_node_with_taxon_label(array2.id):
+				try:
+					existing_ancestor = array_dict[tree.find_node_with_taxon_label(array2.id).parent_node.taxon.label]
+				except: #root is parent
+					existing_ancestor = False
+			else:
+				existing_ancestor = False
+		else:
+			existing_ancestor = False
+
 
 		array1.reset() # Make sure the distance and events haven't carried over from a previous usage
 		array2.reset()
 		
-		ancestor = infer_ancestor(array1, array2, all_arrays, node_ids, node_count)
+		ancestor = infer_ancestor(array1, array2, all_arrays, node_ids, node_count, existing_ancestor)
 
 		array1 = count_parsimony_events(array1, ancestor, array_dict, tree, True)
 		array2 = count_parsimony_events(array2, ancestor, array_dict, tree, True)
