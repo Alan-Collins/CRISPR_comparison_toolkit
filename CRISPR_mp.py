@@ -2038,22 +2038,21 @@ def main():
 	else:
 		colours = [(i, "#000000") for i in Cols_tol]
 	# if provided, read in colour scheme.
-
+	spacer_cols_dict = {}
 	if args.colour_scheme_infile:
 		with open(args.colour_scheme_infile, 'r') as fin:
-			spacer_cols_dict = json.load(fin)
-		if any([s not in spacer_cols_dict.keys() for s in non_singleton_spacers]):
-			colour_idx = 0
-			for s in non_singleton_spacers:
-				if s not in spacer_cols_dict.keys():
-					while list(colours[colour_idx]) in spacer_cols_dict.values():
-						colour_idx += 1
-					spacer_cols_dict[s] = colours[colour_idx]
+			user_spacer_cols_dict = json.load(fin)
+		for s in non_singleton_spacers:
+			if s in user_spacer_cols_dict.keys():
+				spacer_cols_dict[s] = user_spacer_cols_dict[s]
+			else:
+				colour_idx = 0
+				while list(colours[colour_idx]) in spacer_cols_dict.values():
 					colour_idx += 1
+				spacer_cols_dict[s] = colours[colour_idx]
+				colour_idx += 1
 	else:
 		# build a dictionary with colours assigned to each spacer.
-		spacer_cols_dict  = {}
-
 		for i, spacer in enumerate(sorted(non_singleton_spacers)):
 			spacer_cols_dict[spacer] = colours[i]
 
