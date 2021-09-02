@@ -1156,10 +1156,7 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 	start_position = [0,0]
 	node_locs[start_node.taxon.label] = start_position
 
-	if align_cartoons or align_labels:
-		dash_shift = 5
-		if align_labels:
-			dash_shift = 0
+	
 	# dim_x, dim_y = 10, 10
 
 	# hscale = (dim_x+1)/(tree_width + max([len(array.spacers) for array in array_dict.values()])) # Factor to scale all branch lengths to fit them in the plot
@@ -1170,6 +1167,12 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 	spacing = outline*0.15
 	spacer_size = 2.5
 	brlen_scale = 0.5
+	label_pad = max([len(i) for i in array_dict.keys()] + [5]) # adds 1 unit of space per character in longest array ID. Min space = 5 units
+
+	if align_cartoons or align_labels:
+		dash_shift = label_pad
+		if align_labels:
+			dash_shift = 0
 
 	max_depth = tree_width
 
@@ -1337,9 +1340,9 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 				if align_cartoons:
 					if location[0] != 0:
 						ax.plot([-dash_shift, location[0]-dash_shift], [location[1], location[1]], linestyle='--', color='black', linewidth = 1, dashes=(10, 2), alpha=0.5)
-					start_pos_x = -5
+					start_pos_x = -label_pad
 				else:
-					start_pos_x = location[0]-5 # Start a bit to the left to leave room for the label
+					start_pos_x = location[0]-label_pad # Start a bit to the left to leave room for the label
 				start_pos_y = location[1]
 				spacer_count = 0 # How many spacers have been plotted?
 				reshift_loc = 1000
@@ -1458,9 +1461,9 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 				if align_cartoons:
 					if location[0] != 0:
 						ax.plot([-dash_shift, location[0]-dash_shift], [location[1], location[1]], linestyle='--', color='black', linewidth = 1, dashes=(10, 2), alpha=0.5)
-					start_pos_x = -5
+					start_pos_x = -label_pad
 				else:
-					start_pos_x = location[0]-5 # Start a bit to the left to leave room for the label
+					start_pos_x = location[0]-label_pad # Start a bit to the left to leave room for the label
 				start_pos_y = location[1] 
 				for n, spacer in enumerate(reversed(spacers)): # work backwards through the array plotting from right to left
 					if spacer in spacer_cols_dict.keys():
@@ -1479,9 +1482,9 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 			if align_cartoons:
 				if location[0] != 0:
 					ax.plot([-dash_shift, location[0]-dash_shift], [location[1], location[1]], linestyle='--', color='black', linewidth = 1, dashes=(10, 2), alpha=0.5)
-				start_pos_x = -5
+				start_pos_x = -label_pad
 			else:
-				start_pos_x = location[0]-5 # Start a bit to the left to leave room for the label
+				start_pos_x = location[0]-label_pad # Start a bit to the left to leave room for the label
 			start_pos_y = location[1] 
 			for n, spacer in enumerate(reversed(spacers)): # work backwards through the array plotting from right to left
 				if spacer in spacer_cols_dict.keys():
