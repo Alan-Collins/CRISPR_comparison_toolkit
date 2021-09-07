@@ -527,7 +527,7 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count, existing_an
 						if all([s in existing_ancestor.spacers for s in mod1.spacers if s != '-']) and all([s in existing_ancestor.spacers for s in mod2.spacers if s != '-']):
 							existing_ancestor_indices = sorted([existing_ancestor.spacers.index(s) for s in mod1.spacers + mod2.spacers if s != '-'])
 							new_module = Spacer_Module()
-							new_module.spacers = existing_ancestor[existing_ancestor_indices[0]:existing_ancestor_indices[-1]+1]
+							new_module.spacers = existing_ancestor.spacers[existing_ancestor_indices[0]:existing_ancestor_indices[-1]+1]
 							ancestor.modules.append(new_module)
 							idx = mod1.indices[-1] + 1 
 							continue
