@@ -1290,10 +1290,14 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 	for array, location in node_locs.items():
 		# Add label first
 		x, y = location
-		if align_labels:
-			ax.text(-0.4, y-0.2, array, ha='right', fontsize=15)
+		if "Anc" in array:
+			label_color = "#607d8b" #"#cc5500"
 		else:
-			ax.text(x-0.4, y-0.2, array, ha='right', fontsize=15)
+			label_color = "#000000"
+		if align_labels:
+			ax.text(-0.4, y-0.2, array, ha='right', fontsize=15, color=label_color)
+		else:
+			ax.text(x-0.4, y-0.2, array, ha='right', fontsize=15, color=label_color)
 		# then add branches
 		first_node = tree.find_node_with_taxon_label(array)
 
@@ -1451,7 +1455,7 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 						ax.fill_between([start_pos_x-spacer_size*spacer_count-spacing, start_pos_x-spacer_size*spacer_count-spacing-spacer_size+spacing], start_pos_y-sp_width, start_pos_y+sp_width, color=spcolour[0], edgecolor=spcolour[1], linewidth=outline, joinstyle='miter')
 						spacer_count+=1
 			if "Anc" in array and fade_ancestral:
-				ax.fill_between([start_pos_x-spacer_size*spacer_count-spacing, -label_pad], start_pos_y-sp_width-1, start_pos_y+sp_width+0.6, color="#ffffff99", joinstyle='miter', zorder=10)
+				ax.fill_between([start_pos_x-spacer_size*spacer_count-spacing, -label_pad], start_pos_y-sp_width-1, start_pos_y+sp_width+0.6, color="#ffffff", alpha=0.4, joinstyle='miter', zorder=10)
 
 
 
@@ -1476,7 +1480,7 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 					
 					ax.fill_between([start_pos_x-spacer_size*n-spacing, start_pos_x-spacer_size*n-spacing-spacer_size+spacing], start_pos_y-sp_width, start_pos_y+sp_width, color=spcolour[0], edgecolor=spcolour[1], linewidth=outline, joinstyle='miter')
 				if fade_ancestral:
-					ax.fill_between([start_pos_x-spacer_size*spacer_count-spacing, -label_pad], start_pos_y-sp_width-1, start_pos_y+sp_width+0.6, color="#ffffff99", joinstyle='miter', zorder=10)
+					ax.fill_between([start_pos_x-spacer_size*spacer_count-spacing, -label_pad], start_pos_y-sp_width-1, start_pos_y+sp_width+0.6, color="#ffffff", alpha=0.4, joinstyle='miter', zorder=10)
 
 
 		if not emphasize_diffs:
