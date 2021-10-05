@@ -9,7 +9,7 @@ import sys
 import argparse
 import numpy as np
 from itertools import product
-from string import ascii_lowercase
+from string import ascii_uppercase
 import random
 from collections import Counter
 from collections import defaultdict
@@ -1447,10 +1447,10 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 						else:
 							spcolour = ("#000000", "#000000") #black
 							sp_width = 0.25*spacer_width
-				
 						ax.fill_between([start_pos_x-spacer_size*spacer_count-spacing, start_pos_x-spacer_size*spacer_count-spacing-spacer_size+spacing], start_pos_y-sp_width, start_pos_y+sp_width, color=spcolour[0], edgecolor=spcolour[1], linewidth=outline, joinstyle='miter')
 						spacer_count+=1
-
+			if "Anc" in array:
+				ax.fill_between([start_pos_x-spacer_size*spacer_count-spacing, -label_pad], start_pos_y-sp_width-1, start_pos_y+sp_width+0.6, color="#ffffff99", joinstyle='miter', zorder=10)
 
 
 
@@ -1474,6 +1474,7 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 						sp_width = 0.25*spacer_width
 					
 					ax.fill_between([start_pos_x-spacer_size*n-spacing, start_pos_x-spacer_size*n-spacing-spacer_size+spacing], start_pos_y-sp_width, start_pos_y+sp_width, color=spcolour[0], edgecolor=spcolour[1], linewidth=outline, joinstyle='miter')
+				ax.fill_between([start_pos_x-spacer_size*spacer_count-spacing, -label_pad], start_pos_y-sp_width-1, start_pos_y+sp_width+0.6, color="#ffffff99", joinstyle='miter', zorder=10)
 
 
 		if not emphasize_diffs:
@@ -1495,6 +1496,7 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 					sp_width = 0.25*spacer_width
 				
 				ax.fill_between([start_pos_x-spacer_size*n-spacing, start_pos_x-spacer_size*n-spacing-spacer_size+spacing], start_pos_y-sp_width, start_pos_y+sp_width, color=spcolour[0], edgecolor=spcolour[1], linewidth=outline, joinstyle='miter')
+
 
 	ymin, ymax = ax.get_ylim()
 	xmin, xmax = ax.get_xlim()
@@ -1833,9 +1835,9 @@ def main():
 
 	# Generate strings to assign as internal node_IDs (This makes 702)
 
-	node_ids = ["Int " + i for i in ascii_lowercase]
+	node_ids = ["Anc " + i for i in ascii_uppercase]
 	if len(args.arrays_to_join) > 27: # Maximum internal nodes in tree is n-2 so only need more than 26 if n >= 28
-		node_ids += ["Int " + "".join(i) for i in product(ascii_lowercase, repeat=(ceil(log(len(args.arrays_to_join), 26))))]
+		node_ids += ["Anc " + "".join(i) for i in product(ascii_uppercase, repeat=(ceil(log(len(args.arrays_to_join), 26))))]
 
 
 	array_spacers_dict = {}
