@@ -1128,7 +1128,7 @@ def replace_existing_array(existing_array, new_array, current_parent, tree, all_
 		return tree, array_dict, tree_child_dict
 
 
-def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False, emphasize_diffs=False, dpi=600, align_cartoons=True, align_labels=True):
+def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False, emphasize_diffs=False, dpi=600, align_cartoons=True, align_labels=True, fade_ancestral=False):
 	"""
 	Args:
 		tree (dendopy Tree class instance): The tree you want to plot.
@@ -1140,6 +1140,7 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 		dpi (int): The resolution of the output plot
 		align_cartoons (bool): Should cartoons of arrays be aligned such that their trailer-most spacers have the same x position?
 		align_labels (bool): Should labels of arrays be aligned? If not they are placed next to corresponding node. algin_cartoons must also be True for this setting to work.
+		fade_ancestral (bool): Should ancestral array cartoons be made slightly transparent to de-emphasize them?
 	"""
 
 	# Find tree dimensions
@@ -1449,7 +1450,7 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 							sp_width = 0.25*spacer_width
 						ax.fill_between([start_pos_x-spacer_size*spacer_count-spacing, start_pos_x-spacer_size*spacer_count-spacing-spacer_size+spacing], start_pos_y-sp_width, start_pos_y+sp_width, color=spcolour[0], edgecolor=spcolour[1], linewidth=outline, joinstyle='miter')
 						spacer_count+=1
-			if "Anc" in array:
+			if "Anc" in array and fade_ancestral:
 				ax.fill_between([start_pos_x-spacer_size*spacer_count-spacing, -label_pad], start_pos_y-sp_width-1, start_pos_y+sp_width+0.6, color="#ffffff99", joinstyle='miter', zorder=10)
 
 
@@ -1474,7 +1475,8 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict, branch_lengths=False
 						sp_width = 0.25*spacer_width
 					
 					ax.fill_between([start_pos_x-spacer_size*n-spacing, start_pos_x-spacer_size*n-spacing-spacer_size+spacing], start_pos_y-sp_width, start_pos_y+sp_width, color=spcolour[0], edgecolor=spcolour[1], linewidth=outline, joinstyle='miter')
-				ax.fill_between([start_pos_x-spacer_size*spacer_count-spacing, -label_pad], start_pos_y-sp_width-1, start_pos_y+sp_width+0.6, color="#ffffff99", joinstyle='miter', zorder=10)
+				if fade_ancestral:
+					ax.fill_between([start_pos_x-spacer_size*spacer_count-spacing, -label_pad], start_pos_y-sp_width-1, start_pos_y+sp_width+0.6, color="#ffffff99", joinstyle='miter', zorder=10)
 
 
 		if not emphasize_diffs:
@@ -1801,6 +1803,10 @@ def main():
 		help="The desired resolution of the output image."
 		)
 	parser.add_argument(
+		"--fade_anc", dest="fade_ancestral", action='store_true', 
+		help="De-emphasize ancestral array cartoons using transparency. This option helps to make it clear which are the inferred ancestral arrays and which are the arrays being analyzed. However, this option reduces colour contrast between spacers."
+		)
+	parser.add_argument(
 		"arrays_to_join", nargs="*",  
 		help="Specify the IDs of the arrays you want to join. If none provided, joins all arrays in the provided array representatives file. **If given, must come at the end of your command after all other arguments.**"
 		)
@@ -2081,7 +2087,7 @@ def main():
 				if args.output_tree:
 					filename = "{}_{}.png".format(args.output_tree[:-4], n+1)
 					print("Saving image of tree with array diagrams to {}\n".format(filename))
-					plot_tree(good_tree, best_arrays[n], filename, spacer_cols_dict, args.branch_lengths, args.emphasize_diffs, args.dpi, args.align_cartoons, args.align_labels)
+					plot_tree(good_tree, best_arrays[n], filename, spacer_cols_dict, args.branch_lengths, args.emphasize_diffs, args.dpi, args.align_cartoons, args.align_labels, args.fade_ancestral)
 				if args.output_arrays:
 					filename = "{}_{}.txt".format(args.output_arrays[:-4], n+1)
 					print("Saving details of arrays to {}\n".format(filename))
@@ -2095,7 +2101,7 @@ def main():
 			print(best_tree.as_string("newick"))
 			if args.output_tree:
 				print("Saving image of tree with array diagrams to {}\n".format(args.output_tree))
-				plot_tree(best_tree, best_arrays, args.output_tree, spacer_cols_dict, args.branch_lengths, args.emphasize_diffs, args.dpi, args.align_cartoons, args.align_labels)
+				plot_tree(best_tree, best_arrays, args.output_tree, spacer_cols_dict, args.branch_lengths, args.emphasize_diffs, args.dpi, args.align_cartoons, args.align_labels, args.fade_ancestral)
 			if args.output_arrays:
 				print("Saving details of arrays to {}\n".format(args.output_arrays))
 				with open(args.output_arrays, 'w') as fout:
