@@ -55,6 +55,7 @@ def decide_array_order_global_best(arrays_dict):
 	elements = list(arrays_dict.keys())
 	possible_orders = list(permutations(elements, len(elements)))
 	score = 0
+	best_order = list(possible_orders[0])
 	for i in possible_orders:
 		new_score = get_list_score(arrays_dict, i)
 		if new_score > score:
@@ -153,22 +154,6 @@ def decide_array_order_local_best(arrays_dict, reps, nits):
 			overall_best_score = int(best_score)
 			overall_best_order = list(best_order)
 	return overall_best_order, overall_best_score
-
-
-
-# def decide_array_order_local_best(arrays_dict, reps): Old function that started with random order shuffled neighbours and stored best alignment.
-# 	elements = list(arrays_dict.keys())
-# 	rep = 0
-# 	best_order = ''
-# 	best_score = 0
-# 	while rep < reps:
-# 		rep+=1
-# 		order = sample(elements, len(elements))
-# 		order, score = jiggle_list_to_local_max(arrays_dict, order) #shuffle(elements))
-# 		if score > best_score:
-# 			best_score = int(score)
-# 			best_order = list(order)
-# 	return best_order
 
 
 def find_indices(lst, element):
@@ -380,9 +365,9 @@ def main():
 	if args.legend:
 		ratio_of_heights = ((len(imp_spacers)+1)*0.2)/dim_y
 		ncols = int(1+ ratio_of_heights)
-		dim_x = max(largest_array_size*0.2 + 1.2*ncols, 3)
+		dim_x = max(largest_array_size*0.25 + 1.2*ncols, 3)
 	else:
-		dim_x = max(largest_array_size*0.2, 2)
+		dim_x = max(largest_array_size*0.25, 2)
 	
 
 
@@ -410,7 +395,7 @@ def main():
 			else: 
 				spcolour = ("#000000", "#000000") #black
 				line_width = 0.01
-			ax.fill_between([spcount+0.58, spcount+1.42],arcount-line_width, arcount+line_width, color = spcolour[0], edgecolor=spcolour[1], linewidth=1, joinstyle='miter', zorder=2)
+			ax.fill_between([spcount+0.60, spcount+1.40],arcount-line_width, arcount+line_width, color = spcolour[0], edgecolor=spcolour[1], linewidth=1.5, joinstyle='miter', zorder=2)
 
 			spcount+=1
 		arcount+=1
@@ -462,7 +447,7 @@ def main():
 
 	fig.tight_layout()
 
-	plt.savefig(outfile, dpi=300)
+	plt.savefig(outfile, dpi=1200)
 	plt.close(fig)
 
 if __name__ == '__main__':
