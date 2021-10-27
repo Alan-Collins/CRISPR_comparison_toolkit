@@ -10,7 +10,8 @@ from collections import Counter
 
 def scale_branches(branch, all_branches):
 	max_branch = max(all_branches)
-	branch = int(9*branch/max_branch)+1
+	scale = 10/max_branch
+	branch *= scale
 	return branch
 
 
