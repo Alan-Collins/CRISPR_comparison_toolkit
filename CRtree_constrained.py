@@ -1,8 +1,6 @@
 #! /usr/bin/env python3
 
 import sys
-from string import ascii_lowercase
-from itertools import product
 from math import ceil, log
 from collections import Counter
 
@@ -11,7 +9,8 @@ import dendropy
 import CRISPR_mp
 from cctk import (
 	colour_schemes,
-	file_handling
+	file_handling,
+	tree_operations
 	)
 
 def scale_branches(branch, all_branches, max_len=10):
@@ -84,8 +83,6 @@ for node in tree:
 		edge_lens.append(node.edge_length)
 	
 
-
-
 for node in tree:
 	if node.edge_length != None:
 		node.edge_length = scale_branches(node.edge_length, edge_lens)
@@ -93,12 +90,11 @@ for node in tree:
 		node.edge_length = 0
 
 
-node_ids = ["Anc " + i for i in ascii_lowercase]
+labels = [g for g in genome_array_dict.values()]
+node_ids = tree_operations.create_internal_node_ids(len(genome_array_dict))
 
-if len(genome_array_dict) > 27: # Number of internal nodes in tree is n-1 so only need more than 26 if n >= 28
-	node_ids += ["Anc " + "".join(i) for i in product(ascii_lowercase, repeat=(ceil(log(len(genome_array_dict), 26))))]
 
-taxon_namespace = dendropy.TaxonNamespace(list(genome_array_dict.values()) + node_ids)
+taxon_namespace = dendropy.TaxonNamespace(labels + node_ids)
 
 
 for leaf in tree.leaf_node_iter():
