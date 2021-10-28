@@ -67,7 +67,9 @@ def choose_col_scheme(ncolours):
 					else:
 						col_scheme = Cols_hex_27
 					colours = []
-					for i in range((ncolours+len(col_scheme)-1)//len(col_scheme)): # Repeat the same colour scheme.
+					# Repeat the same colour scheme.
+					for i in range((ncolours+len(col_scheme)-1)
+						//len(col_scheme)): 
 						for j in col_scheme:
 							colours += [(j, col_scheme[i])]
 
