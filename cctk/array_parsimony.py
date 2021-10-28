@@ -13,8 +13,8 @@ class Array():
 		aligned (list): A list of spacers in aligned format relative to 
 			another array
 		module_lookup (dict): A dict with indices as keys and 
-			Spacer_Module instances as values where a given 
-			Spacer_module instance will be pointed to by all the 
+			SpacerModule instances as values where a given 
+			SpacerModule instance will be pointed to by all the 
 			indices at which it is located.
 		distance (int): Parsimony distance from the hypothetical 
 			ancestral state of this array.
@@ -39,7 +39,7 @@ class Array():
 						}
 
 	def sort_modules(self):
-		"""Sort Spacer_Modules by their indices within the array."""
+		"""Sort SpacerModules by their indices within the array."""
 		self.modules.sort(key=lambda x: int(x.indices[0]))
 
 	def reset(self):
@@ -55,7 +55,7 @@ class Array():
 						}
 
 
-class Spacer_Module():
+class SpacerModule():
 	"""
 	Class to store information about spacers in CRISPR arrays.
 	
