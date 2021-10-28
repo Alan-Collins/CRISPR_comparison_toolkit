@@ -56,6 +56,7 @@ Cols_hex_27 = [
 
 
 def choose_col_scheme(ncolours):
+	"""Identify colour scheme with enough colours for all spacers."""
 	if ncolours > 8:
 		if ncolours > 12: 
 			if ncolours > 27:
