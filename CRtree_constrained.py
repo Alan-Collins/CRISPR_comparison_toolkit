@@ -14,9 +14,9 @@ from cctk import (
 	file_handling
 	)
 
-def scale_branches(branch, all_branches):
+def scale_branches(branch, all_branches, max_len=10):
 	max_branch = max(all_branches)
-	scale = 10/max_branch
+	scale = max_len/max_branch
 	branch *= scale
 	return branch
 
