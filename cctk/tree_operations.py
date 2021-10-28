@@ -4,13 +4,7 @@ from itertools import product
 
 
 def create_internal_node_ids(n_leaves):
-	"""Make list of internal node IDs for tree.
-
-	As the number of internal nodes in a bifurcating tree = n-1,
-	if fewer than 28 internal nodes then they can be uniquely
-	identified using single letters. For larger numbers of internal 
-	nodes multiple character identifiers are needed.
-	"""
+	"""Make list of internal node IDs for tree."""
 	node_ids = ["Anc " + i for i in ascii_lowercase]
 	# Number of internal nodes in tree is n-1 
 	# so only need more than 26 if n >= 28
