@@ -1,8 +1,10 @@
 import sys
-sys.path.append('../cctk')
+import os
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import unittest
-import tree_operations
+from cctk import tree_operations
 
 class TestTreeOps(unittest.TestCase):
 
