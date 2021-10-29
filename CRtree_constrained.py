@@ -13,12 +13,6 @@ from cctk import (
 	tree_operations
 	)
 
-def scale_branches(branch, all_branches, max_len=10):
-	max_branch = max(all_branches)
-	scale = max_len/max_branch
-	branch *= scale
-	return branch
-
 
 intree = sys.argv[1]
 array_file = sys.argv[2]
@@ -50,14 +44,16 @@ with open(genome_array_file, 'r') as fin:
 
 array_dict = {}
 for array in genome_array_dict.values():
-	array_dict[array] = CRISPR_mp.Array(array, array_spacers_dict[array], extant=True)
+	array_dict[array] = CRISPR_mp.Array(
+		array, array_spacers_dict[array], extant=True)
 all_arrays = [array.spacers for array in array_dict.values()]
 
 
 all_spacers = []
 for array in array_dict.keys():
 	all_spacers += array_spacers_dict[array]
-non_singleton_spacers = [spacer for spacer, count in Counter(all_spacers).items() if count >1]
+non_singleton_spacers = [
+	spacer for spacer, count in Counter(all_spacers).items() if count >1]
 
 colours = colour_schemes.choose_col_scheme(len(non_singleton_spacers))
 # build a dictionary with colours assigned to each spacer.
@@ -77,21 +73,14 @@ tree.to_outgroup_position(outgroup_node, update_bipartitions=False)
 # Now remove outgroup as it isn't used for array analysis
 tree.prune_taxa_with_labels([outgroup_taxon])
 
-edge_lens = []
-for node in tree:
-	if node.edge_length != None:
-		edge_lens.append(node.edge_length)
-	
 
-for node in tree:
-	if node.edge_length != None:
-		node.edge_length = scale_branches(node.edge_length, edge_lens)
-	else:
-		node.edge_length = 0
+tree = tree_handling.scale_branches(tree, 10)
+
 
 
 labels = [g for g in genome_array_dict.values()]
-node_ids = tree_operations.create_internal_node_ids(len(genome_array_dict))
+node_ids = tree_operations.create_internal_node_ids(
+	len(genome_array_dict))
 
 
 taxon_namespace = dendropy.TaxonNamespace(labels + node_ids)
@@ -112,7 +101,16 @@ for node in tree.seed_node.postorder_iter():
 			if sister.taxon:
 				b = sister.taxon.label
 				if not parent.taxon: # Only need to add the ancestor once.
-					results = CRISPR_mp.resolve_pairwise_parsimony(array_dict[a], array_dict[b], all_arrays, array_dict, node_ids, node_count, tree, event_costs)
+					results = CRISPR_mp.resolve_pairwise_parsimony(
+						array_dict[a], 
+						array_dict[b], 
+						all_arrays, 
+						array_dict, 
+						node_ids, 
+						node_count, 
+						tree, 
+						event_costs,
+						)
 					# if results == "No_ID":
 					# 	Incomplete_tree = True
 					# 	break
@@ -121,11 +119,13 @@ for node in tree.seed_node.postorder_iter():
 
 					for n, n_id in [(node, a), (sister, b)]:
 						for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
-							array_dict[n_id].distance += array_dict[n_id].events[k] * v
+							d = array_dict[n_id].events[k]*v
+							array_dict[n_id].distance += d
 						# n.edge_length = array_dict[n_id].distance
 
 					array_dict[ancestor.id] = ancestor
-					node.parent_node.taxon = taxon_namespace.get_taxon(ancestor.id)
+					node.parent_node.taxon = taxon_namespace.get_taxon(
+						ancestor.id)
 					# node.parent_node.edge_length = 0 # Start the ancestor with 0 branch length
 
 # Repeat iteration now that tree is built to add repeat indels.
@@ -134,13 +134,26 @@ for node in tree:
 		parent = node.parent_node				
 		array_dict[node.taxon.label].reset()
 		array_dict[parent.taxon.label].reset()
-		array_dict[node.taxon.label] = CRISPR_mp.count_parsimony_events(array_dict[node.taxon.label], array_dict[parent.taxon.label], array_dict, tree, True)
+		array_dict[node.taxon.label] = CRISPR_mp.count_parsimony_events(
+			array_dict[node.taxon.label], 
+			array_dict[parent.taxon.label],
+			array_dict, 
+			tree, 
+			True,
+			)
 		for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
-			array_dict[node.taxon.label].distance += array_dict[node.taxon.label].events[k] * v
+			d = array_dict[node.taxon.label].events[k]*v
+			array_dict[node.taxon.label].distance += d
 			# node.edge_length = array_dict[node.taxon.label].distance
 
 print(tree.as_string("newick"))
 
 print(tree.as_ascii_plot(plot_metric='length', show_internal_node_labels=True))
 
-CRISPR_mp.plot_tree(tree, array_dict, "test_out.png", spacer_cols_dict, branch_lengths=False, emphasize_diffs=True)
+CRISPR_mp.plot_tree(tree, 
+	array_dict, 
+	"test_out.png", 
+	spacer_cols_dict, 
+	branch_lengths=False, 
+	emphasize_diffs=True,
+	)
