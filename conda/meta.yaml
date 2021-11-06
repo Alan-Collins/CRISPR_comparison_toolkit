@@ -23,5 +23,6 @@ requirements:
 about:
   home: https://github.com/Alan-Collins/CRISPR_comparison_toolkit
   license: GPL-3.0
-  license_file: LICENSE
+  license_family: GPL
+  license_file: ../LICENSE
   summary: "Tools to identify CRISPR arrays and analyze the relationships between them."
