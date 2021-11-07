@@ -19,7 +19,7 @@ CCTK is a collection of scripts that designed to be run from the command line. I
 
 ### Conda - recommended
 
-CCTK has a number of dependencies to function. These are listed in the [Dependencies section below.](#dependencies)
+CCTK has a number of dependencies to function. These are listed in the [Dependencies](#dependencies) section below.
 
 Conda can be used to install CCTK and all of its dependencies easily.
 
