@@ -18,6 +18,10 @@ requirements:
     - matplotlib
     - bioconda::dendropy
     - bioconda::minced
+    - bioconda::blast
+    - bioconda::emboss
+    - bioconda::fastx_toolkit
+
 
 
 about:
