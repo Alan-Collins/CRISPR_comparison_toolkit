@@ -10,18 +10,22 @@ def create_internal_node_ids(n_leaves, prefix="", chars="letters"):
 	uniquely identify all internal nodes of a bifurcating tree.
 
 	Args:
-		n_leaves (int): The number of leaf nodes in the tree.
-		prefix (str, optional): Prefix with which all node IDs should begin.
-		chars (str, optional): Options "letters", "numbers". The kind
-			of character that should be used to identify each node.
+	  n_leaves (int): 
+	  	The number of leaf nodes in the tree.
+	  prefix (str, optional): 
+	  	Prefix with which all node IDs should begin.
+	  chars (str, optional): 
+	  	Options "letters", "numbers". The kind of character that should 
+	  	be used to identify each node.
 	Returns:
-		list of str: List of unique node IDs.
+	  list of str: 
+	  	List of unique node IDs.
 
 	Raises:
-		ValueError: If n_leaves is less than 2.
-		TypeError: If n_leaves is not int.
-		TypeError: If prefix is not str.
-		ValueError: If chars is not either "letters" or "numbers".
+	  ValueError: If n_leaves is less than 2.
+	  TypeError: If n_leaves is not int.
+	  TypeError: If prefix is not str.
+	  ValueError: If chars is not either "letters" or "numbers".
 	"""
 	if n_leaves < 2:
 		raise ValueError("n_leaves must be 2 or more.")
@@ -51,8 +55,42 @@ def create_internal_node_ids(n_leaves, prefix="", chars="letters"):
 	return node_ids
 
 
-def scale_branches(branch, all_branches, max_len=10):
-	max_branch = max(all_branches)
+def scale_branches(tree, max_len=10):
+	"""Scales tree branch lengths linearly up to a user-defined maximum.
+	
+	Args:
+	  tree (dendropy.Tree instance):
+		Tree to scale
+	  max_len (int or float):
+		Value to set the longest branch to
+
+	Returns:
+	  tree:
+	  	dendropy.Tree instance with scaled branch lengths.
+
+	Raises:
+	  TypeError: If tree is not a dendropy Tree class instance
+	  ValueError: If max_len is not >0
+	  TypeError: If max_len is not an int of float.
+	"""
+	edge_lens = []
+	for node in tree:
+		if node.edge_length != None:
+			edge_lens.append(node.edge_length)
+
+	max_branch = max(edge_lens)
 	scale = max_len/max_branch
-	branch *= scale
-	return branch
+
+	for node in tree:
+		if node.edge_length != None:
+			new_branch = node.edge_length * scale
+			# Handle ints vs floats
+			if new_branch%1 == 0:
+				node.edge_length = int(new_branch)
+			else:
+				node.edge_length = new_branch
+		else:
+			node.edge_length = 0
+	
+	 
+	return tree
