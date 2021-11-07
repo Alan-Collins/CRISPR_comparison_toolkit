@@ -25,13 +25,13 @@ Conda can be used to install CCTK and all of its dependencies easily.
 
 The latest version of CCTK can be installed from Anaconda using:
 
-  conda install -c alan-collins cctk
+`conda install -c alan-collins cctk`
 
 ### Git clone
 
 To download this repository using git:
 
-  git clone https://github.com/Alan-Collins/CRISPR_comparison_toolkit.git
+`git clone https://github.com/Alan-Collins/CRISPR_comparison_toolkit.git`
 
 ## Dependencies
 
