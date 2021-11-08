@@ -62,7 +62,7 @@ class MincedObj():
 				for line in f.readlines():
 					if "Sequence" in line and "bp)" in line:
 						contig = re.match(r"Sequence '(.*)' \([0-9]+ bp\)", line)[1]
-					if "CRISPR" in line:
+					if "CRISPR" in line and "Range:" in line:
 						self.array_count += 1
 						array_num = int(re.match(r'CRISPR ([0-9]+) ', line)[1])
 						self.array_locations[array_num] = [contig] + [i for i in re.findall(r'Range:\s+(\d+)\W+(\d+)\W+', line)[0]]
