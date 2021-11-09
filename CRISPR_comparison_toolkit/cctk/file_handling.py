@@ -1,7 +1,34 @@
-
+import os
 
 def read_array_file(file):
-	"""Read array spacers file into dict."""
+	"""Read array spacers file into dict.
+	
+	Read Array IDs or sequences from file produced by one of the CRISPR
+	finding scripts. Expected format of file is:
+	Array_ID\tCRISPR_type\tspacer1 spacer2 etc
+
+	Args:
+	  file (str): 
+		path to Array file
+
+	Returns:
+	  dict: 
+		dict of format {Array_ID : [list, of, spacers]}
+
+	Raises:
+	  TypeError: If file is not a str
+	  OSError: If file is not the path to an existing file
+
+	"""
+
+	if type(file) is not str:
+		raise TypeError(
+			"file must be str, not {}.".format(type(file).__name__))
+
+	if not os.path.exists(file):
+		raise OSError(
+			"file must be the path to an existing file.")
+
 	array_spacers_dict = {}
 	with open(file, 'r') as fin:
 		for line in fin.readlines():
@@ -23,7 +50,21 @@ def fasta_to_dict(FASTA_file):
 	Returns:
 	  dict: 
 		dict of format {fasta_header : sequence}
+
+	Raises:
+	  TypeError: If FASTA_file is not a str
+	  OSError: If FASTA_file is not the path to an existing file
 	"""
+	
+	if type(FASTA_file) is not str:
+		raise TypeError(
+			"FASTA_file must be str, not {}.".format(type(FASTA_file).__name__))
+
+	if not os.path.exists(FASTA_file):
+		raise OSError(
+			"FASTA_file must be the path to an existing file.")
+
+
 	fasta_dict = {}
 	with open(FASTA_file, 'r') as f:
 		multifasta = f.read()
