@@ -8,9 +8,14 @@ from CRISPR_comparison_toolkit.cctk import sequence_operations as seqops
 
 class TestRevComp(unittest.TestCase):
 	
-	def test_crev_comp(self):
+	def test_rev_comp_simple(self):
 		
 		self.assertEqual(seqops.rev_comp("ATCGatcg"), "cgatCGAT")
+
+	def test_rev_comp_weird(self):
+		self.assertEqual(
+			seqops.rev_comp("abracadabraNnN...#!/"),
+			"/!#...NnNtrbtdtgtrbt")
 
 
 
