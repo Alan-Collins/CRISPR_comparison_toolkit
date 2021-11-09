@@ -24,6 +24,8 @@ class TestCreateNodeIds(unittest.TestCase):
 				),
 			[str(i) for i in range(1,31)])
 
+	def test_create_internal_node_ids_Raise(self):
+
 		with self.assertRaises(ValueError):
 			treeops.create_internal_node_ids(1)
 			treeops.create_internal_node_ids(5, chars="wrong")
