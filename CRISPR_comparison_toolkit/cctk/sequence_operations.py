@@ -1,4 +1,4 @@
-
+import numpy as np
 
 def rev_comp(string):
 	"""Reverse complement a string of nucleotide sequence
