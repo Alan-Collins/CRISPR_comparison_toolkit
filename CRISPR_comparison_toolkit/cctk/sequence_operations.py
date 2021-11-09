@@ -10,7 +10,15 @@ def rev_comp(string):
 	Returns:
 	  str:
 	    reverse complement of given nucleotide sequence
+	
+	Raises:
+	  TypeError: If string is not str.
+
 	"""
+	if type(string) is not str:
+		raise TypeError(
+			"string must be str, not {}.".format(type(string).__name__))
+
 	rev_str = ''
 	rev_comp_lookup = {
 	"A" : "T", 
@@ -50,7 +58,17 @@ def hamming(string1, string2):
 		  The hamming distance of the first sequence shifted
 		distminus1 (int):
 		  The hamming distance of the econd sequence shifted
+
+	Raises:
+	  TypeError: If string1 and string2 are not str.
+
 	"""
+	if type(string1) is not str:
+		raise TypeError(
+			"Inputs must be str, not {}.".format(type(string1).__name__))
+	if type(string2) is not str:
+		raise TypeError(
+			"Inputs must be str, not {}.".format(type(string2).__name__))
 	dist, distplus1, distminus1 = 0,0,0
 	string1plus1 = string1[1:]
 	string2plus1 = string2[1:]
@@ -82,9 +100,9 @@ def needle(seq1, seq2, match = 100, mismatch = -1, gap = -2):
 	"""
 	Perform Needleman-Wunsch pairwise alignment of two sequences.
 	Args:
-	  seq1 (str or list):
+	  seq1 (str, list, or tuple):
 	    First sequence of items to align.
-	  seq2 (str or list):
+	  seq2 (str, list, or tuple):
 	    Second sequence of items to align
 	  match (int):
 	    Score for match at a position in alignment.
@@ -99,7 +117,33 @@ def needle(seq1, seq2, match = 100, mismatch = -1, gap = -2):
 	  If strings were given then strings are returned.
 	  If lists were given then lists are returned.
 
+	Raises:
+	  TypeError: If seq1 and seq2 are not str, list, or tuple.
+	  TypeError: If match, mismatch, and gap are not int or float.
 	"""
+
+	if type(seq1) not in [str, list, tuple]:
+		raise TypeError(
+			"Inputs must be str, list, or tuple, not {}.".format(
+				type(seq1).__name__))
+	if type(seq2) not in [str, list, tuple]:
+		raise TypeError(
+			"Inputs must be str, list, or tuple, not {}.".format(
+				type(seq2).__name__))
+
+	if type(match) not in [int, float]:
+		raise TypeError(
+			"match must be int or float, not {}.".format(
+				type(match).__name__))
+	if type(mismatch) not in [int, float]:
+		raise TypeError(
+			"mismatch must be int or float, not {}.".format(
+				type(mismatch).__name__))
+	if type(gap) not in [int, float]:
+		raise TypeError(
+			"gap must be int or float, not {}.".format(
+				type(gap).__name__))
+
 
 	# Make a list of lists of 0s with dimensions x by y: 
 	# list containing x lists of y 0s each.
@@ -177,3 +221,4 @@ def needle(seq1, seq2, match = 100, mismatch = -1, gap = -2):
 		align2 = ''.join(align2)
 	
 	return align1, align2
+
