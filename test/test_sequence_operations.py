@@ -17,6 +17,17 @@ class TestRevComp(unittest.TestCase):
 			seqops.rev_comp("abracadabraNnN...#!/"),
 			"/!#...NnNtrbtdtgtrbt")
 
+class TestHamming(unittest.TestCase):
+
+	def test_hamming_with_sequence(self):
+
+		self.assertEqual(seqops.hamming("ATCG", "ATCG"),
+			(0,4,4))
+
+		self.assertEqual(seqops.hamming("ATCG", "GATCGG"),
+			(6,6,1))
+
+
 
 
 
