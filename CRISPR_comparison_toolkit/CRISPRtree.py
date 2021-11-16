@@ -1819,8 +1819,6 @@ def main():
 
 	args = parser.parse_args(sys.argv[1:])
 
-	print(args)
-
 	if args.no_align_labels and not args.no_align_cartoons:
 		print("\n\nYou chose settings that would align node labels but not array cartoons in the output tree image. Labels cannot be aligned without also aligning array cartoons so that setting has been overwritten. Both will be aligned.\n\n")
 		args.no_align_cartoons = True
