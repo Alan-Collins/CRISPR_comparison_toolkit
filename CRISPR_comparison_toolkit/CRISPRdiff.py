@@ -219,8 +219,8 @@ def main():
 		help="Include a legend in the output plot (Highly recommended to use spacer IDs rather than sequences with this setting). N.B. Spacer order in the legend is the same as the order of first instance of spacers working from bottom to top, right to left along your plotted arrays."
 		)
 	parser.add_argument(
-		"--trailer_align", dest="trailer_align", action='store_true',  
-		help="Declare that you want the plot to line up all the trailer ends instead of the default of lining up the leader ends."
+		"--leader_align", dest="trailer_align", action='store_true',  
+		help="Declare that you want the plot to line up all the leader ends instead of the default of lining up the trailer ends."
 		)
 	parser.add_argument(
 		"--preordered", dest="preordered", action='store_true',  
@@ -247,7 +247,7 @@ def main():
 
 	infile = args.array_file
 	outfile = args.out_file
-	array_network = args.arrays_to_align
+
 
 
 
@@ -257,9 +257,12 @@ def main():
 			bits = line.split()
 			array_dict[bits[0]] = bits[2:]
 
-	arrays_of_interest_dict = {}
-	for array in array_network:
-		arrays_of_interest_dict[array] = array_dict[array]
+	if len(args.arrays_to_align) == 0:
+		arrays_of_interest_dict = array_dict
+	else:
+		arrays_of_interest_dict = {}
+		for array in array_network:
+			arrays_of_interest_dict[array] = array_dict[array]
 
 	if args.preordered:
 		array_order = array_network
@@ -378,7 +381,7 @@ def main():
 
 	### Plot array alignments
 
-	if args.trailer_align:
+	if not args.leader_align:
 		longest_array = max([len(arrays_of_interest_dict[i]) for i in array_order])
 		pad_dict = {array: longest_array-len(arrays_of_interest_dict[array]) for array in array_order}
 
