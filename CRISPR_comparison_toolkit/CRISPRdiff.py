@@ -282,9 +282,7 @@ def find_indices(lst, element):
 		result.append(offset)
 
 
-
-def main():
-
+def parse_args():
 	parser = argparse.ArgumentParser(
 		description="Given an array file and a list of arrays to "
 		"align, produces a plot showing shared spacers among arrays "
@@ -295,33 +293,47 @@ def main():
 		"test.png -c cols.txt -iter 100 155 9 204 73 97",
 		formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument(
-		"-a", dest="array_file", required = True,
+		"-a", 
+		dest="array_file",
+		required=True,
 		help="Specify array representatives file."
 		)
 	parser.add_argument(
-		"-o", dest="out_file", required = True, 
+		"-o",
+		dest="out_file",
+		required=True, 
 		help="Specify output file."
 		)
 	parser.add_argument(
-		"-c", dest="colour_file", required = False, 
+		"-c",
+		dest="colour_file",
+		required=False, 
 		help="Specify file with custom colour list (Optional). "
 		"Colours must be hex codes. One colour per line with no header "
 		"line in file. e.g. #fd5925."
 		)
 	parser.add_argument(
-		"-m", dest="colour_scheme_outfile", required = False, 
+		"-m",
+		dest="colour_scheme_outfile",
+		required=False, 
 		help="Specify output file to store json format dictionary of "
 		"the colour schemes used for spacers in this run."
 		)
 	parser.add_argument(
-		"-s", dest="colour_scheme_infile", required = False, 
+		"-s",
+		dest="colour_scheme_infile",
+		required=False,
 		help="Specify input file containing json format dictionary of "
 		"the colour scheme to be used for spacers in this run. Any "
 		"spacers not in the input file will be coloured according to "
 		"the normal process."
 		)
 	parser.add_argument(
-		"-i", "--iter", dest="iterations", nargs="?", default = 10, type=int,
+		"-i", "--iter",
+		dest="iterations",
+		required=False,
+		default=10,
+		type=int,
 		help="(Default = 10) If you are aligning fewer than 9 arrays, "
 		"a good order will be found using a repeated shuffling search "
 		"method. Set the number of replicates of this search you want "
@@ -329,7 +341,10 @@ def main():
 		"possible ordering, but take longer."
 		)
 	parser.add_argument(
-		"-l", dest="legend", action='store_true',  
+		"-l",
+		dest="legend",
+		required=False,
+		action='store_true',  
 		help="Include a legend in the output plot (Highly recommended "
 		"to use spacer IDs rather than sequences with this setting). "
 		"N.B. Spacer order in the legend is the same as the order of "
@@ -337,17 +352,26 @@ def main():
 		"to left along your plotted arrays."
 		)
 	parser.add_argument(
-		"--leader_align", dest="leader_align", action='store_true',  
+		"--leader_align",
+		dest="leader_align",
+		required=False,
+		action='store_true',  
 		help="Declare that you want the plot to line up all the leader "
 		"ends instead of the default of lining up the trailer ends."
 		)
 	parser.add_argument(
-		"--preordered", dest="preordered", action='store_true',  
+		"--preordered",
+		dest="preordered",
+		required=False, 
+		action='store_true',  
 		help="Declare that the array order you provided is the one you "
 		"want plotted."
 		)
 	parser.add_argument(
-		"--approxordered", dest="approxordered", action='store_true',  
+		"--approxordered",
+		dest="approxordered",
+		required=False,
+		action='store_true',  
 		help="Declare that the array order you provided should be "
 		"optimized slightly before plotting. Optimization involves "
 		"switching order of adjacent arrays in list as long as that "
@@ -355,18 +379,28 @@ def main():
 		"neighbours."
 		)
 	parser.add_argument(
-		"--seed", dest="seed", type=int, required = False, default = 2,
+		"--seed",
+		dest="seed",
+		required=False, 
+		type=int,
+		default=2,
 		help="The order of outline and fill colours assigned to "
 		"spacers is semi-random. Change it by providing a number here "
 		"to change which colours are assigned to each spacer."
 		)
 	parser.add_argument(
-		"--dpi", dest="dpi", type=int, required = False, default = 300,
+		"--dpi",
+		dest="dpi",
+		required=False,
+		type=int,
+		default=300,
 		help="Resolution of output image. Only relevant for bitmap "
 		"formats such as PNG. Has no effect on SVG outputs."
 		)
 	parser.add_argument(
-		"--connection_outline", dest="connection_outline", 
+		"--connection_outline",
+		dest="connection_outline",
+		required=False,
 		action='store_true',
 		help="Identical spacers in arrays plotted adjacent to one "
 		"another are connected by a line with the fill colour of the "
@@ -375,19 +409,24 @@ def main():
 		"then use this option."
 		)
 	parser.add_argument(
-		"arrays_to_align", nargs="+",  
+		"arrays_to_align",
+		nargs="+",  
 		help="Specify the arrays for which you want to plot an "
 		"alignment. **Must come at the end of your command after all "
 		"other arguments.**"
 		)
 
-	args = parser.parse_args(sys.argv[1:])
+	args = parser.parse_args()
+
+	return args
+
+
+def main():
+
+	args = parse_args()
 
 	infile = args.array_file
 	outfile = args.out_file
-
-
-
 
 	array_dict = {}
 	with open(infile, 'r') as fin:
