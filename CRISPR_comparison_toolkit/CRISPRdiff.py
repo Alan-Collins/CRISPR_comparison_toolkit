@@ -8,28 +8,48 @@ from random import sample, randrange, seed
 import argparse
 import json
 
+from cctk import colour_schemes
+
 
 def get_list_score(arrays_dict, arrays_order):
-	"""
+	"""Returns number of shared spacers between all neighbouring arrays.
+	
 	Given an ordered list of arrays and a dict of array spacer content.
-	For each set of neighbouring arrays in the list, finds the number of spacers shared among those two arrays.
-	Sums number of shared spacers between all neighbouring arrays in list.
+	For each set of neighbouring arrays in the list, finds the number of
+	spacers shared among those two arrays. Sums number of shared spacers
+	between all neighbouring arrays in list.
 	e.g. 
 	Array1 has spacers 1,2,3,4,5
 	Array2 has spacers 9,2,3,5,6,7,8,
 	Array3 has spacers 1,6,7,8
 	Array1 and Array2 share spacers 2,3,5 = 3 spacers
 	Array2 and Array3 share spacers 6,7,8 = 3 spacers
-	Array1 and Array3 are not neighbours so their shared spacers are not counted.
+	Array1 and Array3 are not neighbours so their shared spacers are not
+	counted.
 	The score for this order would therefore be 3 + 3 = 6
-
-	:param arrays_dict (dict): dict object containing all arrays in your dataset as keys and a list of the spacers in those arrays as values. Format: {Array1: [Spacer1, Spacer2, ...], Array2: [Spacer45, Spacer2, ...], ...}
-	:param arrays_order (list): ordered list of arrays to be scored. Format: [Array1, Array2, Array3, Array4]
-	:returns: Score (int) (The total number of shared spacers among neighbouring arrays in the provided order list of arrays.)
+	
+	Args:
+	  arrays_dict (dict):
+	    dict object containing all arrays in your dataset as keys and a
+	    list of the spacers in those arrays as values. 
+	    Format: {
+	      Array1: [Spacer1, Spacer2, ...], 
+	      Array2: [Spacer45, Spacer2, ...], 
+	      ...
+	      }
+	  arrays_order (list):
+	    ordered list of arrays to be scored. 
+	    Format: [Array1, Array2, Array3, Array4]
+	
+	returns:
+	  Score (int) 
+	  The total number of shared spacers among neighbouring arrays in
+	  the provided order list of arrays.)
 	"""
 	overlap_dict = {}
 	for i in combinations(list(arrays_dict.keys()), 2):
-		overlap_dict[i]=len(list(set(arrays_dict[i[0]]).intersection(arrays_dict[i[1]])))
+		overlap_dict[i]=len(
+			list(set(arrays_dict[i[0]]).intersection(arrays_dict[i[1]])))
 	score = 0
 	for i in range(len(arrays_order)-1):
 		if (arrays_order[i], arrays_order[i+1]) in overlap_dict.keys():
@@ -37,17 +57,33 @@ def get_list_score(arrays_dict, arrays_order):
 		elif (arrays_order[i+1], arrays_order[i]) in overlap_dict.keys():
 			score+= overlap_dict[(arrays_order[i+1], arrays_order[i])]
 		else:
-			print("can't find combination %s, %s" %(arrays_order[i+1], arrays_order[i]))
+			print("can't find combination %s, %s" %(
+				arrays_order[i+1], arrays_order[i]))
 	return score
 
 
 def decide_array_order_global_best(arrays_dict):
-	"""
-	Given a dict of arrays and their spacers, where the arrays in that dict are to be ordered such that the neighbours share the most possible spacers, 
-	generates a list of all possible orders of spacers and calls get_list_score to find the best possible array order.
+	"""Find an array order to maximise shared spacers in plot.
+	
+	Given a dict of arrays and their spacers, where the arrays in that 
+	dict are to be ordered such that the neighbours share the most 
+	possible spacers, generates a list of all possible orders of spacers
+	and calls get_list_score to find the best possible array order.
 
-	:param arrays_dict (dict): dict object containing all arrays in your dataset as keys and a list of the spacers in those arrays as values. Format: {Array1: [Spacer1, Spacer2, ...], Array2: [Spacer45, Spacer2, ...], ...}
-	:returns: best_order (list) (The order of arrays that results in the highest total number of shared spacers among neighbouring arrays in the list.)
+	Args:
+	  arrays_dict (dict): 
+	    dict object containing all arrays in your dataset as keys and a
+	    list of the spacers in those arrays as values. 
+	    Format: {
+	      Array1: [Spacer1, Spacer2, ...], 
+	      Array2: [Spacer45, Spacer2, ...], 
+	      ...
+	      }
+	
+	returns:
+	  best_order (list)
+	    The order of arrays that results in the highest total number of
+	    shared spacers among neighbouring arrays in the list.
 	"""
 	elements = list(arrays_dict.keys())
 	possible_orders = list(permutations(elements, len(elements)))
@@ -62,16 +98,38 @@ def decide_array_order_global_best(arrays_dict):
 
 
 def jiggle_list_to_local_max(arrays_dict, order):
-	"""
-	Given a dict of arrays and the spacers they contain and a list of arrays, first calculates the score for the order of arrays using get_list_score function.
-	Then swaps the order to the first and second array in the list and calculates score again. If score improved, keeps the new order. Otherwise discards new order.
-	Proceeds through the list, swapping each array with the preceding and then the following array in the list, keeping the new order whenever the score improves.
-	Repeats this process until it goes through the list of arrays from first to last array without any of the rearrangements increasing the score.
+	"""Perform slight changes to array order to improve score.
 
-	:param arrays_dict (dict): dict object containing all arrays in your dataset as keys and a list of the spacers in those arrays as values. Format: {Array1: [Spacer1, Spacer2, ...], Array2: [Spacer45, Spacer2, ...], ...}
-	:param order (list): ordered list of arrays to be scored. Format: [Array1, Array2, Array3, Array4]
-	:returns: 	best_score (int) (The score of the best order found)
-				best_order (list) (the best order found)
+	Given a dict of arrays and the spacers they contain and a list of 
+	arrays, first calculates the score for the order of arrays using 
+	get_list_score function. Then swaps the order to the first and 
+	second array in the list and calculates score again. If score 
+	improved, keeps the new order. Otherwise discards new order.
+	Proceeds through the list, swapping each array with the preceding 
+	and then the following array in the list, keeping the new order 
+	whenever the score improves. Repeats this process until it goes 
+	through the list of arrays from first to last array without any of 
+	the rearrangements increasing the score.
+
+	Args:
+	  arrays_dict (dict):
+	    dict object containing all arrays in your dataset as keys and a
+	    list of the spacers in those arrays as values. 
+	    Format: {
+	    Array1: [Spacer1, Spacer2, ...], 
+	    Array2: [Spacer45, Spacer2, ...], 
+	    ...
+	    }
+	  order (list): 
+	    ordered list of arrays to be scored. 
+	    Format: [Array1, Array2, Array3, Array4]
+	
+	returns: 
+	  tuple of
+	    (
+	    best_score (int) The score of the best order found,
+	    best_order (list) the best order found
+	    )
 
 	"""
 	repeat = True
@@ -81,7 +139,8 @@ def jiggle_list_to_local_max(arrays_dict, order):
 		repeat = False
 		for i in range(len(order)):
 			try:
-				order[i], order[i-1] = order[i-1], order[i] # switch list element with the element before it 
+				# switch list element with the element before it 
+				order[i], order[i-1] = order[i-1], order[i]
 				new_score = get_list_score(arrays_dict, order)
 				if new_score > best_score:
 					repeat = True
@@ -90,7 +149,8 @@ def jiggle_list_to_local_max(arrays_dict, order):
 			except:
 				pass
 			try:
-				order[i], order[i+1] = order[i+1], order[i] # switch list element with the element after it
+				# switch list element with the element after it
+				order[i], order[i+1] = order[i+1], order[i] 
 				new_score = get_list_score(arrays_dict, order)
 				if new_score > best_score:
 					repeat = True
@@ -102,11 +162,18 @@ def jiggle_list_to_local_max(arrays_dict, order):
 
 
 def shuffle_random_arrays(order):
-	"""
-	Given a list of arrays, picks two random indices in the list and swaps those elements of the list.
+	"""Shuffle order of list of arrays.
 
-	:param order (list): ordered list of arrays to be scored. Format: [Array1, Array2, Array3, Array4]
-	:returns: order (list) (new order of arrays with two random indices swapped)
+	Given a list of arrays, picks two random indices in the list and
+	swaps those elements of the list.
+
+	Args:
+	  order (list):
+	    ordered list of arrays to be scored.
+	    Format: [Array1, Array2, Array3, Array4]
+	
+	returns:
+	  order (list) new order of arrays with two random indices swapped
 	"""
 	ran = len(order)
 	a = randrange(ran)
@@ -119,18 +186,45 @@ def shuffle_random_arrays(order):
 
 
 def decide_array_order_local_best(arrays_dict, reps, nits):
-	"""
-	Given a dict of arrays and the spacers they contain and a list of arrays, creates a random initial order of arrays in a list. Then calls shuffle_random_arrays function to switch the position of two random arrays in the list.
-	If this shuffling improves the score calculated by get_list_score, keep the new order. If not discard the new order and proceed with the old order.
-	Repeat this shuffling step until it has failed to improve the order how ever many times is defined by the "reps" argument.
-	Repeat this whole process with a new initial random order however many times is defined by the "nits" argument (n iterations).
-	Returns the order and score that were highest among all of the iterations
+	"""Find good order for arrays to maximise shared spacers.
 
-	:param arrays_dict (dict): dict object containing all arrays in your dataset as keys and a list of the spacers in those arrays as values. Format: {Array1: [Spacer1, Spacer2, ...], Array2: [Spacer45, Spacer2, ...], ...}
-	:param reps (int): Number of consecutive shuffling steps that should result in no increase in score before the function stops optimizing this order of arrays
-	:param nits (int): Number of times to repeat the whole process with a different initial random array order
-	:returns: 	overall_best_order (list) (Highest scoring order of arrays found among all the iterations)
-				overall_best_score (list) (Highest score found among all the iterations)
+	Given a dict of arrays and the spacers they contain and a list of 
+	arrays, creates a random initial order of arrays in a list. 
+	Then calls shuffle_random_arrays function to switch the position of
+	two random arrays in the list. If this shuffling improves the score 
+	calculated by get_list_score, keep the new order. If not discard the
+	new order and proceed with the old order. Repeat this shuffling step
+	until it has failed to improve the order how ever many times is
+	defined by the "reps" argument.	Repeat this whole process with a new
+	initial random order however many times is defined by the "nits"
+	argument (n iterations). Returns the order and score that were
+	highest among all of the iterations
+
+	Args:
+	  arrays_dict (dict):
+	    dict object containing all arrays in your dataset as keys and a
+	    list of the spacers in those arrays as values. 
+	    Format: {
+	      Array1: [Spacer1, Spacer2, ...],
+	      Array2: [Spacer45, Spacer2, ...],
+	      ...
+	      }
+	  reps (int):
+	    Number of consecutive shuffling steps that should result in no
+	    increase in score before the function stops optimizing this
+	    order of arrays
+	  nits (int):
+	    Number of times to repeat the whole process with a different
+	    initial random array order
+	  returns:
+	    tuple of:
+	    (
+	      overall_best_order (list)
+	        Highest scoring order of arrays found among all the 
+	        iterations,
+		  overall_best_score (list)
+		    Highest score found among all the iterations,
+		  )
 	"""
 	elements = list(arrays_dict.keys())
 	overall_best_score = 0
@@ -154,20 +248,35 @@ def decide_array_order_local_best(arrays_dict, reps, nits):
 
 
 def find_indices(lst, element):
-	"""
-	Given a list and an element found in that list, return all of the indices at which that element is found.
+	"""Return all indices of list at which an specified element is found.
+	
+	Given a list and an element found in that list, return all of the 
+	indices at which that element is found.
 	e.g. for a list ['apple', 'tomatoe', 'apple', 'banana']
 	Returns [0,2] for 'apple'
 
-	:param lst (list): a list of anything
-	:param element (any type): An element you expect to find in the list
-	:returns: result (list) (A list of indices at which the element was found in the list. Returns an empty list if no indices were found.)
+	lst.index() only returns the first instance by default. 
+	The second argument provided to index is the position to start
+	searching. This approach starts looking again from the index after
+	the last found index.
+
+
+	Args:
+	  lst (list): 
+	    a list of anything
+	  element (any type):
+	    An element you expect to find in the list
+	
+	returns:
+	  result (list)
+	    A list of indices at which the element was found in the list.
+	    Returns an empty list if no indices were found.
 	"""
 	result = []
 	offset = -1
 	while True:
 		try:
-			offset = lst.index(element, offset+1) # lst.index() only returns the first instance by default. The second argument provided to index is the position to start searching. This approach starts looking again from the index after the last found index.
+			offset = lst.index(element, offset+1) 
 		except ValueError:
 			return result
 		result.append(offset)
@@ -176,17 +285,15 @@ def find_indices(lst, element):
 
 def main():
 
-	# hex values from this website http://phrogz.net/css/distinct-colors.html
-
-	Cols_hex_27 = ["#fd5925", "#dbc58e", "#008d40", "#304865", "#934270", "#f7b8a2", "#907500", "#45deb2", "#1f4195", "#d67381", "#8e7166", "#afb200", "#005746", "#a598ff", "#8f0f1b", "#b96000", "#667f42", "#00c7ce", "#9650f0", "#614017", "#59c300", "#1a8298", "#b5a6bd", "#ea9b00", "#bbcbb3", "#00b0ff", "#cd6ec6"]
-
-
-	Cols_tol = ["#332288", "#117733", "#44AA99", "#88CCEE", "#DDCC77", "#CC6677", "#AA4499", "#882255"]
-
-	Cols_hex_12 = ["#07001c", "#ff6f8d", "#4c62ff", "#92ffa9", "#810087", "#bcffe6", "#490046", "#00c8ee", "#b53900", "#ff8cf7", "#5b5800", "#14d625"]
-
 	parser = argparse.ArgumentParser(
-		description="Given an array file and a list of arrays to align, produces a plot showing shared spacers among arrays and their location within each array. Array file format is whitespace separated columns where column 1 is the array ID and columns 3 onwards are spacer IDs, names, or sequences.\ne.g. python3 CRISPR_alignment_plot.py -a Array_IDs.txt -o test.png -c cols.txt -iter 100 155 9 204 73 97")
+		description="Given an array file and a list of arrays to "
+		"align, produces a plot showing shared spacers among arrays "
+		"and their location within each array. Array file format is "
+		"whitespace separated columns where column 1 is the array ID "
+		"and columns 3 onwards are spacer IDs, names, or sequences."
+		"\ne.g. CRISPRdiff.py -a Array_IDs.txt -o "
+		"test.png -c cols.txt -iter 100 155 9 204 73 97",
+		formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument(
 		"-a", dest="array_file", required = True,
 		help="Specify array representatives file."
@@ -197,47 +304,76 @@ def main():
 		)
 	parser.add_argument(
 		"-c", dest="colour_file", required = False, 
-		help="Specify file with custom colour list (Optional). Colours must be hex codes. One colour per line with no header line in file. e.g. #fd5925."
+		help="Specify file with custom colour list (Optional). "
+		"Colours must be hex codes. One colour per line with no header "
+		"line in file. e.g. #fd5925."
 		)
 	parser.add_argument(
 		"-m", dest="colour_scheme_outfile", required = False, 
-		help="Specify output file to store json format dictionary of the colour schemes used for spacers in this run."
+		help="Specify output file to store json format dictionary of "
+		"the colour schemes used for spacers in this run."
 		)
 	parser.add_argument(
 		"-s", dest="colour_scheme_infile", required = False, 
-		help="Specify input file containing json format dictionary of the colour scheme to be used for spacers in this run. Any spacers not in the input file will be coloured according to the normal process."
+		help="Specify input file containing json format dictionary of "
+		"the colour scheme to be used for spacers in this run. Any "
+		"spacers not in the input file will be coloured according to "
+		"the normal process."
 		)
 	parser.add_argument(
 		"-i", "--iter", dest="iterations", nargs="?", default = 10, type=int,
-		help="(Default = 10) If you are aligning fewer than 9 arrays, a good order will be found using a repeated shuffling search method. Set the number of replicates of this search you want performed. Higher numbers more likely to find the best possible ordering, but take longer."
+		help="(Default = 10) If you are aligning fewer than 9 arrays, "
+		"a good order will be found using a repeated shuffling search "
+		"method. Set the number of replicates of this search you want "
+		"performed. Higher numbers more likely to find the best "
+		"possible ordering, but take longer."
 		)
 	parser.add_argument(
 		"-l", dest="legend", action='store_true',  
-		help="Include a legend in the output plot (Highly recommended to use spacer IDs rather than sequences with this setting). N.B. Spacer order in the legend is the same as the order of first instance of spacers working from bottom to top, right to left along your plotted arrays."
+		help="Include a legend in the output plot (Highly recommended "
+		"to use spacer IDs rather than sequences with this setting). "
+		"N.B. Spacer order in the legend is the same as the order of "
+		"first instance of spacers working from bottom to top, right "
+		"to left along your plotted arrays."
 		)
 	parser.add_argument(
-		"--leader_align", dest="trailer_align", action='store_true',  
-		help="Declare that you want the plot to line up all the leader ends instead of the default of lining up the trailer ends."
+		"--leader_align", dest="leader_align", action='store_true',  
+		help="Declare that you want the plot to line up all the leader "
+		"ends instead of the default of lining up the trailer ends."
 		)
 	parser.add_argument(
 		"--preordered", dest="preordered", action='store_true',  
-		help="Declare that the array order you provided is the one you want plotted."
+		help="Declare that the array order you provided is the one you "
+		"want plotted."
 		)
 	parser.add_argument(
 		"--approxordered", dest="approxordered", action='store_true',  
-		help="Declare that the array order you provided should be optimized slightly before plotting. Optimization involves switching order of adjacent arrays in list as long as that increases the total number of shared spacers among all neighbours."
+		help="Declare that the array order you provided should be "
+		"optimized slightly before plotting. Optimization involves "
+		"switching order of adjacent arrays in list as long as that "
+		"increases the total number of shared spacers among all "
+		"neighbours."
 		)
 	parser.add_argument(
 		"--seed", dest="seed", type=int, required = False, default = 2,
-		help="The order of outline and fill colours assigned to spacers is semi-random. Change it by providing a number here to change which colours are assigned to each spacer."
+		help="The order of outline and fill colours assigned to "
+		"spacers is semi-random. Change it by providing a number here "
+		"to change which colours are assigned to each spacer."
 		)
 	parser.add_argument(
-		"--connection_outline", dest="connection_outline", action='store_true',
-		help="Identical spacers in arrays plotted adjacent to one another are connected by a line with the fill colour of the spacer by default. If you would like the line connecting those spacers to have the same outline as the spacers as well then use this option."
+		"--connection_outline", dest="connection_outline", 
+		action='store_true',
+		help="Identical spacers in arrays plotted adjacent to one "
+		"another are connected by a line with the fill colour of the "
+		"spacer by default. If you would like the line connecting "
+		"those spacers to have the same outline as the spacers as well "
+		"then use this option."
 		)
 	parser.add_argument(
 		"arrays_to_align", nargs="+",  
-		help="Specify the arrays for which you want to plot an alignment. **Must come at the end of your command after all other arguments.**"
+		help="Specify the arrays for which you want to plot an "
+		"alignment. **Must come at the end of your command after all "
+		"other arguments.**"
 		)
 
 	args = parser.parse_args(sys.argv[1:])
@@ -264,17 +400,25 @@ def main():
 	if args.preordered:
 		array_order = array_network
 	elif args.approxordered:
-		array_order, score_dump = jiggle_list_to_local_max(arrays_of_interest_dict, array_network)
+		array_order, score_dump = jiggle_list_to_local_max(
+			arrays_of_interest_dict, array_network)
 	else:
 		if len(array_network) < 9:
-			array_order = decide_array_order_global_best(arrays_of_interest_dict)
+			array_order = decide_array_order_global_best(
+				arrays_of_interest_dict)
 		else:
-			array_order, local_best_score = decide_array_order_local_best(arrays_of_interest_dict, 100, args.iterations)
-			print("The score (sum of spacers shared between all neighbouring arrays) of the best ordering found was: %i" % local_best_score)
+			array_order, local_best_score = decide_array_order_local_best(
+				arrays_of_interest_dict, 100, args.iterations)
+			print(
+				"The score (sum of spacers shared between all neighbouring"
+				"arrays) of the best ordering found was: {}".format(
+					local_best_score))
 
 	## Find spacers present in more than one array
-
-	occurrences = dict(collections.Counter([item for sublist in list(arrays_of_interest_dict.values()) for item in sublist]))
+	all_spacers = list(arrays_of_interest_dict.values())
+	occurrences = dict(collections.Counter(
+		[item for sublist in all_spacers for item in sublist]
+		))
 
 	imp_spacers = []
 
@@ -282,7 +426,8 @@ def main():
 		if v > 1:
 			imp_spacers.append(k)
 
-	print("Identified %i spacers present in more than one array." % len(imp_spacers))
+	print("Identified {} spacers present in more than one array.".format(
+		len(imp_spacers)))
 
 	## Figure out colour scheme to use
 
@@ -302,36 +447,37 @@ def main():
 				if len(colours) == len(imp_spacers):
 					break
 			if len(imp_spacers) > len(col_scheme)**2:
-				print("The provided colour scheme file has too few colours. You need at least {}. Repeating colour scheme to make up the numbers.".format(len(imp_spacers)))
+				print("The provided colour scheme file has too few colours. "
+					"You need at least {}. Repeating colour scheme to make up "
+					"the numbers.".format(len(imp_spacers)))
 
 	else:
 		if len(imp_spacers) > 8:
 			if len(imp_spacers) > 12: 
 				if len(imp_spacers) > 27:
-					print("{} spacers found in multiple arrays. Using fill and outline colour combinations to distinguish spacers.".format(len(imp_spacers)))
+					print("{} spacers found in multiple arrays. Using fill "
+						"and outline colour combinations to distinguish "
+						"spacers.".format(len(imp_spacers)))
 					if len(imp_spacers) < 65:
-						col_scheme = Cols_tol
+						col_scheme = colour_schemes.Cols_tol
 					elif len(imp_spacers) < 145:
-						col_scheme = Cols_hex_12
+						col_scheme = colour_schemes.Cols_hex_12
 					else:
-						col_scheme = Cols_hex_27
+						col_scheme = colour_schemes.Cols_hex_27
 					seed(args.seed)
 					combos = [i for i in permutations(col_scheme, 2)]
 					combos += [(i,i) for i in col_scheme]
 					colours = sample(combos, len(combos))
 					seed(None)
-					# colours = []
-					# for i in range((len(imp_spacers)+len(col_scheme)-1)//len(col_scheme)): # Repeat the same colour scheme.
-					# 	for j in col_scheme:
-					# 		colours += [(j, edge_colours[i])]
+
 					
 
 				else:
-					colours = [(i, "#000000") for i in Cols_hex_27]
+					colours = [(i, "#000000") for i in colour_schemes.Cols_hex_27]
 			else:
-				colours = [(i, "#000000") for i in Cols_hex_12]
+				colours = [(i, "#000000") for i in colour_schemes.Cols_hex_12]
 		else:
-			colours = [(i, "#000000") for i in Cols_tol]
+			colours = [(i, "#000000") for i in colour_schemes.Cols_tol]
 
 	# if provided, read in colour scheme.
 
@@ -359,7 +505,8 @@ def main():
 			json.dump(spacer_colours, fout, ensure_ascii=False, indent=4)
 
 
-	largest_array_size = max([len(x) for x in [array_dict[y] for y in array_network]])
+	largest_array_size = max(
+		[len(x) for x in [array_dict[y] for y in array_network]])
 
 	dim_y = max(len(array_network)*0.5, 2)
 	if args.legend:
@@ -379,15 +526,20 @@ def main():
 	### Plot array alignments
 
 	if not args.leader_align:
-		longest_array = max([len(arrays_of_interest_dict[i]) for i in array_order])
-		pad_dict = {array: longest_array-len(arrays_of_interest_dict[array]) for array in array_order}
+		longest_array = max(
+			[len(arrays_of_interest_dict[i]) for i in array_order])
+		pad_dict = {
+		array: longest_array-len(arrays_of_interest_dict[array]) for array in array_order}
 
 	else:
 		pad_dict = {array:0 for array in array_order}
 
-	arcount = 1 # count of which array we are on (i.e. y axis value to plot at)
+	# count of which array we are on (i.e. y axis value to plot at)
+	arcount = 1 
 	for array in array_order:
-		spcount = 0+pad_dict[array] # count of which spacer in array we are on (i.e. which x-axis value to plot at)
+		# count of which spacer in array we are on 
+		# (i.e. which x-axis value to plot at)
+		spcount = 0+pad_dict[array] 
 		for spacer in arrays_of_interest_dict[array]:
 			if spacer in imp_spacers:
 				line_width= 0.1
@@ -395,7 +547,16 @@ def main():
 			else: 
 				spcolour = ("#000000", "#000000") #black
 				line_width = 0.01
-			ax.fill_between([spcount+0.60, spcount+1.40],arcount-line_width, arcount+line_width, color = spcolour[0], edgecolor=spcolour[1], linewidth=1.5, joinstyle='miter', zorder=2)
+			ax.fill_between(
+				[spcount+0.60, spcount+1.40], 
+				arcount-line_width, 
+				arcount+line_width, 
+				color = spcolour[0], 
+				edgecolor=spcolour[1],
+				linewidth=1.5,
+				joinstyle='miter',
+				zorder=2
+				)
 
 			spcount+=1
 		arcount+=1
@@ -417,32 +578,79 @@ def main():
 					sp_y2 = i+2
 					spcolour = spacer_colours[spacer]
 					if args.connection_outline:
-						ax.plot([sp_x1, sp_x2],[sp_y1+0.1, sp_y2-0.1], color = spcolour[1], linewidth = 2.0, label=spacer, zorder=0)
-					ax.plot([sp_x1, sp_x2],[sp_y1+0.1, sp_y2-0.1], color = spcolour[0], linewidth = 1.0, solid_capstyle="butt", label=spacer, zorder=1)
+						ax.plot(
+							[sp_x1, sp_x2],
+							[sp_y1+0.1, sp_y2-0.1],
+							color=spcolour[1],
+							linewidth=2.0,
+							label=spacer, 
+							zorder=0
+							)
+					ax.plot(
+						[sp_x1, sp_x2],
+						[sp_y1+0.1, sp_y2-0.1],
+						color=spcolour[0],
+						linewidth=1.0,
+						solid_capstyle="butt",
+						label=spacer,
+						zorder=1
+						)
 
 
 
 	axes = plt.gca()
 	plt.yticks(range(1, len(arrays_of_interest_dict.keys())+1, 1))
-	if args.trailer_align:
-		plt.tick_params(axis='x', which='both', bottom=False, labelbottom=False)
+	if args.leader_align:
+		plt.tick_params(
+			axis='x',
+			which='both',
+			bottom=False,
+			labelbottom=False
+			)
 	else:
-		plt.xticks(range(1, max([len(x) for x in arrays_of_interest_dict.values()])+1, 1))
+		plt.xticks(
+			range(1, max(
+					[len(x) for x in arrays_of_interest_dict.values()])+1, 1))
 		plt.xlabel("Spacer in array", fontsize=11)
 
 	ax.set_yticklabels(array_order)
 	plt.ylabel("Array ID", fontsize=11)
 
 	if args.legend:
-		ratio_of_heights = ((len(imp_spacers)+1)*0.2)/dim_y #Approx height of each legend entry is 0.2 inches. Each array is allocated 0.5 inches. Add 1 to number of spacers to account for legend title.
-		ncols = int(1+ ratio_of_heights) # Split the legend over multiple columns if it would be taller than the y axis. Plus 1 to account for rounding down and a bit of extra security.
-		h_leg = 0.2 + (len(imp_spacers)*0.2)/ncols # What is the height of the legend now, having split it over columns?
-		vert_pad = ((dim_y - h_leg)/2)/dim_y # Add blank space half the difference in height between legend and y axis to approximately center the legend relative to y axis. Then scale that on 0-1 relative to y axis size.
-		# Build the legend manually as the automatic legend included duplicates as spacers are plotted once per array they are in.
+		#Approx height of each legend entry is 0.2 inches. Each array
+		# is allocated 0.5 inches. Add 1 to number of spacers to
+		# account for legend title.
+		ratio_of_heights = ((len(imp_spacers)+1)*0.2)/dim_y
+		# Split the legend over multiple columns if it would be taller
+		# than the y axis. Plus 1 to account for rounding down and a bit of extra security.
+		ncols = int(1+ ratio_of_heights)
+		# What is the height of the legend now,
+		# having split it over columns?
+		h_leg = 0.2 + (len(imp_spacers)*0.2)/ncols 
+		# Add blank space half the difference in height between legend
+		# and y axis to approximately center the legend relative
+		# to y axis. Then scale that on 0-1 relative to y axis size.
+		vert_pad = ((dim_y - h_leg)/2)/dim_y 
+		# Build the legend manually as the automatic legend included
+		# duplicates as spacers are plotted once per array they are in.
 		colors = list(spacer_colours.values()) 
-		lines = [plt.fill_between([1, 1], 1, 1, color = c[0], edgecolor=c[1]) for c in colors]
+		lines = [
+			plt.fill_between(
+				[1, 1],
+				1,
+				1,
+				color=c[0],
+				edgecolor=c[1]) 
+			for c in colors
+			]
 		labels = list(spacer_colours.keys())
-		plt.legend(lines, labels, ncol=ncols, loc=(1.01,vert_pad), title="Spacer IDs") # Alternative legend positioning methods that don't work: bbox_to_anchor=(1.05, 1) loc="best",
+		plt.legend(
+			lines,
+			labels,
+			ncol=ncols,
+			loc=(1.01,vert_pad),
+			title="Spacer IDs"
+			) 
 
 
 	fig.tight_layout()
