@@ -3,6 +3,8 @@ from setuptools import setup
 setup(
     name="cctk",
     author="Alan Collins",
+    autor_email="alan.collins@bath.edu",
+    url="https://github.com/Alan-Collins/CRISPR_comparison_toolkit",
     license="GPL-3.0",
     install_requires=[
         "pip",
@@ -23,6 +25,7 @@ setup(
         "CRISPR_comparison_toolkit/Process_CRISPR_cas_finder_out.py",
         "CRISPR_comparison_toolkit/reps2arrays.py",
     ],
-    packages = ["CRISPR_comparison_toolkit/cctk"]
+    packages = ["cctk"],
+    package_dir={"": "CRISPR_comparison_toolkit"}
 )
 
