@@ -3,11 +3,8 @@
 import matplotlib.pyplot as plt
 import sys
 import collections
-from itertools import combinations
-from itertools import permutations
-from random import sample
-from random import randrange
-from random import seed
+from itertools import combinations, permutations
+from random import sample, randrange, seed
 import argparse
 import json
 
