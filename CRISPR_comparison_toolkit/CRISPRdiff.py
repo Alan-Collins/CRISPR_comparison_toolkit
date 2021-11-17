@@ -361,6 +361,11 @@ def main():
 		"to change which colours are assigned to each spacer."
 		)
 	parser.add_argument(
+		"--dpi", dest="dpi", type=int, required = False, default = 300,
+		help="Resolution of output image. Only relevant for bitmap "
+		"formats such as PNG. Has no effect on SVG outputs."
+		)
+	parser.add_argument(
 		"--connection_outline", dest="connection_outline", 
 		action='store_true',
 		help="Identical spacers in arrays plotted adjacent to one "
@@ -655,7 +660,7 @@ def main():
 
 	fig.tight_layout()
 
-	plt.savefig(outfile, dpi=1200)
+	plt.savefig(outfile, dpi=args.dpi)
 	plt.close(fig)
 
 if __name__ == '__main__':
