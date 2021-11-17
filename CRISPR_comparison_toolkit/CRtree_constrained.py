@@ -6,7 +6,7 @@ from collections import Counter
 
 import dendropy
 
-import CRISPR_mp
+import CRISPRtree
 from cctk import (
 	colour_schemes,
 	file_handling,
