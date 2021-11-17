@@ -1,3 +1,6 @@
+from itertools import combinations, permutations
+from random import sample, randrange, seed
+
 Cols_tol = [
 	"#332288",
 	"#117733",
@@ -55,31 +58,48 @@ Cols_hex_27 = [
 	]
 
 
-def choose_col_scheme(ncolours):
-	"""Identify colour scheme with enough colours for all spacers."""
-	if ncolours > 8:
-		if ncolours > 12: 
-			if ncolours > 27:
-				if ncolours > 40:
-					if ncolours < 65:
-						col_scheme = Cols_tol
-					elif ncolours < 145:
-						col_scheme = Cols_hex_12
-					else:
-						col_scheme = Cols_hex_27
-					colours = []
-					# Repeat the same colour scheme.
-					for i in range((ncolours+len(col_scheme)-1)
-						//len(col_scheme)): 
-						for j in col_scheme:
-							colours += [(j, col_scheme[i])]
+def choose_col_scheme(ncolours, s=None):
+	"""Identify colour scheme with enough colours for all spacers.
 
-				else:
-					colours = [(i, "#000000") for i in Cols_hex_40]
-			else:
-				colours = [(i, "#000000") for i in Cols_hex_27]
-		else:
-			colours = [(i, "#000000") for i in Cols_hex_12]
-	else:
+	Args:
+	  ncolours (int):
+		Number of colours desired in produced colour scheme.
+	  s (int or None):
+		Seed to control random ordering of colours in colour scheme.
+	  
+	Returns:
+	  colours (list of tuples):
+	    list of two-colour combinations for use as fill and outline.
+	    e.g.: colours = [
+			('#07001c', '#00c8ee'),
+			('#810087', '#00c8ee'),
+			('#490046', '#92ffa9'),
+			...,
+			]
+	"""
+	if ncolours <= 8:
 		colours = [(i, "#000000") for i in Cols_tol]
+	elif ncolours <= 12:
+		colours = [(i, "#000000") for i in Cols_hex_12]
+	elif ncolours <= 27:
+		colours = [(i, "#000000") for i in Cols_hex_27]
+	elif ncolours <= 40:
+		colours = [(i, "#000000") for i in Cols_hex_40]
+	else:
+		if ncolours < 65:
+			col_scheme = Cols_tol
+		elif ncolours < 145:
+			col_scheme = Cols_hex_12
+		else:
+			col_scheme = Cols_hex_27
+		colours = []
+		# Repeat the same colour scheme.
+		seed(s)
+		combos = [i for i in permutations(col_scheme, 2)]
+		# Permutations doesn't return self to self so add those.
+		combos += [(i,i) for i in col_scheme]
+		colours = sample(combos, len(combos))\
+		# Reset seed
+		seed(None)
+		
 	return colours
