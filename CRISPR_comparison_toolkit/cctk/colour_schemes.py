@@ -1,6 +1,6 @@
 import sys
 from itertools import combinations, permutations
-from random import sample, randrange, seed
+from random import sample, randrange, seed, randint
 from math import sqrt, ceil
 
 Cols_tol = [
@@ -144,3 +144,29 @@ def choose_col_scheme(ncolours, s=None, cf_list=None):
 	seed(None)
 		
 	return colours
+
+
+def random_colour_pairs(n, s=None):
+	"""Return pairs of random hex code colours with seed control
+	
+	Args:
+	  n (int):
+	    Number of pairs of colours to return.
+	  s(int):
+	    value to control random number generation.
+
+	Returns:
+	  colours (list of tuples):
+	    A list of tuples of randomly generated pairs of colours.
+
+	"""
+
+	seed(s)
+	colours = [
+		("#%06x" % randint(0,0xFFFFFF), "#%06x" % randint(0,0xFFFFFF))
+		for i in range(n)
+		]
+	seed(None)
+
+	return colours
+
