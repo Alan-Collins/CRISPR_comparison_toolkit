@@ -132,13 +132,12 @@ def choose_col_scheme(ncolours, s=None, cf_list=None):
 		sys.stderr.write(
 			"\nWARNING!!! "
 			"There are not enough colours in the {} colour scheme.\n"
-			"The colour scheme will be repeated so some spacers will "
-			"be coloured the same.\nIn order to colour each spacer uniquely, "
+			"Random colours will be used. "
+			"\nIn order to colour each spacer uniquely, "
 			"{} colours are needed\n\n".format(
 				cs_name,
 				ceil(sqrt(ncolours))))
-	while ncolours > len(colours):
-		colours += colours
+		colours += random_colour_pairs(ncolours-len(colours), s)
 
 	# Reset seed
 	seed(None)
