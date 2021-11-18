@@ -1,5 +1,7 @@
+import sys
 from itertools import combinations, permutations
 from random import sample, randrange, seed
+from math import sqrt, ceil
 
 Cols_tol = [
 	"#332288",
@@ -58,7 +60,7 @@ Cols_hex_27 = [
 	]
 
 
-def choose_col_scheme(ncolours, s=None):
+def choose_col_scheme(ncolours, s=None, cf_list=None):
 	"""Identify colour scheme with enough colours for all spacers.
 
 	Args:
@@ -66,6 +68,8 @@ def choose_col_scheme(ncolours, s=None):
 		Number of colours desired in produced colour scheme.
 	  s (int or None):
 		Seed to control random ordering of colours in colour scheme.
+	  cf_list (list):
+	    User-provided colours.
 	  
 	Returns:
 	  colours (list of tuples):
@@ -77,29 +81,66 @@ def choose_col_scheme(ncolours, s=None):
 			...,
 			]
 	"""
-	if ncolours <= 8:
+
+	if cf_list:
+		cs_name = "user-provided"
+		if ncolours <= len(cf_list):
+			colours = [(i, "#000000") for i in cf_list]
+			return colours
+
+		else:	
+			col_scheme = cf_list	
+	
+	elif ncolours <= 8:
 		colours = [(i, "#000000") for i in Cols_tol]
+		return colours
+
+
 	elif ncolours <= 12:
 		colours = [(i, "#000000") for i in Cols_hex_12]
+		return colours
+
+
 	elif ncolours <= 27:
 		colours = [(i, "#000000") for i in Cols_hex_27]
+		return colours
+
+
 	elif ncolours <= 40:
 		colours = [(i, "#000000") for i in Cols_hex_40]
+		return colours
+
+
+	elif ncolours < 65:
+		col_scheme = Cols_tol
+	elif ncolours < 145:
+		col_scheme = Cols_hex_12
 	else:
-		if ncolours < 65:
-			col_scheme = Cols_tol
-		elif ncolours < 145:
-			col_scheme = Cols_hex_12
-		else:
-			col_scheme = Cols_hex_27
-		colours = []
-		# Repeat the same colour scheme.
-		seed(s)
-		combos = [i for i in permutations(col_scheme, 2)]
-		# Permutations doesn't return self to self so add those.
-		combos += [(i,i) for i in col_scheme]
-		colours = sample(combos, len(combos))\
-		# Reset seed
-		seed(None)
+		cs_name = "built-in"
+		col_scheme = Cols_hex_27
+	
+	colours = []
+	# Repeat the same colour scheme for fill and outline combos.
+	seed(s)
+	combos = [i for i in permutations(col_scheme, 2)]
+	# Permutations doesn't return self to self so add those.
+	combos += [(i,i) for i in col_scheme]
+	colours = sample(combos, len(combos))
+
+	# If colour scheme is insufficient, repeat until enough.
+	if ncolours > len(colours):
+		sys.stderr.write(
+			"\n\nWARNING!!! "
+			"There are not enough colours in the {} colour scheme.\n"
+			"The colour scheme will be repeated so some spacers will "
+			"be coloured the same.\nIn order to colour each spacer uniquely, "
+			"{} colours are needed\n".format(
+				cs_name,
+				ceil(sqrt(ncolours))))
+	while ncolours > len(colours):
+		colours += colours
+
+	# Reset seed
+	seed(None)
 		
 	return colours
