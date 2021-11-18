@@ -8,7 +8,7 @@ from random import sample, randrange, seed
 import argparse
 import json
 
-from cctk import colour_schemes
+from cctk import colour_schemes, file_handling
 
 
 def get_list_score(arrays_dict, arrays_order):
@@ -425,19 +425,14 @@ def main():
 
 	args = parse_args()
 
-	infile = args.array_file
-	outfile = args.out_file
-
-	array_dict = {}
-	with open(infile, 'r') as fin:
-		for line in fin.readlines():
-			bits = line.split()
-			array_dict[bits[0]] = bits[2:]
+	array_dict = file_handling.read_array_file(args.array_file)
 
 	if len(args.arrays_to_align) == 0:
 		arrays_of_interest_dict = array_dict
+		array_network = [a for a in array_dict.keys()]
 	else:
 		arrays_of_interest_dict = {}
+		array_network = args.arrays_to_align
 		for array in array_network:
 			arrays_of_interest_dict[array] = array_dict[array]
 
@@ -699,7 +694,7 @@ def main():
 
 	fig.tight_layout()
 
-	plt.savefig(outfile, dpi=args.dpi)
+	plt.savefig(args.out_file, dpi=args.dpi)
 	plt.close(fig)
 
 if __name__ == '__main__':
