@@ -5,6 +5,7 @@ import re
 import os
 import sys
 import subprocess
+from shutil import which
 
 from cctk import file_handling, sequence_operations
 
@@ -420,23 +421,30 @@ def process_minced_out(CRISPR_types_dict, out_dir):
 				+ "\n")
 
 
-if __name__ == '__main__':
-
+def parse_args():
 	parser = argparse.ArgumentParser(
 		description="Runs minced and processes the output into a spacer"
 		"multifasta and summary tables describing which genomes have"
 		"which CRISPRs")
 	parser.add_argument(
-		"-i",  dest="indir", required = False,
+		"-i",
+		dest="indir",
+		required = False,
 		help="Specify the input directory containing genome fastas. "
 		)
 	parser.add_argument(
-		"-l",  dest="minced_path", required = False,
+		"-l",
+		dest="minced_path",
+		required = False,
+		default="minced",
 		help="If running minced, specify the path to the minced"
-		"executable. "
+		"executable. Default is to run minced as if it were in your "
+		"PATH"
 		)
 	parser.add_argument(
-		"-o", dest="out_dir", required = True,
+		"-o",
+		dest="out_dir",
+		required = True,
 		help="Specify directory for minced output and processed minced"
 		"files. If just running minced processing steps then this is"
 		"the directory above the directory where your minced output is"
@@ -445,7 +453,9 @@ if __name__ == '__main__':
 		"will be stored in dir1/PROCESSED/"
 		)
 	parser.add_argument(
-		"-r", dest="repeats_file", required = False,
+		"-r",
+		dest="repeats_file",
+		required = False,
 		help="FASTA format file containing the CRISPR repeats you want"
 		"to look for. If you don't provide one, this script will look"
 		"for type 1F, 1E, and 1C repeats from Pseudomonas aeruginosa."
@@ -453,16 +463,24 @@ if __name__ == '__main__':
 		"with one another."
 		)
 	parser.add_argument(
-		"-m", action='store_true',
-			help="Indicate that you want minced to be run"
+		"-m",
+		action='store_true',
+		help="Indicate that you want minced to be run"
 		)
 	parser.add_argument(
-		"-p", action='store_true',
-			help="Indicate that you want to run processing steps on"
+		"-p",
+		action='store_true',
+		help="Indicate that you want to run processing steps on"
 			"minced output"
 		)
 
-	args = parser.parse_args(sys.argv[1:])
+	args = parser.parse_args()
+	return args
+
+
+if __name__ == '__main__':
+
+	args = parse_args()
 
 	indir = args.indir
 	out_dir = args.out_dir
@@ -484,12 +502,10 @@ if __name__ == '__main__':
 		}
 
 	if args.m:
-		if not args.minced_path:
-			print(
-				"ERROR: To run minced you must provide the path to the"
-				"minced executable."
-				)
-			sys.exit()
+		if which(args.minced_path) is None:
+			sys.exit("ERROR: minced executable not found. "
+				"To run minced you must provide the path to the"
+				"minced executable.")
 		mince_it(args.minced_path, indir, out_dir)
 	if args.p:
 		process_minced_out(CRISPR_types_dict, out_dir)
