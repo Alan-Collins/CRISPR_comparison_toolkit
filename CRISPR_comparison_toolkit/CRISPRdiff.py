@@ -472,51 +472,15 @@ def main():
 
 	if args.colour_file:
 		with open(args.colour_file, 'r') as fin:
-			col_scheme = [i.strip() for i in fin.readlines()]
-		colours = []
-		if len(imp_spacers) > len(col_scheme):
-			while True:
-				for i in col_scheme:
-					for j in col_scheme:
-						colours.append((i,j))
-						if len(colours) == len(imp_spacers):
-							break
-					if len(colours) == len(imp_spacers):
-						break
-				if len(colours) == len(imp_spacers):
-					break
-			if len(imp_spacers) > len(col_scheme)**2:
-				print("The provided colour scheme file has too few colours. "
-					"You need at least {}. Repeating colour scheme to make up "
-					"the numbers.".format(len(imp_spacers)))
-
+			cf_list = [i.strip() for i in fin.readlines()]
+		colours = colour_schemes.choose_col_scheme(
+			len(imp_spacers),
+			args.seed,
+			cf_list)
 	else:
-		if len(imp_spacers) > 8:
-			if len(imp_spacers) > 12: 
-				if len(imp_spacers) > 27:
-					print("{} spacers found in multiple arrays. Using fill "
-						"and outline colour combinations to distinguish "
-						"spacers.".format(len(imp_spacers)))
-					if len(imp_spacers) < 65:
-						col_scheme = colour_schemes.Cols_tol
-					elif len(imp_spacers) < 145:
-						col_scheme = colour_schemes.Cols_hex_12
-					else:
-						col_scheme = colour_schemes.Cols_hex_27
-					seed(args.seed)
-					combos = [i for i in permutations(col_scheme, 2)]
-					combos += [(i,i) for i in col_scheme]
-					colours = sample(combos, len(combos))
-					seed(None)
-
-					
-
-				else:
-					colours = [(i, "#000000") for i in colour_schemes.Cols_hex_27]
-			else:
-				colours = [(i, "#000000") for i in colour_schemes.Cols_hex_12]
-		else:
-			colours = [(i, "#000000") for i in colour_schemes.Cols_tol]
+		colours = colour_schemes.choose_col_scheme(
+			len(imp_spacers),
+			args.seed)
 
 	# if provided, read in colour scheme.
 
