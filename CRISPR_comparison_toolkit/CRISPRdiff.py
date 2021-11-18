@@ -439,7 +439,7 @@ def main():
 	if args.preordered:
 		array_order = array_network
 	elif args.approxordered:
-		array_order, score_dump = jiggle_list_to_local_max(
+		array_order, _ = jiggle_list_to_local_max(
 			arrays_of_interest_dict, array_network)
 	else:
 		if len(array_network) < 9:
