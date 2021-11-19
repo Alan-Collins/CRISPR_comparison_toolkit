@@ -80,36 +80,53 @@ def main(args):
 
 	arrays = []
 	included_arrays = []
-	represented_assembly_arrays = {}
+	repped_ass_ars = {}
 
 	with open(args.input, 'r') as CRISPR_infile:
 		for line in CRISPR_infile.readlines()[1:]:
 			ass_info = Assembly(line.split(','))
-			if ass_info.present:
-				for i in range(ass_info.count):
-					array_num = i + 1
-					if ass_info.array_ids[array_num] not in included_arrays:
-						arrays.append(CRISPR_info(ass_info, array_num))
-						included_arrays.append(ass_info.array_ids[array_num])
-						represented_assembly_arrays[ass_info.array_ids[array_num]] = [ass_info.ass_id]
-					else:
-						represented_assembly_arrays[ass_info.array_ids[array_num]].append(ass_info.ass_id)
+			if not ass_info.present:
+				continue
+			for i in range(ass_info.count):
+				array_num = i + 1
+				if ass_info.array_ids[array_num] not in included_arrays:
+					arrays.append(CRISPR_info(ass_info, array_num))
+					included_arrays.append(ass_info.array_ids[array_num])
+					repped_ass_ars[
+						ass_info.array_ids[array_num]] = [ass_info.ass_id]
+				else:
+					repped_ass_ars[
+						ass_info.array_ids[array_num]].append(ass_info.ass_id)
 
 	edges = []
 
 	for i in range(len(arrays)):
 		for j in range(i+1, len(arrays)):
-			shared_spacers = list(set(arrays[i].spacers) & set(arrays[j].spacers))
+			shared_spacers = list(
+				set(arrays[i].spacers) & set(arrays[j].spacers))
 			if len(shared_spacers) != 0:
-				edges.append("\t".join([arrays[i].array_id, str(len(shared_spacers)), arrays[j].array_id, arrays[i].type, arrays[j].type, str(len(arrays[i].spacers)), str(len(arrays[j].spacers)), str(len(set(arrays[i].spacers + arrays[j].spacers))), str(len(shared_spacers)/len(set(arrays[i].spacers + arrays[j].spacers)))]))
+				edges.append("\t".join(
+					[arrays[i].array_id,
+					str(len(shared_spacers)),
+					arrays[j].array_id,
+					arrays[i].type,
+					arrays[j].type,
+					str(len(arrays[i].spacers)),
+					str(len(arrays[j].spacers)),
+					str(len(set(arrays[i].spacers + arrays[j].spacers))),
+					str(len(shared_spacers)/len(
+						set(arrays[i].spacers + arrays[j].spacers)))
+					]))
 
 	with open(args.rep_file, 'w+') as fout:
 		fout.write("Array_ID\tAssemblies_with_array\n")
-		for k,v in represented_assembly_arrays.items():
-			fout.write("%s\t%s\n" %(k, " ".join(v)))
+		for k,v in repped_ass_ars.items():
+			fout.write("{}\t{}\n".format(k, " ".join(v)))
 
 	with open(args.network_file, 'w+') as fout:
-		fout.write("Source_ID\tShared_Spacers\tTarget_ID\tSource_CRISPR_Type\tTarget_CRISPR_Type\tLen_Source_Array\tLen_Target_Array\tTotal_Unique_Spacers\tProportion_Unique_Spacers_Shared\n")
+		fout.write("Source_ID\tShared_Spacers\tTarget_ID\tSource_CRISPR_Type\t"
+			"Target_CRISPR_Type\tLen_Source_Array\tLen_Target_Array\t"
+			"Total_Unique_Spacers\tProportion_Unique_Spacers_Shared\n")
 		fout.write("\n".join(edges))
 
 
