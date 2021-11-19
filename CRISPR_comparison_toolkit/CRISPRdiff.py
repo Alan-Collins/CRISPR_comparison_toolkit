@@ -293,35 +293,30 @@ def cmdline_args():
 		"test.png -c cols.txt -iter 100 155 9 204 73 97",
 		formatter_class=argparse.RawTextHelpFormatter)
 	parser.add_argument(
-		"-a", 
-		dest="array_file",
+		"-a", "--array-file",
 		required=True,
 		help="Specify array representatives file."
 		)
 	parser.add_argument(
-		"-o",
-		dest="out_file",
+		"-o", "--out-file",
 		required=True, 
 		help="Specify output file."
 		)
 	parser.add_argument(
-		"-c",
-		dest="colour_file",
+		"-c", "--colour-file",
 		required=False, 
 		help="Specify file with custom colour list (Optional). "
 		"Colours must be hex codes. One colour per line with no header "
 		"line in file. e.g. #fd5925."
 		)
 	parser.add_argument(
-		"-m",
-		dest="colour_scheme_outfile",
+		"-m", "--colour-scheme-outfile",
 		required=False, 
 		help="Specify output file to store json format dictionary of "
 		"the colour schemes used for spacers in this run."
 		)
 	parser.add_argument(
-		"-s",
-		dest="colour_scheme_infile",
+		"-s", "--colour-scheme-infile",
 		required=False,
 		help="Specify input file containing json format dictionary of "
 		"the colour scheme to be used for spacers in this run. Any "
@@ -329,8 +324,7 @@ def cmdline_args():
 		"the normal process."
 		)
 	parser.add_argument(
-		"-i", "--iter",
-		dest="iterations",
+		"-i", "--iterations",
 		required=False,
 		default=10,
 		type=int,
@@ -341,8 +335,7 @@ def cmdline_args():
 		"possible ordering, but take longer."
 		)
 	parser.add_argument(
-		"-l",
-		dest="legend",
+		"-l", "--legend",
 		required=False,
 		action='store_true',  
 		help="Include a legend in the output plot (Highly recommended "
@@ -352,8 +345,7 @@ def cmdline_args():
 		"to left along your plotted arrays."
 		)
 	parser.add_argument(
-		"--leader_align",
-		dest="leader_align",
+		"--leader-align",
 		required=False,
 		action='store_true',  
 		help="Declare that you want the plot to line up all the leader "
@@ -361,7 +353,6 @@ def cmdline_args():
 		)
 	parser.add_argument(
 		"--preordered",
-		dest="preordered",
 		required=False, 
 		action='store_true',  
 		help="Declare that the array order you provided is the one you "
@@ -369,7 +360,6 @@ def cmdline_args():
 		)
 	parser.add_argument(
 		"--approxordered",
-		dest="approxordered",
 		required=False,
 		action='store_true',  
 		help="Declare that the array order you provided should be "
@@ -380,7 +370,6 @@ def cmdline_args():
 		)
 	parser.add_argument(
 		"--seed",
-		dest="seed",
 		required=False, 
 		type=int,
 		default=2,
@@ -390,7 +379,6 @@ def cmdline_args():
 		)
 	parser.add_argument(
 		"--dpi",
-		dest="dpi",
 		required=False,
 		type=int,
 		default=300,
@@ -398,8 +386,7 @@ def cmdline_args():
 		"formats such as PNG. Has no effect on SVG outputs."
 		)
 	parser.add_argument(
-		"--connection_outline",
-		dest="connection_outline",
+		"--connection-outline",
 		required=False,
 		action='store_true',
 		help="Identical spacers in arrays plotted adjacent to one "
