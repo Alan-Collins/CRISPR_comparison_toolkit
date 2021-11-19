@@ -282,7 +282,7 @@ def find_indices(lst, element):
 		result.append(offset)
 
 
-def parse_args():
+def cmdline_args():
 	parser = argparse.ArgumentParser(
 		description="Given an array file and a list of arrays to "
 		"align, produces a plot showing shared spacers among arrays "
@@ -421,9 +421,7 @@ def parse_args():
 	return args
 
 
-def main():
-
-	args = parse_args()
+def main(args):
 
 	array_dict = file_handling.read_array_file(args.array_file)
 
@@ -661,5 +659,8 @@ def main():
 	plt.savefig(args.out_file, dpi=args.dpi)
 	plt.close(fig)
 
+
 if __name__ == '__main__':
-	main()
+	args = cmdline_args()
+
+	main(args)
