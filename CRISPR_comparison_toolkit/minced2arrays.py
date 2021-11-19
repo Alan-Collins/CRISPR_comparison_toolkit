@@ -421,7 +421,7 @@ def process_minced_out(CRISPR_types_dict, out_dir):
 				+ "\n")
 
 
-def parse_args():
+def cmdline_args():
 	parser = argparse.ArgumentParser(
 		description="Runs minced and processes the output into a spacer"
 		"multifasta and summary tables describing which genomes have"
@@ -480,7 +480,7 @@ def parse_args():
 
 if __name__ == '__main__':
 
-	args = parse_args()
+	args = cmdline_args()
 
 	indir = args.indir
 	out_dir = args.out_dir
