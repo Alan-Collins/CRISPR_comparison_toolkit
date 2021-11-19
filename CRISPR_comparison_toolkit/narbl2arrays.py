@@ -4,22 +4,10 @@ import subprocess
 import argparse
 import sys
 import os
-from collections import Counter
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 
-def fasta_to_dict(FASTA_file): # takes opened and read fasta file and returns a dict of format {fasta_header:sequence}
-	fasta_dict = {}
-	fastas = FASTA_file.split(">")
-	trimmed_fastas = []
-	for i in fastas:
-		if len(i) != 0:
-			trimmed_fastas.append(i)
-	fastas = trimmed_fastas
-	for i in fastas:
-		header =  i.split("\n")[0]
-		seq = "".join(i.split("\n")[1:])
-		fasta_dict[header] = seq
-	return fasta_dict
+from cctk import file_handling
+
 
 def find_network_ends(edge_list): # takes list of edges from network file from narble output and finds the ends of each array and returns them as a list of tuples
 	all_edges =[]
@@ -69,8 +57,8 @@ def find_array_order(twelvebp, edge_list): #ends[i], links)
 
 
 def find_ordered_spacers(ordered_dodecs, spacer_file):
-	with open(spacer_file, 'r') as sf:
-		spacers_coverage_dict = Counter(list(fasta_to_dict(sf.read()).values()))
+	spacers_coverage_dict = Counter(
+		list(file_handling.fasta_to_dict(spacer_file.values())))
 	ordered_spacer_dict = OrderedDict()
 	count = 0
 	for i in range(1, len(ordered_dodecs[:-2]), 2):
@@ -101,47 +89,50 @@ def find_ordered_spacers(ordered_dodecs, spacer_file):
 	return ordered_spacer_dict
 
 
+def cmdline_args():
+	parser = argparse.ArgumentParser(
+		description="runs narbl pipeline scripts written by Whitney England.\n\
+		This pipeline was written to work with the following versions of scripts (if given):\
+		crhunt4d.sh\
+		narblWE.sh",
+		formatter_class=argparse.RawTextHelpFormatter)
+	parser.add_argument(
+		"-s", dest="scripts_dir", required = True,
+		help="Specify path to crhunt, narbl, and crisprmax scripts."
+		)
+	parser.add_argument(
+		"-o", dest="out_dir", required = False, default='', 
+		help="Specify output directory path. Default is to write to current working directory"
+		)
+	parser.add_argument(
+		"-c", dest="cores", required = True, 
+		help="Specify how many cpu cores to use."
+		)
+	parser.add_argument(
+		"-r", dest="repfile", required = True, 
+		help="Specify file containing CRISPR repeats in fasta format."
+		)
+	parser.add_argument(
+		"-g", dest="readsfile", required = True, 
+		help="Specify reads file in fasta format."
+		)
+	parser.add_argument(
+		"-n", dest="repsize", required = True, 
+		help="Specify approximate repeat size."
+		)
+	parser.add_argument(
+		"-m", dest="mincov", required = True, type=int, 
+		help="Specify minimum coverage of supporting 2 spacers being neighbours."
+		)
+	parser.add_argument(
+		"-i", dest="id", required = True, 
+		help="Specify strain name or id for use in headers of output spacer fasta."
+		)
 
-parser = argparse.ArgumentParser(
-	description="runs narbl pipeline scripts written by Whitney England.\n\
-	This pipeline was written to work with the following versions of scripts (if given):\
-	crhunt4d.sh\
-	narblWE.sh",
-	formatter_class=argparse.RawTextHelpFormatter)
-parser.add_argument(
-	"-s", dest="scripts_dir", required = True,
-	help="Specify path to crhunt, narbl, and crisprmax scripts."
-	)
-parser.add_argument(
-	"-o", dest="out_dir", required = False, default='', 
-	help="Specify output directory path. Default is to write to current working directory"
-	)
-parser.add_argument(
-	"-c", dest="cores", required = True, 
-	help="Specify how many cpu cores to use."
-	)
-parser.add_argument(
-	"-r", dest="repfile", required = True, 
-	help="Specify file containing CRISPR repeats in fasta format."
-	)
-parser.add_argument(
-	"-g", dest="readsfile", required = True, 
-	help="Specify reads file in fasta format."
-	)
-parser.add_argument(
-	"-n", dest="repsize", required = True, 
-	help="Specify approximate repeat size."
-	)
-parser.add_argument(
-	"-m", dest="mincov", required = True, type=int, 
-	help="Specify minimum coverage of supporting 2 spacers being neighbours."
-	)
-parser.add_argument(
-	"-i", dest="id", required = True, 
-	help="Specify strain name or id for use in headers of output spacer fasta."
-	)
+	args = parser.parse_args()
 
-args = parser.parse_args(sys.argv[1:])
+	return args
+
 
 if len(args.out_dir) !=0:
 	main_outdir = os.path.abspath(args.out_dir)
@@ -159,8 +150,7 @@ readsfile = os.path.abspath(args.readsfile)
 repfile = os.path.abspath(args.repfile)
 
 
-with open(repfile, 'r') as rin:
-	repeats_dict = fasta_to_dict(rin.read())
+repeats_dict = file_handling.fasta_to_dict(repfile)
 
 repeats = list(repeats_dict.keys())
 
@@ -235,3 +225,7 @@ for repname in repeats:
 		ordered_spacers_dict = find_ordered_spacers(ordered_dodecs, "%s%s.spacers.final.fasta" %(narbl_out, repname))
 		with open(final_out + "_".join([args.id, repname, "array", str(i+1), "spacers.fna"]), 'w+') as spacer_outf:
 			spacer_outf.write("\n".join([str(">" + k + "\n" + v) for k,v in ordered_spacers_dict.items()]) + '\n')
+
+if __name__ == '__main__':
+	args = cmdline_args()
+	main(args)
