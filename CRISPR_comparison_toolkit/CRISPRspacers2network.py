@@ -1,16 +1,32 @@
 #!/usr/bin/env python3
 
-# Takes ouput from minced2arrays.py and produces a file describing which assemblies have which arrays and a file describing the network of arrays (nodes) and the spacers they share (edges).
-
 import sys
+import argparse
 
-class assembly():
-	""" Class to process lines from CRISPR_summary_table.csv output be minced2arrays.py. Takes line of file split on commas"""
+class Assembly():	
+	""" Class to process lines from CRISPR_summary_table.csv
+
+	Takes file output by CRISPR identification scripts and reads array 
+	information from them.
+	
+	Attributes:
+	  ass_id (str):
+	    Name of assembly or sequence record.
+	  present (bool):
+	    Were CRISPR arrays found in this assembly?
+	  count (int):
+	    How many CRISPR arrays were found?
+	  array_ids (dict):
+	    spacers found in each array of format
+	    {'Array number' : ['IDs', 'of', 'spacers', ...]}
+	  types (dict):
+	    The CRISPR subtype that each array was characterized as. Format:
+	    {'Array number' : 'subtype'}
+	"""
 	def __init__(self, ass):
 		self.ass_id = ass[0]
 		self.present = True if ass[1] == "True" else False
 		self.count = int(ass[2])
-		self.arrays = {}
 		self.array_ids = {}
 		self.types = {}
 		if self.present:
@@ -22,48 +38,83 @@ class assembly():
 
 
 class CRISPR_info():
+	"""Key information about CRISPR arrays.
+	
+	Attributes:
+	  array_id (str):
+	    Identifier of array.
+	  spacers (list):
+	    An integer count of the eggs we have laid.
+	"""
 	def __init__(self, assembly, array_num):
 		self.array_id = assembly.array_ids[array_num]
 		self.spacers = assembly.arrays[array_num]
 		self.type = assembly.types[array_num]
 
-infile = sys.argv[1]
-outfile = sys.argv[2]
 
-arrays = []
-included_arrays = []
-represented_assembly_arrays = {}
+def cmdline_args():
 
-with open(infile, 'r') as CRISPR_infile:
-	for line in CRISPR_infile.readlines()[1:]:
-		ass_info = assembly(line.split(','))
-		if ass_info.present:
-			for i in range(ass_info.count):
-				array_num = i + 1
-				if ass_info.array_ids[array_num] not in included_arrays:
-					arrays.append(CRISPR_info(ass_info, array_num))
-					included_arrays.append(ass_info.array_ids[array_num])
-					represented_assembly_arrays[ass_info.array_ids[array_num]] = [ass_info.ass_id]
-				else:
-					represented_assembly_arrays[ass_info.array_ids[array_num]].append(ass_info.ass_id)
+	parser = argparse.ArgumentParser(
+		description=""
+		)
+	parser.add_argument(
+		"-i", "--input", required = True,
+		help="Input file. CRISPR_summary_table.csv produced by one of the "
+		"CRISPR identification scripts."
+		)
+	parser.add_argument(
+		"-n", "--network-file", default="Array_network",
+		help="Output network file. Path to location to write network " 
+		"representation of array relationships."
+		)
+	parser.add_argument(
+		"-r", "--reps-file", default="Array_representatives",
+		help="Output array representatives file. "
+		"Path to location to write a list of which assemblies have each array."
+		)
 
-edges = []
-
-for i in range(len(arrays)):
-	for j in range(i+1, len(arrays)):
-		shared_spacers = list(set(arrays[i].spacers) & set(arrays[j].spacers))
-		if len(shared_spacers) != 0:
-			edges.append("\t".join([arrays[i].array_id, str(len(shared_spacers)), arrays[j].array_id, arrays[i].type, arrays[j].type, str(len(arrays[i].spacers)), str(len(arrays[j].spacers)), str(len(set(arrays[i].spacers + arrays[j].spacers))), str(len(shared_spacers)/len(set(arrays[i].spacers + arrays[j].spacers)))]))
-
-with open("Array_ID_representatives.txt", 'w+') as id_file:
-	id_file.write("Array_ID\tAssemblies_with_array\n")
-	for k,v in represented_assembly_arrays.items():
-		id_file.write("%s\t%s\n" %(k, " ".join(v)))
-
-with open(outfile, 'w+') as network_file:
-	network_file.write("Source_ID\tShared_Spacers\tTarget_ID\tSource_CRISPR_Type\tTarget_CRISPR_Type\tLen_Source_Array\tLen_Target_Array\tTotal_Unique_Spacers\tProportion_Unique_Spacers_Shared\n")
-	network_file.write("\n".join(edges))
+	return parser.parse_args()
 
 
+def main(args):
+
+	arrays = []
+	included_arrays = []
+	represented_assembly_arrays = {}
+
+	with open(args.input, 'r') as CRISPR_infile:
+		for line in CRISPR_infile.readlines()[1:]:
+			ass_info = Assembly(line.split(','))
+			if ass_info.present:
+				for i in range(ass_info.count):
+					array_num = i + 1
+					if ass_info.array_ids[array_num] not in included_arrays:
+						arrays.append(CRISPR_info(ass_info, array_num))
+						included_arrays.append(ass_info.array_ids[array_num])
+						represented_assembly_arrays[ass_info.array_ids[array_num]] = [ass_info.ass_id]
+					else:
+						represented_assembly_arrays[ass_info.array_ids[array_num]].append(ass_info.ass_id)
+
+	edges = []
+
+	for i in range(len(arrays)):
+		for j in range(i+1, len(arrays)):
+			shared_spacers = list(set(arrays[i].spacers) & set(arrays[j].spacers))
+			if len(shared_spacers) != 0:
+				edges.append("\t".join([arrays[i].array_id, str(len(shared_spacers)), arrays[j].array_id, arrays[i].type, arrays[j].type, str(len(arrays[i].spacers)), str(len(arrays[j].spacers)), str(len(set(arrays[i].spacers + arrays[j].spacers))), str(len(shared_spacers)/len(set(arrays[i].spacers + arrays[j].spacers)))]))
+
+	with open(args.rep_file, 'w+') as fout:
+		fout.write("Array_ID\tAssemblies_with_array\n")
+		for k,v in represented_assembly_arrays.items():
+			fout.write("%s\t%s\n" %(k, " ".join(v)))
+
+	with open(args.network_file, 'w+') as fout:
+		fout.write("Source_ID\tShared_Spacers\tTarget_ID\tSource_CRISPR_Type\tTarget_CRISPR_Type\tLen_Source_Array\tLen_Target_Array\tTotal_Unique_Spacers\tProportion_Unique_Spacers_Shared\n")
+		fout.write("\n".join(edges))
+
+
+if __name__ == '__main__':
+	args = cmdline_args()
+	main(args)	
 	
 
