@@ -55,7 +55,8 @@ class CRISPR_info():
 def cmdline_args():
 
 	parser = argparse.ArgumentParser(
-		description=""
+		description="Create a network representation of the relationships "
+		"between arrays."
 		)
 	parser.add_argument(
 		"-i", "--input", required = True,
