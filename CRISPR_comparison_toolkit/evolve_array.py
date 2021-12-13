@@ -4,6 +4,8 @@ import sys
 import argparse
 import random
 
+import dendropy
+
 
 class Array():
 	"""Store information about arrays.
@@ -15,14 +17,15 @@ class Array():
 		  Age of the array.
 	"""
 	def __init__(self, name=0, parent=None):
-		self.name = name
+		self.name = str(name)
 		self.parent = parent
 		if self.parent:
 			self.age_weight = int(parent.age_weight*1.5)
 			self.spacers = [int(i) for i in parent.spacers]
 		else:
-			self.age_weight = 10
+			self.age_weight = 2
 			self.spacers = []
+		self.age_dict_idxs = []
 		
 
 def cmdline_args():
@@ -53,19 +56,24 @@ def cmdline_args():
 		"-i", "--initial-length", type=int, default=5, metavar="",
 		help="Length of the starting array")
 	parameters.add_argument(
-		"-a", "--acquisition", type=int, default=80, metavar="",
+		"-a", "--acquisition", type=int, default=75, metavar="",
 		help="Relative frequency of spacer acquisitions")
 	parameters.add_argument(
 		"-t", "--trailer-loss", type=int, default=15, metavar="",
 		help="Relative frequency of trailer spacer decay")
 	parameters.add_argument(
-		"-d", "--deletion", type=int, default=5, metavar="",
+		"-d", "--deletion", type=int, default=10, metavar="",
 		help="Relative frequency of deletions of one or more spacers")
+	parameters.add_argument(
+		"-l", "--loss-rate", type=int, default=50, metavar="",
+		help="Rate (percent) at which arrays are lost after spawning a \
+		descendant")
 
 	return p.parse_args()
 
 
-def tick(age_dict, spacer_n, array_name, events_dict):
+def tick(age_dict, tree, tree_namespace, spacer_n, array_name, events_dict,
+	all_arrays, loss_rate):
 	"""Choose an event and return the resulting spacer.
 	
 	Picks an existing array to modify and an event at random. Creates a
@@ -75,6 +83,10 @@ def tick(age_dict, spacer_n, array_name, events_dict):
 	Args:
 	  age_dict (dict of Array):
 		dict with all existing Array instances.
+	  tree (Dendropy.Tree):
+	    Tree instance containing array histories.
+	  tree_namespace (Dendropy.TaxonNamespace):
+	    namespace for tree nodes.
 	  spacer_n (int):
 		Next spacer ID to use.
 	  array_name (int):
@@ -82,15 +94,19 @@ def tick(age_dict, spacer_n, array_name, events_dict):
 	  events_dict (dict):
 	    Dict to look up to which event a selected random number
 	    corresponds
+	  all_arrays (list):
+	    list of all Array instances
+	  loss_rate (int):
+	    Percent rate at which to remove old arrays from the age_dict 
+	    after they are the source of a new array
 
 	Returns:
-	  A modified form of the chosen array as an Array class instance.
+	  A modified form of the chosen array as an Array class instance and
+	  other updates objects.
 	"""
-	if args.seed:
-		random.seed(args.seed)
-	
-	source_array = age_dict[random.randint(1,len(age_dict)+1)]
-	event = events_dict[random.randint(1,len(events_dict)+1)]
+
+	source_array = age_dict[random.choice([i for i in age_dict.keys()])]
+	event = events_dict[random.randint(1,len(events_dict))]
 
 	array = Array(name=array_name, parent=source_array)
 	array_name+=1
@@ -102,13 +118,29 @@ def tick(age_dict, spacer_n, array_name, events_dict):
 	else:
 		array = do_deletion(array)
 
-	# Add new array to age_dict
-
-	for i in range(len(age_dict)+1, len(age_dict)+array.age_weight+1):
+	# Add new array to age_dict and all_arrays
+	max_age = max([i for i in age_dict.keys()])
+	for i in range(max_age+1, max_age+array.age_weight+1):
 		age_dict[i] = array
+		array.age_dict_idxs.append(i)
+
+	all_arrays.append(array)
+
+	# Check whether to remove source array from age_dict
+	x = random.randint(1,100)
+	if x <= loss_rate:
+		for i in source_array.age_dict_idxs:
+			del age_dict[i]
+
+	# Add array relationships to tree
+
+	new_node = dendropy.Node()
+	new_node.taxon = tree_namespace.get_taxon(array.name)
+
+	tree.find_node_with_taxon_label(source_array.name).add_child(new_node)
 
 
-	return age_dict, spacer_n, array_name
+	return age_dict, tree, spacer_n, array_name, all_arrays
 
 
 def do_acquisition(array, spacer_n):
@@ -133,7 +165,7 @@ def do_deletion(array):
 	mean = array_len/2
 
 	# Set the level of variation from the middle of the array
-	stddev = array_len/6
+	stddev = array_len/4
 
 	a = pick_normal_index(array_len, mean, stddev)
 	b = pick_normal_index(array_len, mean, stddev)
@@ -146,8 +178,6 @@ def do_deletion(array):
 		a,b = b,a
 
 	spacers_to_del = [i for i in range(a,b+1)]
-
-	print(a,b)
 
 	array.spacers = [
 		i for n,i in enumerate(array.spacers) if n not in spacers_to_del]
@@ -165,6 +195,9 @@ def pick_normal_index(max, mean, stddev):
 
 def main(args):
 
+	if args.seed:
+		random.seed(args.seed)	
+
 	spacer_n = 1 # Track ID of spacers
 	total_age = 1 # Track 
 	array_name = 1
@@ -175,9 +208,11 @@ def main(args):
 	for _ in range(args.initial_length):
 		init_array.spacers.insert(0,spacer_n)
 		spacer_n+=1
+	all_arrays = [init_array]
 	
 	for _ in range(init_array.age_weight):
 		age_dict[total_age] = init_array
+		init_array.age_dict_idxs.append(total_age)
 		total_age+=1
 
 	i = 1
@@ -191,14 +226,24 @@ def main(args):
 		events_dict[i] = 'Deletion'
 		i+=1
 
+	tree_namespace = dendropy.TaxonNamespace(
+		[str(i) for i in range(1, args.num_events+1)])
+	tree = dendropy.Tree(taxon_namespace=tree_namespace)
+
+	first_node = dendropy.Node()
+	first_node.taxon = tree_namespace.get_taxon(1)
+	tree.seed_node.add_child(first_node)
+
 	for _ in range(args.num_events):
-		age_dict, spacer_n, array_name = tick(
-			age_dict, spacer_n, array_name, events_dict)
+		age_dict, tree, spacer_n, array_name, all_arrays = tick(
+			age_dict, tree, tree_namespace, spacer_n, array_name, events_dict,
+			all_arrays, args.loss_rate)
 
-	for i in set(list(age_dict.values())):
-		print(i.name, i.spacers)
+	for a in all_arrays:
+		print(str(a.name) + '\t' + ' '.join([str(i) for i in a.spacers]))
 
 
+	print(tree.as_ascii_plot(show_internal_node_labels=True))
 
 
 
