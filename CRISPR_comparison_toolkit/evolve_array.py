@@ -20,12 +20,9 @@ class Array():
 		self.name = str(name)
 		self.parent = parent
 		if self.parent:
-			self.age_weight = int(parent.age_weight*1.5)
 			self.spacers = [int(i) for i in parent.spacers]
 		else:
-			self.age_weight = 2
 			self.spacers = []
-		self.age_dict_idxs = []
 		
 
 def cmdline_args():
@@ -72,7 +69,7 @@ def cmdline_args():
 	return p.parse_args()
 
 
-def tick(age_dict, tree, tree_namespace, spacer_n, array_name, events_dict,
+def tick(active_arrays, tree, tree_namespace, spacer_n, array_name, events_dict,
 	all_arrays, loss_rate):
 	"""Choose an event and return the resulting spacer.
 	
@@ -81,8 +78,8 @@ def tick(age_dict, tree, tree_namespace, spacer_n, array_name, events_dict,
 	returns the modified copy of the array
 
 	Args:
-	  age_dict (dict of Array):
-		dict with all existing Array instances.
+	  active_arrays (list of Array):
+		List of Arrays that are still available to use as source arrays.
 	  tree (Dendropy.Tree):
 	    Tree instance containing array histories.
 	  tree_namespace (Dendropy.TaxonNamespace):
@@ -97,15 +94,15 @@ def tick(age_dict, tree, tree_namespace, spacer_n, array_name, events_dict,
 	  all_arrays (list):
 	    list of all Array instances
 	  loss_rate (int):
-	    Percent rate at which to remove old arrays from the age_dict 
-	    after they are the source of a new array
+	    Percent rate at which to remove old arrays from the 
+	    active_arrays after they are the source of a new array
 
 	Returns:
 	  A modified form of the chosen array as an Array class instance and
 	  other updates objects.
 	"""
 
-	source_array = age_dict[random.choice([i for i in age_dict.keys()])]
+	source_array = random.choice(active_arrays)
 	event = events_dict[random.randint(1,len(events_dict))]
 
 	array = Array(name=array_name, parent=source_array)
@@ -118,19 +115,15 @@ def tick(age_dict, tree, tree_namespace, spacer_n, array_name, events_dict,
 	else:
 		array = do_deletion(array)
 
-	# Add new array to age_dict and all_arrays
-	max_age = max([i for i in age_dict.keys()])
-	for i in range(max_age+1, max_age+array.age_weight+1):
-		age_dict[i] = array
-		array.age_dict_idxs.append(i)
-
+	# Add new array to active_arrays and all_arrays lists
+	active_arrays.append(array)
 	all_arrays.append(array)
 
-	# Check whether to remove source array from age_dict
+	# Check whether to remove source array from active_arrays
 	x = random.randint(1,100)
 	if x <= loss_rate:
-		for i in source_array.age_dict_idxs:
-			del age_dict[i]
+		del_idx = active_arrays.index(source_array)
+		del active_arrays[del_idx]
 
 	# Add array relationships to tree
 
@@ -140,7 +133,7 @@ def tick(age_dict, tree, tree_namespace, spacer_n, array_name, events_dict,
 	tree.find_node_with_taxon_label(source_array.name).add_child(new_node)
 
 
-	return age_dict, tree, spacer_n, array_name, all_arrays
+	return active_arrays, tree, spacer_n, array_name, all_arrays
 
 
 def do_acquisition(array, spacer_n):
@@ -199,21 +192,19 @@ def main(args):
 		random.seed(args.seed)	
 
 	spacer_n = 1 # Track ID of spacers
-	total_age = 1 # Track 
 	array_name = 1
-	age_dict = {}
+	active_arrays = []
 	events_dict = {}
 
 	init_array = Array(name=array_name)
+	array_name+=1
+	
 	for _ in range(args.initial_length):
 		init_array.spacers.insert(0,spacer_n)
 		spacer_n+=1
 	all_arrays = [init_array]
+	active_arrays = [init_array]
 	
-	for _ in range(init_array.age_weight):
-		age_dict[total_age] = init_array
-		init_array.age_dict_idxs.append(total_age)
-		total_age+=1
 
 	i = 1
 	for _ in range(args.acquisition):
@@ -235,8 +226,8 @@ def main(args):
 	tree.seed_node.add_child(first_node)
 
 	for _ in range(args.num_events):
-		age_dict, tree, spacer_n, array_name, all_arrays = tick(
-			age_dict, tree, tree_namespace, spacer_n, array_name, events_dict,
+		active_arrays, tree, spacer_n, array_name, all_arrays = tick(
+			active_arrays, tree, tree_namespace, spacer_n, array_name, events_dict,
 			all_arrays, args.loss_rate)
 
 	for a in all_arrays:
