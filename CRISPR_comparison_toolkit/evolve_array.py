@@ -27,6 +27,9 @@ def cmdline_args():
 		array and performs a simple in silico evolution process."
 		)
 
+	p.add_argument(
+		"-s", "--seed", type=int, metavar="", help="Set seed for consistency")
+
 	required = p.add_argument_group('Required arguments')
 	required.add_argument(
 		"-n", "--num-events", required = True, type=int, metavar="",
@@ -57,14 +60,83 @@ def cmdline_args():
 	return p.parse_args()
 
 
+def tick(age_dict, spacer_n, events_dict):
+	"""Choose an event and return the resulting spacer.
+	
+	Picks an existing array to modify and an event at random. Creates a
+	modified copy of the chosen array according to the event chosen and
+	returns the modified copy of the array
+
+	Args:
+	  age_dict (dict of Array):
+		dict with all existing Array instances.
+	  spacer_n (int):
+		Next spacer ID to use.
+	  events_dict (dict):
+	    Dict to look up to which event a selected random number
+	    corresponds
+
+	Returns:
+	  A modified form of the chosen array as an Array class instance.
+	"""
+	if args.seed:
+		random.seed(args.seed)
+	
+	source_array = age_dict[random.randint(1,len(age_dict)+1)]
+	event = events_dict[random.randint(1,len(events_dict)+1)]
+
+	if event == "Acquisition":
+		array = do_acquisition(source_array, spacer_n)
+	elif event == "Trailer_loss":
+		array = do_trailer_loss(source_array)
+	else:
+		array = do_deletion(source_array)
+
+	return array
+
+
+def do_acquisition(source_array, spacer_n):
+	pass
+
+def do_trailer_loss(source_array):
+	pass
+	
+def do_deletion(source_array):
+	pass
+
+
 def main(args):
 
-	spacer_n = 1
+	spacer_n = 1 # Track ID of spacers
+	total_age = 1 # Track 
+	age_dict = {}
+	events_dict = {}
+
 	init_array = Array()
 	for _ in range(args.initial_length):
 		init_array.spacers.append(spacer_n)
 		spacer_n+=1
 	
+	for _ in range(init_array.age_weight):
+		age_dict[total_age] = init_array
+		total_age+=1
+
+	i = 1
+	for _ in range(args.acquisition):
+		events_dict[i] = 'Acquisition'
+		i+=1
+	for _ in range(args.trailer_loss):
+		events_dict[i] = 'Trailer_loss'
+		i+=1
+	for _ in range(args.deletion):
+		events_dict[i] = 'Deletion'
+		i+=1
+
+	x = tick(age_dict, spacer_n, events_dict)
+
+	# print(vars(x))
+
+
 
 
 
