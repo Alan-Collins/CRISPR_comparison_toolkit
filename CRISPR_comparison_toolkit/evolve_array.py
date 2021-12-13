@@ -14,10 +14,14 @@ class Array():
 		age_weight (int):
 		  Age of the array.
 	"""
-	def __init__(self, parent=None, age_weight=10):
+	def __init__(self, parent=None):
 		self.parent = parent
-		self.age_weight = age_weight
-		self.spacers = []
+		if self.parent:
+			self.age_weight = int(parent.age_weight*1.2)
+			self.spacers = [int(i) for i in parent.spacers]
+		else:
+			self.age_weight = 10
+			self.spacers = []
 		
 
 def cmdline_args():
@@ -85,24 +89,70 @@ def tick(age_dict, spacer_n, events_dict):
 	source_array = age_dict[random.randint(1,len(age_dict)+1)]
 	event = events_dict[random.randint(1,len(events_dict)+1)]
 
+	array = Array(parent=source_array)
+
 	if event == "Acquisition":
-		array = do_acquisition(source_array, spacer_n)
+		array, spacer_n = do_acquisition(array, spacer_n)
 	elif event == "Trailer_loss":
-		array = do_trailer_loss(source_array)
+		array = do_trailer_loss(array)
 	else:
-		array = do_deletion(source_array)
+		array = do_deletion(array)
+
+	print(array.spacers)
+	sys.exit()
+
+	return array, spacer_n
+
+
+def do_acquisition(array, spacer_n):
+	array.spacers.append(spacer_n)
+	spacer_n+=1
+
+	return array, spacer_n
+
+
+def do_trailer_loss(array):
+	del array.spacers[-1]
+
+	return array
+	
+def do_deletion(array):
+	# Define parameters for a normal distribution
+	# This distribution will be used to select random spacers that
+	# tend to be close to the middle of the array
+	array_len = len(array.spacers)
+	# Define the central point of the array
+	mean = array_len/2
+
+	# Set the level of variation from the middle of the array
+	stddev = array_len/6
+
+	a = pick_normal_index(array_len, mean, stddev)
+	b = pick_normal_index(array_len, mean, stddev)
+
+	# To ensure a deletion takes place
+	while b == a:
+		b = pick_normal_index(array_len, mean, stddev)
+
+	if a > b:
+		a,b = b,a
+
+	spacers_to_del = [i for i in range(a,b+1)]
+
+	print(a,b)
+
+	array.spacers = [
+		i for n,i in enumerate(array.spacers) if n not in spacers_to_del]
 
 	return array
 
 
-def do_acquisition(source_array, spacer_n):
-	pass
+def pick_normal_index(max, mean, stddev):
 
-def do_trailer_loss(source_array):
-	pass
-	
-def do_deletion(source_array):
-	pass
+	while True: # Keep going until a valid index is chosen
+		idx = int(random.normalvariate(mean, stddev))
+		if 0 <= idx <= max:
+			return idx
 
 
 def main(args):
@@ -132,7 +182,7 @@ def main(args):
 		events_dict[i] = 'Deletion'
 		i+=1
 
-	x = tick(age_dict, spacer_n, events_dict)
+	x, spacer_n = tick(age_dict, spacer_n, events_dict)
 
 	# print(vars(x))
 
