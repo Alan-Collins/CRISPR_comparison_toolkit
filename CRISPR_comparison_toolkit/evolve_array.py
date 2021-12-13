@@ -11,12 +11,14 @@ class Array():
 	"""Store information about arrays.
 
 	Attributes:
+		name (str):
+		  Array ID
 		parent (Array):
 		  The array from which this array was derived.
-		age_weight (int):
-		  Age of the array.
+		spacers (list):
+		  The spacers in this array.
 	"""
-	def __init__(self, name=0, parent=None):
+	def __init__(self, name, parent=None):
 		self.name = str(name)
 		self.parent = parent
 		if self.parent:
@@ -192,13 +194,13 @@ def main(args):
 		random.seed(args.seed)	
 
 	spacer_n = 1 # Track ID of spacers
-	array_name = 1
+	array_name = 0
 	active_arrays = []
 	events_dict = {}
 
 	init_array = Array(name=array_name)
 	array_name+=1
-	
+
 	for _ in range(args.initial_length):
 		init_array.spacers.insert(0,spacer_n)
 		spacer_n+=1
@@ -218,11 +220,11 @@ def main(args):
 		i+=1
 
 	tree_namespace = dendropy.TaxonNamespace(
-		[str(i) for i in range(1, args.num_events+1)])
+		[str(i) for i in range(args.num_events+1)])
 	tree = dendropy.Tree(taxon_namespace=tree_namespace)
 
 	first_node = dendropy.Node()
-	first_node.taxon = tree_namespace.get_taxon(1)
+	first_node.taxon = tree_namespace.get_taxon('0')
 	tree.seed_node.add_child(first_node)
 
 	for _ in range(args.num_events):
