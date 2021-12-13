@@ -14,10 +14,11 @@ class Array():
 		age_weight (int):
 		  Age of the array.
 	"""
-	def __init__(self, parent=None):
+	def __init__(self, name=0, parent=None):
+		self.name = name
 		self.parent = parent
 		if self.parent:
-			self.age_weight = int(parent.age_weight*1.2)
+			self.age_weight = int(parent.age_weight*1.5)
 			self.spacers = [int(i) for i in parent.spacers]
 		else:
 			self.age_weight = 10
@@ -64,7 +65,7 @@ def cmdline_args():
 	return p.parse_args()
 
 
-def tick(age_dict, spacer_n, events_dict):
+def tick(age_dict, spacer_n, array_name, events_dict):
 	"""Choose an event and return the resulting spacer.
 	
 	Picks an existing array to modify and an event at random. Creates a
@@ -76,6 +77,8 @@ def tick(age_dict, spacer_n, events_dict):
 		dict with all existing Array instances.
 	  spacer_n (int):
 		Next spacer ID to use.
+	  array_name (int):
+	    The ID to assign to newly create Array instances.
 	  events_dict (dict):
 	    Dict to look up to which event a selected random number
 	    corresponds
@@ -89,7 +92,8 @@ def tick(age_dict, spacer_n, events_dict):
 	source_array = age_dict[random.randint(1,len(age_dict)+1)]
 	event = events_dict[random.randint(1,len(events_dict)+1)]
 
-	array = Array(parent=source_array)
+	array = Array(name=array_name, parent=source_array)
+	array_name+=1
 
 	if event == "Acquisition":
 		array, spacer_n = do_acquisition(array, spacer_n)
@@ -98,14 +102,17 @@ def tick(age_dict, spacer_n, events_dict):
 	else:
 		array = do_deletion(array)
 
-	print(array.spacers)
-	sys.exit()
+	# Add new array to age_dict
 
-	return array, spacer_n
+	for i in range(len(age_dict)+1, len(age_dict)+array.age_weight+1):
+		age_dict[i] = array
+
+
+	return age_dict, spacer_n, array_name
 
 
 def do_acquisition(array, spacer_n):
-	array.spacers.append(spacer_n)
+	array.spacers.insert(0,spacer_n)
 	spacer_n+=1
 
 	return array, spacer_n
@@ -116,6 +123,7 @@ def do_trailer_loss(array):
 
 	return array
 	
+
 def do_deletion(array):
 	# Define parameters for a normal distribution
 	# This distribution will be used to select random spacers that
@@ -159,12 +167,13 @@ def main(args):
 
 	spacer_n = 1 # Track ID of spacers
 	total_age = 1 # Track 
+	array_name = 1
 	age_dict = {}
 	events_dict = {}
 
-	init_array = Array()
+	init_array = Array(name=array_name)
 	for _ in range(args.initial_length):
-		init_array.spacers.append(spacer_n)
+		init_array.spacers.insert(0,spacer_n)
 		spacer_n+=1
 	
 	for _ in range(init_array.age_weight):
@@ -182,9 +191,12 @@ def main(args):
 		events_dict[i] = 'Deletion'
 		i+=1
 
-	x, spacer_n = tick(age_dict, spacer_n, events_dict)
+	for _ in range(args.num_events):
+		age_dict, spacer_n, array_name = tick(
+			age_dict, spacer_n, array_name, events_dict)
 
-	# print(vars(x))
+	for i in set(list(age_dict.values())):
+		print(i.name, i.spacers)
 
 
 
