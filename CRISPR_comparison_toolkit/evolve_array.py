@@ -107,6 +107,12 @@ def tick(active_arrays, tree, tree_namespace, spacer_n, array_name, events_dict,
 	source_array = random.choice(active_arrays)
 	event = events_dict[random.randint(1,len(events_dict))]
 
+	# Don't allow deletion if array is only 1 spacer long
+
+	if len(source_array.spacers) == 1:
+		while event == "Deletion":
+			event = events_dict[random.randint(1,len(events_dict))]
+
 	array = Array(name=array_name, parent=source_array)
 	array_name+=1
 
@@ -165,14 +171,14 @@ def do_deletion(array):
 	a = pick_normal_index(array_len, mean, stddev)
 	b = pick_normal_index(array_len, mean, stddev)
 
-	# To ensure a deletion takes place
-	while b == a:
+	# To ensure a deletion takes place, but not the whole array
+	while b == a or (a in [0, array_len] and b in [0, array_len]):
 		b = pick_normal_index(array_len, mean, stddev)
 
 	if a > b:
 		a,b = b,a
 
-	spacers_to_del = [i for i in range(a,b+1)]
+	spacers_to_del = [i for i in range(a,b)]
 
 	array.spacers = [
 		i for n,i in enumerate(array.spacers) if n not in spacers_to_del]
