@@ -238,7 +238,7 @@ def main(args):
 			active_arrays, tree, tree_namespace, spacer_n, array_name, events_dict,
 			all_arrays, args.loss_rate)
 
-	for a in all_arrays:
+	for a in active_arrays:
 		print(str(a.name) + '\t' + ' '.join([str(i) for i in a.spacers]))
 
 
