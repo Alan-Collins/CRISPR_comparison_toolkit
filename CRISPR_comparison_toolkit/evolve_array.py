@@ -6,26 +6,8 @@ import random
 
 import dendropy
 
+from cctk import array_parsimony, tree_operations
 
-class Array():
-	"""Store information about arrays.
-
-	Attributes:
-		name (str):
-		  Array ID
-		parent (Array):
-		  The array from which this array was derived.
-		spacers (list):
-		  The spacers in this array.
-	"""
-	def __init__(self, name, parent=None):
-		self.name = str(name)
-		self.parent = parent
-		if self.parent:
-			self.spacers = [int(i) for i in parent.spacers]
-		else:
-			self.spacers = []
-		
 
 def cmdline_args():
 
@@ -113,7 +95,8 @@ def tick(active_arrays, tree, tree_namespace, spacer_n, array_name, events_dict,
 		while event == "Deletion":
 			event = events_dict[random.randint(1,len(events_dict))]
 
-	array = Array(name=array_name, parent=source_array)
+	array = array_parsimony.Array(str(array_name), spacers=source_array.spacers,
+		extant=False)
 	array_name+=1
 
 	if event == "Acquisition":
@@ -136,9 +119,9 @@ def tick(active_arrays, tree, tree_namespace, spacer_n, array_name, events_dict,
 	# Add array relationships to tree
 
 	new_node = dendropy.Node()
-	new_node.taxon = tree_namespace.get_taxon(array.name)
+	new_node.taxon = tree_namespace.get_taxon(array.id)
 
-	tree.find_node_with_taxon_label(source_array.name).add_child(new_node)
+	tree.find_node_with_taxon_label(source_array.id).add_child(new_node)
 
 
 	return active_arrays, tree, spacer_n, array_name, all_arrays
@@ -204,7 +187,7 @@ def main(args):
 	active_arrays = []
 	events_dict = {}
 
-	init_array = Array(name=array_name)
+	init_array = array_parsimony.Array(str(array_name), extant=False)
 	array_name+=1
 
 	for _ in range(args.initial_length):
@@ -239,7 +222,7 @@ def main(args):
 			all_arrays, args.loss_rate)
 
 	for a in active_arrays:
-		print(str(a.name) + '\t' + ' '.join([str(i) for i in a.spacers]))
+		print(str(a.id) + '\t' + ' '.join([str(i) for i in a.spacers]))
 
 
 	print(tree.as_ascii_plot(show_internal_node_labels=True))
