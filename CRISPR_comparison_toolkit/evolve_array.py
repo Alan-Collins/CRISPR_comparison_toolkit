@@ -6,7 +6,7 @@ import random
 
 import dendropy
 
-from cctk import array_parsimony, tree_operations
+from cctk import array_parsimony, tree_operations, colour_schemes
 
 
 def cmdline_args():
@@ -55,7 +55,7 @@ def cmdline_args():
 
 def tick(active_arrays, tree, tree_namespace, spacer_n, array_name, events_dict,
 	all_arrays, loss_rate):
-	"""Choose an event and return the resulting spacer.
+	"""Choose an event and return the resulting array.
 	
 	Picks an existing array to modify and an event at random. Creates a
 	modified copy of the chosen array according to the event chosen and
@@ -95,7 +95,8 @@ def tick(active_arrays, tree, tree_namespace, spacer_n, array_name, events_dict,
 		while event == "Deletion":
 			event = events_dict[random.randint(1,len(events_dict))]
 
-	array = array_parsimony.Array(str(array_name), spacers=source_array.spacers,
+	array = array_parsimony.Array(str(array_name), 
+		spacers=[i for i in source_array.spacers],
 		extant=False)
 	array_name+=1
 
@@ -244,14 +245,40 @@ def main(args):
 			active_arrays, tree, tree_namespace, spacer_n, array_name, events_dict,
 			all_arrays, args.loss_rate)
 
-	for a in active_arrays:
+	for a in all_arrays:
 		print(str(a.id) + '\t' + ' '.join([str(i) for i in a.spacers]))
 
 	new_tree = summarise_tree(tree)
 
+	for node in new_tree.postorder_node_iter():
+		if node == new_tree.seed_node: # Skip seed node
+			continue
+		node.edge_length = 5
+
+
 	print(tree.as_ascii_plot(show_internal_node_labels=True))
 
 	print(new_tree.as_ascii_plot(show_internal_node_labels=True))
+
+	# Plot tree
+
+	all_spacers = []
+	for array in active_arrays:
+		all_spacers += array.spacers
+
+	all_spacers = set(all_spacers)
+
+	ncols = len(all_spacers)
+
+	col_scheme = colour_schemes.choose_col_scheme(ncols)
+
+	spacer_colours = {i: j for i,j in zip(all_spacers, col_scheme)}
+
+	array_dict = {a.id: a for a in all_arrays}
+
+	tree_operations.plot_tree(new_tree, array_dict, args.outdir+"test.png", spacer_colours)
+
+
 
 
 
