@@ -291,8 +291,10 @@ def main(args):
 
 	final_array_dict = remove_lost_spacers(array_dict, active_spacers)
 
-	tree_operations.plot_tree(new_tree, final_array_dict, args.outdir+"test.png", spacer_colours)
+	# tree_operations.plot_tree(new_tree, final_array_dict, args.outdir+"test.png", spacer_colours)
 
+	tree_operations.plot_tree_temp(
+		new_tree, final_array_dict, args.outdir+"test_temp.png", spacer_colours)
 
 
 
