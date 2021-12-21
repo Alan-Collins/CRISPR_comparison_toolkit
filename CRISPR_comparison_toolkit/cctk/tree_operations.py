@@ -1,6 +1,7 @@
 from string import ascii_lowercase
 from math import ceil, log
 from itertools import product
+import matplotlib.pyplot as plt
 
 
 def create_internal_node_ids(n_leaves, prefix="", chars="letters"):
