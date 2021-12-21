@@ -3,6 +3,7 @@
 import sys
 import argparse
 import random
+from copy import deepcopy
 
 import dendropy
 
@@ -199,6 +200,15 @@ def summarise_tree(tree):
 	return new_tree
 
 
+def remove_lost_spacers(array_dict, active_spacers):
+	"""Remove spacers from array dict that are not present in final arrays"""
+
+	new_dict = deepcopy(array_dict)
+
+	for array in new_dict.values():
+		array.spacers = [i for i in array.spacers if i in active_spacers]
+
+	return new_dict
 
 
 def main(args):
@@ -262,21 +272,26 @@ def main(args):
 
 	# Plot tree
 
-	all_spacers = []
+	active_spacers = []
 	for array in active_arrays:
-		all_spacers += array.spacers
+		active_spacers += array.spacers
 
-	all_spacers = set(all_spacers)
+	active_spacers = set(active_spacers)
 
-	ncols = len(all_spacers)
+	ncols = len(active_spacers)
 
 	col_scheme = colour_schemes.choose_col_scheme(ncols)
 
-	spacer_colours = {i: j for i,j in zip(all_spacers, col_scheme)}
+	spacer_colours = {i: j for i,j in zip(active_spacers, col_scheme)}
 
 	array_dict = {a.id: a for a in all_arrays}
 
-	tree_operations.plot_tree(new_tree, array_dict, args.outdir+"test.png", spacer_colours)
+	# Only keep spacers that there is evidence for the existence of in
+	# final arrays
+
+	final_array_dict = remove_lost_spacers(array_dict, active_spacers)
+
+	tree_operations.plot_tree(new_tree, final_array_dict, args.outdir+"test.png", spacer_colours)
 
 
 
