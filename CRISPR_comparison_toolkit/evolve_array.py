@@ -177,6 +177,29 @@ def pick_normal_index(max, mean, stddev):
 			return idx
 
 
+def summarise_tree(tree):
+	""" Removes nodes with only a single descendant from the given tree.
+	"""
+
+	new_tree = dendropy.Tree(tree)
+
+	for node in new_tree.postorder_node_iter():
+		if node == new_tree.seed_node: # Skip seed node
+			continue
+		if len(node.child_nodes()) == 1:
+			current_child = node.child_nodes()[0]
+			# Retrive existing children of parent
+			parent_children = node.parent_node.child_nodes()
+			# Find index of current node in parents child_nodes
+			idx = parent_children.index(node)
+			parent_children[idx] = current_child
+			node.parent_node.set_child_nodes(parent_children)
+
+	return new_tree
+
+
+
+
 def main(args):
 
 	if args.seed:
@@ -224,8 +247,11 @@ def main(args):
 	for a in active_arrays:
 		print(str(a.id) + '\t' + ' '.join([str(i) for i in a.spacers]))
 
+	new_tree = summarise_tree(tree)
 
 	print(tree.as_ascii_plot(show_internal_node_labels=True))
+
+	print(new_tree.as_ascii_plot(show_internal_node_labels=True))
 
 
 
