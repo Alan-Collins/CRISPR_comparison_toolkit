@@ -255,8 +255,8 @@ def main(args):
 			active_arrays, tree, tree_namespace, spacer_n, array_name, events_dict,
 			all_arrays, args.loss_rate)
 
-	for a in all_arrays:
-		print(str(a.id) + '\t' + ' '.join([str(i) for i in a.spacers]))
+	# for a in all_arrays:
+	# 	print(str(a.id) + '\t' + ' '.join([str(i) for i in a.spacers]))
 
 	new_tree = summarise_tree(tree)
 
@@ -266,7 +266,7 @@ def main(args):
 		node.edge_length = 5
 
 
-	print(tree.as_ascii_plot(show_internal_node_labels=True))
+	# print(tree.as_ascii_plot(show_internal_node_labels=True))
 
 	print(new_tree.as_ascii_plot(show_internal_node_labels=True))
 
