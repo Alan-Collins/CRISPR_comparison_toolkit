@@ -97,345 +97,44 @@ def scale_branches(tree, max_len=10):
 	return tree
 
 
-def set_initial_loc(tree, node_locs, nodes_to_revisit, max_depth, brlen_scale):
-	"""set variables to start working through nodes in subtree"""
+def draw_branches(tree, node_locs, ax, branch_lengths=True, brlen_scale=0.5):
 
-	# pick the first node to revisit
-	node = tree.find_node_with_taxon_label(
-		list(nodes_to_revisit.keys())[0])
-	# start drawing from the first leaf in the subtree
-	first_node = node.leaf_nodes()[0]
-	second_node = first_node.sibling_nodes()[0]
-	# Set the y position to the one reserved for this subtree
-	highest_y = nodes_to_revisit[node.taxon.label]
-	
-	x1 = (max_depth-first_node.root_distance)*brlen_scale
-	x2 = ((max_depth-first_node.root_distance)*brlen_scale
-		+ first_node.edge_length*brlen_scale)
-	y1 = highest_y
-	y2 = highest_y
-	position = [x1, x2, y1, y2]
-	node_locs[first_node.taxon.label] = position
-
-	return node_locs, node, first_node, second_node
-
-
-def find_node_locs(tree, brlen_scale=0.5, branch_spacing=2.3):
-	# Find tree dimensions
-	max_depth = max(tree.calc_node_root_distances(
-		return_leaf_distances_only=True))
-	tree_height = len(tree.nodes())
-
-	# Start at the leaf furthest from the root for easier scaling.
-	for node in tree.postorder_node_iter():
-		if node.root_distance == max_depth:
-			start_node = node
-			break
-
-	node_locs = {} # Store where each node is located to draw lines to it.
-
-	start_position = [0, start_node.edge_length*brlen_scale,0, 0]
-	node_locs[start_node.taxon.label] = start_position
-
-	node = start_node
-	highest_y = 0
-
-	# Store nodes with subtrees and the y value to start at for them
-	nodes_to_revisit = {}
-
-	while True: # Keep going until reaching the root triggers a break.
-
-		first_node = node
-		if not first_node.taxon.label in node_locs.keys():
-			node_locs[first_node.taxon.label] = position
-		if len(node.sibling_nodes())==1: # FIX when adding polytomy trees
-			if node.taxon.label not in nodes_to_revisit.keys():
-				second_node = node.sibling_nodes()[0]
-			else:
-				# We've seen this node before which mean this is a
-				# subtree to which we are returning
-				# Remove node from the list; we've finished its subtree
-				del nodes_to_revisit[node.taxon.label]
-				if len(nodes_to_revisit) == 0: 
-				# If not remaining subtrees exit loop 
-					break
-				
-				# Otherwise find start location for subtree
-				node_locs, node, first_node, second_node = set_initial_loc(
-					tree, node_locs, nodes_to_revisit, max_depth, brlen_scale)
-
-		else:
-			# We've reached the root. Check if any subtrees need to be 
-			# figured out.
-			if len(nodes_to_revisit) == 0: # No subtrees. Exit the loop
-				break
-			
-			# Otherwise find start location for subtree
-			node_locs, node, first_node, second_node = set_initial_loc(
-					tree, node_locs, nodes_to_revisit, max_depth, brlen_scale)
-
-		# Identify locations of components of this node
-
-		# figure out first branch location
-		x1, x2, y1, y2 = node_locs[first_node.taxon.label]
-
-		highest_y = max([highest_y,y2])
-		
-		# Figure out how much space is needed based on the number of leaves below this node
-		num_leaves = len(second_node.leaf_nodes())
-		num_internal = len([
-			i for i in second_node.levelorder_iter(lambda x: x.is_internal())])
-
-		if num_internal > 0:
-			num_internal += num_leaves
-
-			
-
-			x1 = (max_depth-second_node.parent_node.root_distance)*brlen_scale
-			x2 = ((max_depth-second_node.parent_node.root_distance)*brlen_scale
-				+ second_node.edge_length*brlen_scale)
-			y1 = highest_y+branch_spacing
-			y2 = highest_y+branch_spacing
-			position = [x1, x2, y1, y2]
-
-			node_locs[second_node.parent_node.taxon.label] = position
-
-			y2 = highest_y+num_internal*branch_spacing
-
-			# Leave space for subtree
-			highest_y = highest_y+(num_internal+1)*branch_spacing
-
-
-			x1 = (max_depth-second_node.root_distance)*brlen_scale
-			x2 = ((max_depth-second_node.root_distance)*brlen_scale
-				+ second_node.edge_length*brlen_scale)
-			y1 = y2
-			y2 = y2
-			position = [x1, x2, y1, y2]
-
-			if second_node.taxon.label not in node_locs.keys():
-				node_locs[second_node.taxon.label] = position
-
-			# Add info for second node to later draw subtree
-			nodes_to_revisit[second_node.taxon.label] = (
-				y2-((num_internal-1)*branch_spacing)+branch_spacing)
-
-		else:
-			y2 = highest_y+2*branch_spacing
-
-			highest_y = y2
-
-			x1 = (max_depth-second_node.root_distance)*brlen_scale
-			x2 = ((max_depth-second_node.root_distance)*brlen_scale
-				+ second_node.edge_length*brlen_scale)
-			y1 = y2
-			y2 = y2
-			position = [x1, x2, y1, y2]
-			if second_node.taxon.label not in node_locs.keys():
-				node_locs[second_node.taxon.label] = position
-
-			# figure out parent node location
-
-			x1 = (max_depth-second_node.parent_node.root_distance)*brlen_scale
-			x2 = ((max_depth-second_node.parent_node.root_distance)*brlen_scale
-				+ second_node.edge_length*brlen_scale)
-			y1 = y2 - branch_spacing
-			y2 = y2 - branch_spacing
-			position = [x1, x2, y1, y2]
-
-
-		node = second_node.parent_node
-
-	return node_locs
-
-
-def find_node_locs_old(tree, brlen_scale=0.5, branch_spacing=2.3):
-	# Find tree dimensions
-	max_depth = max(tree.calc_node_root_distances(
-		return_leaf_distances_only=True))
-	tree_height = len(tree.nodes())
-
-	# Start at the leaf furthest from the root for easier scaling.
-	for node in tree.postorder_node_iter():
-		if node.root_distance == max_depth:
-			start_node = node
-			break
-
-	node_locs = {} # Store where each node is located to draw lines to it.
-
-	start_position = [0, start_node.edge_length*brlen_scale,0, 0]
-	node_locs[start_node.taxon.label] = start_position
-
-	node = start_node
-	highest_y = 0
-
-	# Store nodes with subtrees and the y value to start at for them
-	nodes_to_revisit = {}
-
-	while True: # Keep going until reaching the root triggers a break.
-
-		first_node = node
-		if not first_node.taxon.label in node_locs.keys():
-			node_locs[first_node.taxon.label] = position
-		if len(node.sibling_nodes())==1: # FIX when adding polytomy trees
-			if node.taxon.label not in nodes_to_revisit.keys():
-				second_node = node.sibling_nodes()[0]
-			else:
-				# Remove that from the list as we've finished its tree
-				del nodes_to_revisit[node.taxon.label]
-				if len(nodes_to_revisit) == 0:
-					break
-				
-				# start the next node to revisit
-				node = tree.find_node_with_taxon_label(
-				list(nodes_to_revisit.keys())[0])
-				# start from a random leaf in the subtree 
-				first_node = node.leaf_nodes()[0]
-				second_node = first_node.sibling_nodes()[0]
-				# Set the y position reserved for this subtree
-				highest_y = y2 = nodes_to_revisit[node.taxon.label]
-
-				x1 = (max_depth-first_node.root_distance)*brlen_scale
-				x2 = ((max_depth-first_node.root_distance)*brlen_scale
-					+ first_node.edge_length*brlen_scale)
-				y1 = y2
-				y2 = y2
-				position = [x1, x2, y1, y2]
-				node_locs[first_node.taxon.label] = position
-
-		else:
-			# We've reached the root. Check if any subtrees need to be 
-			# figured out.
-			if len(nodes_to_revisit) == 0: # No subtrees. Exit the loop
-				break
-			
-			# start the first node to revisit
-			node = tree.find_node_with_taxon_label(
-				list(nodes_to_revisit.keys())[0])
-			# start drawing from the first leaf in the subtree
-			first_node = node.child_nodes()[0].leaf_nodes()[0]
-			second_node = first_node.sibling_nodes()[0]
-			# Set the y position reserved for this subtree
-			highest_y = y2 = nodes_to_revisit[node.taxon.label]
-			
-			x1 = (max_depth-first_node.root_distance)*brlen_scale
-			x2 = ((max_depth-first_node.root_distance)*brlen_scale
-				+ first_node.edge_length*brlen_scale)
-			y1 = y2
-			y2 = y2
-			position = [x1, x2, y1, y2]
-			node_locs[first_node.taxon.label] = position
-
-		# figure out first branch location
-		x1, x2, y1, y2 = node_locs[first_node.taxon.label]
-
-		highest_y = max([highest_y,y2])
-		
-		num_leaves = len(second_node.leaf_nodes()) # Figure out how much space is needed based on the number of leaves below this node
-		num_internal = len([i for i in second_node.levelorder_iter(lambda x: x.is_internal())])
-
-		if num_internal > 0:
-			num_internal += num_leaves
-
-			x1 = (max_depth-second_node.parent_node.root_distance)*brlen_scale
-			x2 = ((max_depth-second_node.parent_node.root_distance)*brlen_scale
-				+ second_node.edge_length*brlen_scale)
-			y1 = highest_y+branch_spacing
-			y2 = highest_y+branch_spacing
-			position = [x1, x2, y1, y2]
-
-			node_locs[second_node.parent_node.taxon.label] = position
-
-			y2 = highest_y+num_internal*branch_spacing
-
-			# Leave space for subtree
-			highest_y = highest_y+(num_internal+1)*branch_spacing
-
-
-			x1 = (max_depth-second_node.root_distance)*brlen_scale
-			x2 = ((max_depth-second_node.root_distance)*brlen_scale
-				+ second_node.edge_length*brlen_scale)
-			y1 = y2
-			y2 = y2
-			position = [x1, x2, y1, y2]
-
-			if second_node.taxon.label not in node_locs.keys():
-				node_locs[second_node.taxon.label] = position
-
-			# Add info for second node to later draw subtree
-			nodes_to_revisit[second_node.taxon.label] = (
-				y2-((num_internal-1)*branch_spacing)+branch_spacing)
-
-		else:
-			y2 = highest_y+2*branch_spacing
-
-			highest_y = y2
-
-			x1 = (max_depth-second_node.root_distance)*brlen_scale
-			x2 = ((max_depth-second_node.root_distance)*brlen_scale
-				+ second_node.edge_length*brlen_scale)
-			y1 = y2
-			y2 = y2
-			position = [x1, x2, y1, y2]
-			if second_node.taxon.label not in node_locs.keys():
-				node_locs[second_node.taxon.label] = position
-
-			# figure out parent node location
-
-			x1 = (max_depth-second_node.parent_node.root_distance)*brlen_scale
-			x2 = ((max_depth-second_node.parent_node.root_distance)*brlen_scale
-				+ second_node.edge_length*brlen_scale)
-			y1 = y2 - branch_spacing
-			y2 = y2 - branch_spacing
-			position = [x1, x2, y1, y2]
-
-
-		node = second_node.parent_node
-
-	return node_locs
-
-def draw_branches(tree, node_locs, ax, branch_lengths=True, brlen_scale=0.5,
-	branch_spacing=2.3):
-
-	for array, location in node_locs.items():
+	for name, location in node_locs.items():
 		
 		# Add label first
-		x, _, y, _ = location
+		x, y = location
 		label_color = "#000000"
-		ax.text(x-0.4, y, array, ha='right', va='center_baseline', fontsize=15,
+		ax.text(x-0.4, y, name, ha='right', va='center_baseline', fontsize=15,
 			color=label_color)
 		
 		# then add branches
-		first_node = tree.find_node_with_taxon_label(array)
+		node = tree.find_node_with_taxon_label(name)
 
 		# First add branch lengths if user desires
 
 		if branch_lengths:
-			if first_node.edge_length != 0:
-				ax.text(x+(first_node.edge_length/2)*brlen_scale, y-0.6,
-					first_node.edge_length, ha='center', va='top', fontsize=12)
+			if node.edge_length != 0:
+				ax.text(x + (node.edge_length/2)*brlen_scale, y-0.6,
+					node.edge_length, ha='center', va='top', fontsize=12)
 		
-		# Draw first branch
+		# Draw branch from this node to its parent
 		
-		x1, x2, y1, y2 = node_locs[first_node.taxon.label]
+		# identify x location for parent depth if the parent is not seed
+		if node.parent_node != tree.seed_node:
+			x2 = node_locs[node.parent_node.taxon.label][0]
+		else:
+			x2 = x + brlen_scale
 
-		ax.plot([x1, x2], [y1, y2], color='black', linewidth = 1,
+		ax.plot([x, x2], [y, y], color='black', linewidth = 1,
 			solid_capstyle="butt")
 
-		if len(first_node.sibling_nodes()) > 0:
-			second_node = first_node.sibling_nodes()[0]
-			# draw second branch
-
-			x1, x2, y1, y2 = node_locs[second_node.taxon.label]
-
-			ax.plot([x1, x2], [y1, y2], color='black', linewidth = 1,
-				solid_capstyle="butt")
-
-			# draw line between branches
-
-			x = node_locs[second_node.taxon.label][1]
-			y1 = node_locs[first_node.taxon.label][2]
-			y2 = node_locs[second_node.taxon.label][2]
+		# If internal node, draw line connecting lines to children
+		if node.is_internal():
+			child_locations = [
+				node_locs[i.taxon.label] for i in node.child_nodes()]
+			# Draw line between the highest and smallest child y value
+			y1 = max([i[1] for i in child_locations])
+			y2 = min([i[1] for i in child_locations])
 
 			ax.plot([x, x], [y1, y2], color='black', linewidth = 1,
 				solid_capstyle="butt")
@@ -443,11 +142,48 @@ def draw_branches(tree, node_locs, ax, branch_lengths=True, brlen_scale=0.5,
 	return ax
 
 
+def yield_nodes(node):
+	""" Work through a tree or subtree, yield the taxon labels of nodes
+	"""
+	if node.is_internal():
+		# decide when to insert this node among its children
+		# Should be about half way through its list of child nodes
+		label_loc = int(len(node.child_nodes())/2)-1
+		for i, n in enumerate(node.child_nodes()):
+			for x in yield_nodes(n):
+				yield x
+			if i == label_loc:
+				yield node.taxon.label
+
+	else:
+		yield node.taxon.label
+
+
+def find_node_locs(tree, brlen_scale=0.5, branch_spacing=2.3):
+
+	node_list = [n for n in yield_nodes(tree.seed_node.child_nodes()[0])]
+
+	node_locs = {}
+
+	# Prepare tree for root distance queries
+	tree.calc_node_root_distances(
+		return_leaf_distances_only=False)
+
+	for i, n in enumerate(node_list):
+		node = tree.find_node_with_taxon_label(n)
+		x_position = -node.root_distance*brlen_scale
+		y_position = i*branch_spacing
+		node_locs[n] = (x_position, y_position)
+
+	return node_locs
+
+
 def plot_tree_temp(tree, array_dict, filename, spacer_cols_dict, 
 	branch_lengths=False, emphasize_diffs=False, dpi=600, 
 	no_align_cartoons=False, no_align_labels=False, fade_ancestral=False):
 
 	node_locs = find_node_locs(tree)
+	print(node_locs)
 	
 	fig, ax = plt.subplots()
 
@@ -456,7 +192,7 @@ def plot_tree_temp(tree, array_dict, filename, spacer_cols_dict,
 	plt.axis('off')
 	plt.tight_layout()
 
-	plt.show()
+	plt.savefig(filename)
 
 
 def plot_tree(tree, array_dict, filename, spacer_cols_dict, 
