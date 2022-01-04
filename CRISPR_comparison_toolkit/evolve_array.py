@@ -261,12 +261,15 @@ def main(args):
 	new_tree = summarise_tree(tree)
 
 	for node in new_tree.postorder_node_iter():
-		if node == new_tree.seed_node: # Skip seed node
+		# Skip seed node and its child
+		if node == new_tree.seed_node:		 
 			continue
-		node.edge_length = 5
+		elif node == new_tree.seed_node.child_nodes()[0]:
+			node.edge_length = 0
+		else:
+			node.edge_length = 5
 
-
-	# print(tree.as_ascii_plot(show_internal_node_labels=True))
+	# print(new_tree.as_string(schema='newick'))
 
 	print(new_tree.as_ascii_plot(show_internal_node_labels=True))
 
