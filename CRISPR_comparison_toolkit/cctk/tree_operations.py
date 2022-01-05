@@ -97,25 +97,36 @@ def scale_branches(tree, max_len=10):
 	return tree
 
 
-def draw_branches(tree, node_locs, ax, branch_lengths=True, brlen_scale=0.5):
+def draw_branches(tree, node_locs, ax, branch_lengths=True, brlen_scale=0.5,
+	font_scale=1, line_scale=1, label_text_size=False, annot_text_size=False):
+
+	# Set font sizes based on scaling or user-provided override
+	if label_text_size:
+		node_font_size = label_text_size
+	else:
+		node_font_size = 2*font_scale
+	if annot_text_size:
+		brlen_font_size = annot_text_size
+	else:
+		brlen_font_size = 1.5*font_scale
 
 	for name, location in node_locs.items():
 		
 		# Add label first
 		x, y = location
 		label_color = "#000000"
-		ax.text(x-0.4, y, name, ha='right', va='center_baseline', fontsize=15,
-			color=label_color)
+		ax.text(x-0.4, y, name, ha='right', va='center_baseline', 
+			fontsize=node_font_size, color=label_color)
 		
 		# then add branches
 		node = tree.find_node_with_taxon_label(name)
 
 		# First add branch lengths if user desires
-
 		if branch_lengths:
 			if node.edge_length != 0:
 				ax.text(x + (node.edge_length/2)*brlen_scale, y-0.6,
-					node.edge_length, ha='center', va='top', fontsize=12)
+					node.edge_length, ha='center', va='top',
+					fontsize=brlen_font_size)
 		
 		# Draw branch from this node to its parent
 		
@@ -125,7 +136,7 @@ def draw_branches(tree, node_locs, ax, branch_lengths=True, brlen_scale=0.5):
 		else:
 			x2 = x + brlen_scale
 
-		ax.plot([x, x2], [y, y], color='black', linewidth = 1,
+		ax.plot([x, x2], [y, y], color='black', linewidth=line_scale,
 			solid_capstyle="butt")
 
 		# If internal node, draw line connecting lines to children
@@ -136,7 +147,7 @@ def draw_branches(tree, node_locs, ax, branch_lengths=True, brlen_scale=0.5):
 			y1 = max([i[1] for i in child_locations])
 			y2 = min([i[1] for i in child_locations])
 
-			ax.plot([x, x], [y1, y2], color='black', linewidth = 1,
+			ax.plot([x, x], [y1, y2], color='black', linewidth=line_scale,
 				solid_capstyle="butt")
 
 	return ax
@@ -179,20 +190,23 @@ def find_node_locs(tree, brlen_scale=0.5, branch_spacing=2.3):
 
 
 def plot_tree_temp(tree, array_dict, filename, spacer_cols_dict, 
-	branch_lengths=False, emphasize_diffs=False, dpi=600, 
-	no_align_cartoons=False, no_align_labels=False, fade_ancestral=False):
+	branch_lengths=False, emphasize_diffs=False, dpi=600, line_scale=1,
+	brlen_scale=0.5, branch_spacing=2.3, font_scale=1, fig_h=1, fig_w=1,
+	no_align_cartoons=False, no_align_labels=False, fade_ancestral=False,
+	label_text_size=False, annot_text_size=False):
 
 	node_locs = find_node_locs(tree)
-	print(node_locs)
 	
-	fig, ax = plt.subplots()
+	fig, ax = plt.subplots(figsize=(fig_w,fig_h))
 
-	ax = draw_branches(tree, node_locs, ax)
+	ax = draw_branches(tree, node_locs, ax, font_scale=font_scale,
+		line_scale=line_scale, branch_lengths=branch_lengths,
+		label_text_size=label_text_size, annot_text_size=annot_text_size)
 
 	plt.axis('off')
 	plt.tight_layout()
 
-	plt.savefig(filename)
+	plt.savefig(filename, dpi=dpi)
 
 
 def plot_tree(tree, array_dict, filename, spacer_cols_dict, 
