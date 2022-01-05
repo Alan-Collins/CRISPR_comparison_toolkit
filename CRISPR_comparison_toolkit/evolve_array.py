@@ -89,6 +89,10 @@ def cmdline_args():
 	plotting.add_argument(
 		"--brlen-scale", type=float, default=1, metavar="",
 		help="Branch lengths will be multiplied by this number. Default = 1")
+	plotting.add_argument(
+		"--align", action="store_true",
+		help="Align array labels and cartoons rather than drawing them at \
+		leaf tips and intenal nodes.")
 
 
 	return p.parse_args()
@@ -361,12 +365,14 @@ def main(args):
 	branch_spacing = 2.3*args.branch_spacing
 	brlen_scale=0.5*args.brlen_scale
 
-	tree_operations.plot_tree_temp(
+
+	tree_operations.plot_tree(
 		new_tree, final_array_dict, outdir+"test_temp.png",
 		spacer_colours, fig_h=fig_h, fig_w=fig_w, font_scale=font_scale,
 		dpi=dpi, line_scale=line_scale, branch_lengths=args.brlen_labels,
 		branch_spacing=branch_spacing, brlen_scale=brlen_scale,
-		label_text_size=label_text_size, annot_text_size=annot_text_size)
+		label_text_size=label_text_size, annot_text_size=annot_text_size,
+		align_labels=args.align)
 
 if __name__ == '__main__':
 	args = cmdline_args()
