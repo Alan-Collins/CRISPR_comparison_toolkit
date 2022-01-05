@@ -195,13 +195,15 @@ def plot_tree_temp(tree, array_dict, filename, spacer_cols_dict,
 	no_align_cartoons=False, no_align_labels=False, fade_ancestral=False,
 	label_text_size=False, annot_text_size=False):
 
-	node_locs = find_node_locs(tree)
+	node_locs = find_node_locs(tree, branch_spacing=branch_spacing,
+		brlen_scale=brlen_scale)
 	
 	fig, ax = plt.subplots(figsize=(fig_w,fig_h))
 
 	ax = draw_branches(tree, node_locs, ax, font_scale=font_scale,
 		line_scale=line_scale, branch_lengths=branch_lengths,
-		label_text_size=label_text_size, annot_text_size=annot_text_size)
+		label_text_size=label_text_size, annot_text_size=annot_text_size,
+		brlen_scale=brlen_scale)
 
 	plt.axis('off')
 	plt.tight_layout()
