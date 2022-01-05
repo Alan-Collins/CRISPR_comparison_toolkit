@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import os
 import argparse
 import random
 from copy import deepcopy
@@ -81,9 +82,30 @@ def cmdline_args():
 	plotting.add_argument(
 		"--branch-weight", type=float, default=1, metavar="",
 		help="Thickness of branch lines. Default = 1")
+	plotting.add_argument(
+		"--branch-spacing", type=float, default=1, metavar="",
+		help="The vertical space between branches will be multiplied by this \
+		number. Default = 1")
+	plotting.add_argument(
+		"--brlen-scale", type=float, default=1, metavar="",
+		help="Branch lengths will be multiplied by this number. Default = 1")
 
 
 	return p.parse_args()
+
+
+def check_outdir(outdir):
+	"""Check directory is a valid and add a trailing '/' if needed
+	"""
+	if not os.path.isdir(outdir):
+		raise Exception(
+			"{} is not a directory. Please make sure you ".format(outdir)
+			+ "provide an existing directory as the output dir.")
+
+	# Add / to outdir path if user forgot
+	outdir = outdir + '/' if outdir[-1] != '/' else outdir
+
+	return outdir
 
 
 def tick(active_arrays, tree, tree_namespace, spacer_n, array_name, events_dict,
@@ -245,6 +267,8 @@ def remove_lost_spacers(array_dict, active_spacers):
 
 def main(args):
 
+	outdir = check_outdir(args.outdir)
+
 	if args.seed:
 		random.seed(args.seed)	
 
@@ -336,13 +360,15 @@ def main(args):
 	line_scale = args.branch_weight
 	label_text_size = args.font_override_labels
 	annot_text_size = args.font_override_annotations
+	branch_spacing = 2.3*args.branch_spacing
+	brlen_scale=0.5*args.brlen_scale
 
 	tree_operations.plot_tree_temp(
-		new_tree, final_array_dict, args.outdir+"test_temp.png",
+		new_tree, final_array_dict, outdir+"test_temp.png",
 		spacer_colours, fig_h=fig_h, fig_w=fig_w, font_scale=font_scale,
 		dpi=dpi, line_scale=line_scale, branch_lengths=args.brlen_labels,
-		brlen_scale=0.5, branch_spacing=2.3, label_text_size=label_text_size,
-		annot_text_size=annot_text_size)
+		branch_spacing=branch_spacing, brlen_scale=brlen_scale,
+		label_text_size=label_text_size, annot_text_size=annot_text_size)
 
 
 
