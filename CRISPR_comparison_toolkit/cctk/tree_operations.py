@@ -97,62 +97,6 @@ def scale_branches(tree, max_len=10):
 	return tree
 
 
-def draw_branches(tree, node_locs, ax, branch_lengths=True, brlen_scale=0.5,
-	font_scale=1, line_scale=1, label_text_size=False, annot_text_size=False):
-
-	# Set font sizes based on scaling or user-provided override
-	if label_text_size:
-		node_font_size = label_text_size
-	else:
-		node_font_size = 2*font_scale
-	if annot_text_size:
-		brlen_font_size = annot_text_size
-	else:
-		brlen_font_size = 1.5*font_scale
-
-	for name, location in node_locs.items():
-		
-		# Add label first
-		x, y = location
-		label_color = "#000000"
-		ax.text(x-0.4, y, name, ha='right', va='center_baseline', 
-			fontsize=node_font_size, color=label_color)
-		
-		# then add branches
-		node = tree.find_node_with_taxon_label(name)
-
-		# First add branch lengths if user desires
-		if branch_lengths:
-			if node.edge_length != 0:
-				ax.text(x + (node.edge_length/2)*brlen_scale, y-0.6,
-					node.edge_length, ha='center', va='top',
-					fontsize=brlen_font_size)
-		
-		# Draw branch from this node to its parent
-		
-		# identify x location for parent depth if the parent is not seed
-		if node.parent_node != tree.seed_node:
-			x2 = node_locs[node.parent_node.taxon.label][0]
-		else:
-			x2 = x + brlen_scale
-
-		ax.plot([x, x2], [y, y], color='black', linewidth=line_scale,
-			solid_capstyle="butt")
-
-		# If internal node, draw line connecting lines to children
-		if node.is_internal():
-			child_locations = [
-				node_locs[i.taxon.label] for i in node.child_nodes()]
-			# Draw line between the highest and smallest child y value
-			y1 = max([i[1] for i in child_locations])
-			y2 = min([i[1] for i in child_locations])
-
-			ax.plot([x, x], [y1, y2], color='black', linewidth=line_scale,
-				solid_capstyle="butt")
-
-	return ax
-
-
 def yield_nodes(node):
 	""" Work through a tree or subtree, yield the taxon labels of nodes
 	"""
@@ -189,20 +133,119 @@ def find_node_locs(tree, brlen_scale=0.5, branch_spacing=2.3):
 	return node_locs
 
 
-def plot_tree_temp(tree, array_dict, filename, spacer_cols_dict, 
+def draw_branches(tree, node_locs, ax, branch_lengths=True, brlen_scale=0.5,
+	font_scale=1, line_scale=1, label_text_size=False, annot_text_size=False,
+	align_labels=False):
+
+	for name, location in node_locs.items():
+		x, y = location
+		node = tree.find_node_with_taxon_label(name)
+		
+		# Draw branch from this node to its parent
+		
+		# identify x location for parent depth if the parent is not seed
+		if node.parent_node != tree.seed_node:
+			x2 = node_locs[node.parent_node.taxon.label][0]
+		else:
+			x2 = x + brlen_scale
+
+		ax.plot([x, x2], [y, y], color='black', linewidth=line_scale,
+			solid_capstyle="butt")
+
+		# If internal node, draw line connecting lines to children
+		if node.is_internal():
+			child_locations = [
+				node_locs[i.taxon.label] for i in node.child_nodes()]
+			# Draw line between the highest and smallest child y value
+			y1 = max([i[1] for i in child_locations])
+			y2 = min([i[1] for i in child_locations])
+
+			ax.plot([x, x], [y1, y2], color='black', linewidth=line_scale,
+				solid_capstyle="butt")
+
+	return ax
+
+
+def add_labels(tree, node_locs, ax, branch_lengths=True,font_scale=1,
+	line_scale=1, label_text_size=False, annot_text_size=False,
+	align_labels=False, brlen_scale=0.5,):
+
+	if label_text_size:
+		node_font_size = label_text_size
+	else:
+		node_font_size = 2*font_scale
+	if annot_text_size:
+		brlen_font_size = annot_text_size
+	else:
+		brlen_font_size = 1.5*font_scale
+	
+	for name, location in node_locs.items():
+		# Extract relevant node from tree
+		node = tree.find_node_with_taxon_label(name)
+		
+		# Add node label
+		x, y = location
+		label_color = "#000000"
+		if align_labels:
+			# Draw labels at the most extreme x position (negativen number)
+			label_x = min([int(i[0]) for i in node_locs.values()])
+			# Draw dashed line from node to label for visual aid
+			ax.plot([label_x, x], [y,y], linestyle='--', color='black',
+				linewidth=line_scale*0.5, dashes=(10, 2), alpha=0.3)
+		else:
+			label_x = x
+
+		ax.text(label_x-0.4, y, name, ha='right', va='center_baseline', 
+			fontsize=node_font_size, color=label_color)
+
+		# add branch lengths if user desires and if branch has a length
+		if not branch_lengths:
+			continue	
+		if node.edge_length == 0:
+			continue
+		
+		ax.text(x + (node.edge_length/2)*brlen_scale, y-0.6,node.edge_length,
+			ha='center', va='top', fontsize=brlen_font_size)
+	
+	return ax
+
+
+def add_cartoons(node_locs, ax, array_dict, sp_width=0.3, sp_outline=3,
+	sp_spacing=0.45, sp_size=2.5, label_pad=5, fade_ancestral=False):
+	
+	
+
+	return ax
+
+
+def plot_tree(tree, array_dict, filename, spacer_cols_dict, 
 	branch_lengths=False, emphasize_diffs=False, dpi=600, line_scale=1,
 	brlen_scale=0.5, branch_spacing=2.3, font_scale=1, fig_h=1, fig_w=1,
 	no_align_cartoons=False, no_align_labels=False, fade_ancestral=False,
-	label_text_size=False, annot_text_size=False):
+	label_text_size=False, annot_text_size=False, align_labels=False):
+
+	spacer_width = 0.3 # Thickness of spacer cartoons.
+	outline = 3 # Thickness of spacer_outline
+	spacing = outline*0.15
+	spacer_size = 2.5
+
+	# add 1 unit of space per character in longest array ID. Min space = 5 units
+	label_pad = max([len(i) for i in array_dict.keys()] + [5]) 
+
 
 	node_locs = find_node_locs(tree, branch_spacing=branch_spacing,
 		brlen_scale=brlen_scale)
-	
+
 	fig, ax = plt.subplots(figsize=(fig_w,fig_h))
 
 	ax = draw_branches(tree, node_locs, ax, font_scale=font_scale,
 		line_scale=line_scale, branch_lengths=branch_lengths,
 		label_text_size=label_text_size, annot_text_size=annot_text_size,
+		brlen_scale=brlen_scale, align_labels=align_labels)
+
+	ax = add_labels(tree, node_locs, ax, font_scale=font_scale,
+		branch_lengths=branch_lengths, label_text_size=label_text_size,
+		annot_text_size=annot_text_size, align_labels=align_labels,
 		brlen_scale=brlen_scale)
 
 	plt.axis('off')
@@ -211,7 +254,7 @@ def plot_tree_temp(tree, array_dict, filename, spacer_cols_dict,
 	plt.savefig(filename, dpi=dpi)
 
 
-def plot_tree(tree, array_dict, filename, spacer_cols_dict, 
+def plot_tree_old(tree, array_dict, filename, spacer_cols_dict, 
 	branch_lengths=False, emphasize_diffs=False, dpi=600, 
 	no_align_cartoons=False, no_align_labels=False, fade_ancestral=False):
 	""" Plot dendropy Tree with array cartoons
