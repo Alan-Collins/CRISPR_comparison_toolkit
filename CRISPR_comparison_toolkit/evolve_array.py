@@ -16,19 +16,17 @@ def cmdline_args():
 		description="evolve CRISPR arrays in silico. Starts with a single \
 		array and performs a simple in silico evolution process."
 		)
-
 	p.add_argument(
 		"-s", "--seed", type=int, metavar="", help="Set seed for consistency")
-
-	required = p.add_argument_group('Required arguments')
-	required.add_argument(
-		"-n", "--num-events", required = True, type=int, metavar="",
+	p.add_argument(
+		"-n", "--num-events", type=int, default=20, metavar="",
 		help="How many events should be allowed to occur before the \
-		simulation ends?"
+		simulation ends? Default = 20"
 		)
-	required.add_argument(
-		"-o", "--outdir", required = True, type=str, metavar="",
-		help="Directory in which output files should be written"
+	p.add_argument(
+		"-o", "--outdir", type=str, default="./", metavar="",
+		help="Directory in which output files should be written. \
+		Defalt is your current directory"
 		)
 
 	parameters = p.add_argument_group('Evolution parameters', 
@@ -36,20 +34,53 @@ def cmdline_args():
 		should occur.")
 	parameters.add_argument(
 		"-i", "--initial-length", type=int, default=5, metavar="",
-		help="Length of the starting array")
+		help="Length of the starting array. Default = 5")
 	parameters.add_argument(
 		"-a", "--acquisition", type=int, default=75, metavar="",
-		help="Relative frequency of spacer acquisitions")
+		help="Relative frequency of spacer acquisitions. Default = 75")
 	parameters.add_argument(
 		"-t", "--trailer-loss", type=int, default=15, metavar="",
-		help="Relative frequency of trailer spacer decay")
+		help="Relative frequency of trailer spacer decay. Default = 15")
 	parameters.add_argument(
 		"-d", "--deletion", type=int, default=10, metavar="",
-		help="Relative frequency of deletions of one or more spacers")
+		help="Relative frequency of deletions of one or more spacers.\
+		Default = 10")
 	parameters.add_argument(
 		"-l", "--loss-rate", type=int, default=50, metavar="",
 		help="Rate (percent) at which arrays are lost after spawning a \
-		descendant")
+		descendant. Default = 50")
+
+	plotting = p.add_argument_group('Plotting parameters', 
+		"Set parameters for plotting the tree to file")
+	plotting.add_argument(
+		"-f", "--font-scale", type=float, default=1, metavar="",
+		help="Font size is multiplied by this number. Default is to scale \
+		based on the plot size")
+	plotting.add_argument(
+		"--font-override-labels", type=float, metavar="",
+		help="If you want to force a label font size to be used rather than \
+		using scaling to determine font size, provide it here")
+	plotting.add_argument(
+		"--font-override-brlen", type=float, metavar="",
+		help="If you want to force a branch length font size to be used \
+		rather than using scaling to determine font size, provide it here")
+	plotting.add_argument(
+		"-b", "--brlen-labels", action="store_true",
+		help="Add branch length labels to plot.")
+	plotting.add_argument(
+		"--dpi", type=float, default=300, metavar="",
+		help="Pixel density in pixels per inch (only relevant for PNG output.\
+		Default = 300")
+	plotting.add_argument(
+		"--tree-width", type=float, default=3, metavar="",
+		help="Width of plot in inches. Default = 3")
+	plotting.add_argument(
+		"--tree-height", type=float, default=3, metavar="",
+		help="Height of plot in inches. Default = 3")
+	plotting.add_argument(
+		"--branch-weight", type=float, default=1, metavar="",
+		help="Thickness of branch lines. Default = 1")
+
 
 	return p.parse_args()
 
@@ -271,7 +302,7 @@ def main(args):
 
 	# print(new_tree.as_string(schema='newick'))
 
-	print(new_tree.as_ascii_plot(show_internal_node_labels=True))
+	# print(new_tree.as_ascii_plot(show_internal_node_labels=True))
 
 	# Plot tree
 
@@ -296,8 +327,18 @@ def main(args):
 
 	# tree_operations.plot_tree(new_tree, final_array_dict, args.outdir+"test.png", spacer_colours)
 
+	fig_h = args.tree_height
+	fig_w = args.tree_width
+	# Scale font size according to image dimensions and user-input
+	font_scale = min(fig_h,fig_w)*args.font_scale
+	dpi = args.dpi
+	line_scale = args.branch_weight
+
 	tree_operations.plot_tree_temp(
-		new_tree, final_array_dict, args.outdir+"test_temp.png", spacer_colours)
+		new_tree, final_array_dict, args.outdir+"test_temp.png",
+		spacer_colours, fig_h=fig_h, fig_w=fig_w, font_scale=font_scale,
+		dpi=dpi, line_scale=line_scale, branch_lengths=args.brlen_labels,
+		brlen_scale=0.5, branch_spacing=2.3)
 
 
 
