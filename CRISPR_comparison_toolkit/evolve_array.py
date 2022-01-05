@@ -61,9 +61,10 @@ def cmdline_args():
 		help="If you want to force a label font size to be used rather than \
 		using scaling to determine font size, provide it here")
 	plotting.add_argument(
-		"--font-override-brlen", type=float, metavar="",
-		help="If you want to force a branch length font size to be used \
-		rather than using scaling to determine font size, provide it here")
+		"--font-override-annotations", type=float, metavar="",
+		help="If you want to force a specific font size (pts) to be used for \
+		annotations such as branch length labels, rather than using scaling \
+		to determine font size, provide it here")
 	plotting.add_argument(
 		"-b", "--brlen-labels", action="store_true",
 		help="Add branch length labels to plot.")
@@ -333,12 +334,15 @@ def main(args):
 	font_scale = min(fig_h,fig_w)*args.font_scale
 	dpi = args.dpi
 	line_scale = args.branch_weight
+	label_text_size = args.font_override_labels
+	annot_text_size = args.font_override_annotations
 
 	tree_operations.plot_tree_temp(
 		new_tree, final_array_dict, args.outdir+"test_temp.png",
 		spacer_colours, fig_h=fig_h, fig_w=fig_w, font_scale=font_scale,
 		dpi=dpi, line_scale=line_scale, branch_lengths=args.brlen_labels,
-		brlen_scale=0.5, branch_spacing=2.3)
+		brlen_scale=0.5, branch_spacing=2.3, label_text_size=label_text_size,
+		annot_text_size=annot_text_size)
 
 
 
