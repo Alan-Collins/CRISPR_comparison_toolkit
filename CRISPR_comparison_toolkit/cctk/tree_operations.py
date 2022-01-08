@@ -1,7 +1,9 @@
 from string import ascii_lowercase
-from math import ceil, log
+from math import ceil, log, sin, pi
 from itertools import product
 import matplotlib.pyplot as plt
+import numpy as np
+
 
 
 def create_internal_node_ids(n_leaves, prefix="", chars="letters"):
@@ -210,13 +212,247 @@ def add_labels(tree, node_locs, ax, branch_lengths=True,font_scale=1,
 	return ax
 
 
-def add_cartoons(node_locs, ax, array_dict, sp_width=0.3, sp_outline=3,
-	sp_spacing=0.45, sp_size=2.5, label_pad=5, fade_ancestral=False):
+def add_cartoons(node_locs, ax, array_dict, spacer_cols_dict, sp_width=0.3, 
+	sp_outline=3, sp_spacing=0.45, sp_size=2.5, label_pad=5,
+	fade_ancestral=False, no_align_cartoons=False, emphasize_diffs=False):
+
+	# Add cartoon arrays to show hypothetical ancestral states
+	# plot each array using the coordinates of the array label on the plotted
+	# tree.
 	
+	# If repeat_indel found with multiple arrays as possible partners,
+	# annotate one on the tree and print the rest to stdout if user wants
+	# emphasis.
+	rep_indel_report_count = 1 
 	
+	# Print a help message the first time a list of possible rep indel partners
+	# are found.
+	rep_indel_message_printed = False 
+	
+	for array, location in node_locs.items():
+		child = array_dict[array]
+		# Add label first
+		x, y = location
+		if not no_align_cartoons:
+			x = min([int(i[0]) for i in node_locs.values()])
+
+		start_pos_x = x-label_pad
+
+		spacer_count = 0 # How many spacers have been plotted?
+		reshift_loc = 1000 # init to number that won't be seen
+
+		for n, diff_type in reversed(child.module_lookup.items()):
+			spacer = child.aligned[n]
+
+			nspacers = len([
+				child.aligned[i] for i in diff_type.indices if child.aligned[i] != '-'])
+
+			# Add change info
+			if n == reshift_loc:
+				start_pos_x-=0.5 # Shift future spacers to make space for line
+	
+			if n == diff_type.indices[-1]:
+				# If this is the start of a new module (working from the
+				# back of the module) then process this module
+				if diff_type == "shared":
+					# If these spacers are shared then no annotation.
+					continue
+			
+				elif diff_type.type == "no_ident":
+					# Plot blue box around spacers
+
+					ax = plot_box(
+						ax, nspacers, start_pos_x, y, sp_size,
+						spacer_count, sp_spacing, sp_width, "#02a8b1")
+
+					# Shift future spacers to make spacer for this line.
+					start_pos_x-=0.5
+					# Shift again after the indel region for next line
+					reshift_loc = diff_type.indices[0]-1
+					
+
+				elif diff_type.type == "repeated_indel":
+					# Plot a red box around repeated indels
+					ax = plot_box(
+						ax, nspacers, start_pos_x, y, sp_size,
+						spacer_count, sp_spacing, sp_width, "#cc3300")
+
+					# Shift future spacers to make spacer for this line.
+					start_pos_x-=0.5
+					# Shift again after the indel region for next line
+					reshift_loc = diff_type.indices[0]-1
+
+					# Add Array ID of the array in which the spacers of this predicted repeated_indel can be found
+					num_partners = len(diff_type.partner)
+					
+					ax = plot_rep_indel_text(
+						ax, nspacers, start_pos_x, y, sp_size, spacer_count,
+						sp_spacing,	sp_width, num_partners,
+						rep_indel_report_count,	rep_indel_message_printed)
+
+					rep_indel_report_count += 1
+					rep_indel_message_printed = True
+					
+				elif diff_type.type in ['indel_gap', 'indel_mm', 'indel']:
+					if spacer == '-':
+						# Draw an X as this is a deletion
+						ax = plot_x_or_slash(ax, nspacers, start_pos_x, y,
+							sp_size, spacer_count, sp_spacing, sp_width,
+							'x')
+						# Shift future spacers a bit to make spacer for
+						# this line.
+						spacer_count+=1
+					else:
+						# Insertion so plot a grey box
+						ax = plot_box(
+						ax, nspacers, start_pos_x, y, sp_size,
+						spacer_count, sp_spacing, sp_width, "#666666")
+
+						# Shift future spacers to make spacer for this line.
+						start_pos_x-=0.5
+						# Shift again after the indel region for next line
+						reshift_loc = diff_type.indices[0]-1
+
+				elif diff_type.type == "acquisition":
+					ax = plot_line(ax, nspacers, start_pos_x, y, sp_size,
+						spacer_count, sp_spacing, sp_width, wavy=True)
+
+
+
+				elif diff_type.type == "trailer_loss":
+					if spacer == '-': # Draw a single sloped line
+						ax = plot_x_or_slash(ax, nspacers, start_pos_x, y, 
+							sp_size, spacer_count, sp_spacing, sp_width,
+							'/')
+						 # Shift future spacers a bit to make spacer for this
+						 # line.
+						spacer_count+=1
+				elif diff_type.type == "duplication":
+					ax = plot_line(ax, nspacers, start_pos_x, y, sp_size,
+						spacer_count, sp_spacing, sp_width, wavy=False)
+
+			# Plot spacer cartoon
+			if spacer != '-':
+				if spacer in spacer_cols_dict.keys():
+					spcolour = spacer_cols_dict[spacer]
+					spacer_width = sp_width
+				else:
+					spcolour = ("#000000", "#000000") #black
+					spacer_width = 0.25*sp_width
+				ax.fill_between([start_pos_x-sp_size*spacer_count-sp_spacing,
+					start_pos_x-sp_size*spacer_count-sp_spacing-sp_size+sp_spacing],
+					y-spacer_width, y+spacer_width,	color=spcolour[0],
+					edgecolor=spcolour[1], linewidth=sp_outline,
+					joinstyle='miter')
+				spacer_count+=1
 
 	return ax
 
+
+def plot_box(ax, nspacers, x, y, spacer_size, spacer_count, spacing,
+	spacer_width, box_colour):
+
+	# First bar
+	ax.fill_between(
+		[x-spacer_size*spacer_count-0.5-spacing/2,
+			x-spacer_size*spacer_count-spacing/2],
+		y+spacer_width+0.4, y-spacer_width-0.4,
+		color="#02a8b1", edgecolor='none')
+	# Second bar
+	ax.fill_between(
+		[x-spacer_size*(spacer_count+nspacers)-0.5-0.5-spacing/2,
+			x-spacer_size*(spacer_count+nspacers)-0.5-spacing/2],
+		y+spacer_width+0.4, y-spacer_width-0.4,
+		color="#02a8b1", edgecolor='none')
+	# Top bar
+	ax.fill_between(
+		[x-spacer_size*(spacer_count+nspacers)-0.5-0.5-spacing/2,
+			x-spacer_size*spacer_count-spacing/2],
+		y+spacer_width+0.2, y+spacer_width+0.4,
+		color="#02a8b1", edgecolor='none')
+	# Bottom bar
+	ax.fill_between(
+		[x-spacer_size*(spacer_count+nspacers)-0.5-0.5-spacing/2,
+			x-spacer_size*spacer_count-spacing/2],
+		y-spacer_width-0.2, y-spacer_width-0.4,
+		color="#02a8b1", edgecolor='none')
+
+	return ax
+
+
+def plot_x_or_slash(ax, nspacers, x, y, spacer_size, spacer_count, spacing,
+	spacer_width, x_or_slash):
+	
+	ax.plot([x-spacer_size*spacer_count-spacing,
+		x-spacer_size*spacer_count-spacer_size],
+		[y+spacer_width+0.2, y-spacer_width-0.2],
+		color="#666666", linewidth=3, solid_capstyle="butt")
+	if x_or_slash == 'x':
+		ax.plot([x-spacer_size*spacer_count-spacing,
+			x-spacer_size*spacer_count-spacer_size],
+			[y-spacer_width-0.2, y+spacer_width+0.2],
+			color="#666666", linewidth=3, solid_capstyle="butt")
+
+	return ax
+
+
+def plot_line(ax, nspacers, x, y, spacer_size, spacer_count, spacing, 
+	spacer_width, wavy=False):
+		
+	padded_y = y-spacer_width/2-0.4
+
+	if wavy:
+		xs = np.linspace(x-spacer_size*(spacer_count+nspacers),
+			x-spacer_size*spacer_count-spacing, nspacers*100)
+		ys = [padded_y+0.1*sin(2*pi*i) for i in xs]
+		ax.plot(xs, ys, color="#666666", linewidth=0.5, solid_capstyle="butt")
+
+	else:
+		ax.plot([x-spacer_size*(spacer_count+nspacers),
+			x-spacer_size*spacer_count-spacing], [padded_y, padded_y],
+			color='666666', linestyle='-', linewidth=2, solid_capstyle="butt")
+
+	return ax
+
+
+def plot_rep_indel_text(ax, nspacers, x, y, spacer_size, spacer_count, spacing,
+	spacer_width, partners, rep_indel_report_count, rep_indel_message_printed):
+	
+	
+	############
+	############ ADD TEXT SIZE CONTROL
+	############
+
+
+	if len(partners) > 2:
+		vpad = 1.3
+		message = "\n".join(
+				[partners[0],
+				"event {}".format(rep_indel_report_count)])
+		
+		if not rep_indel_message_printed:
+			print("Repeated indels were identified with multiple possible "
+				+ "partners. Those cases will be annotated in the tree png "
+				+ "file with the one of the arrays identified as a partner "
+				+ "followed by an event number corresponding to one of the "
+				+ "lists of partner arrays below:\n\n")
+		print("Event {}: {}\n\n".format(
+			rep_indel_report_count,
+			" ".join(diff_type.partner)))
+	else:
+		if len(partners) == 2:
+			vpad = 1.3
+			message = "\n".join(partners)
+		else:
+			vpad = 1
+			message = partners[0]
+
+		ax.text(x-spacer_size*(spacer_count+nspacers/2)-0.5,
+			y-spacer_width/2-vpad, message,
+			color="#cc3300", ha='center', fontsize=10)
+
+	return ax
+			
 
 def plot_tree(tree, array_dict, filename, spacer_cols_dict, 
 	branch_lengths=False, emphasize_diffs=False, dpi=600, line_scale=1,
@@ -247,6 +483,11 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict,
 		branch_lengths=branch_lengths, label_text_size=label_text_size,
 		annot_text_size=annot_text_size, align_labels=align_labels,
 		brlen_scale=brlen_scale)
+
+	ax = add_cartoons(node_locs, ax, array_dict, spacer_cols_dict,
+		label_pad=label_pad, sp_size=spacer_size, sp_outline=outline,
+		sp_spacing=spacing, sp_width=spacer_width,
+		no_align_cartoons=no_align_cartoons, emphasize_diffs=emphasize_diffs)
 
 	plt.axis('off')
 	plt.tight_layout()
