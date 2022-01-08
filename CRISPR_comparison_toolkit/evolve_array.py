@@ -71,8 +71,7 @@ def cmdline_args():
 		help="Add branch length labels to plot.")
 	plotting.add_argument(
 		"--dpi", type=float, default=300, metavar="",
-		help="Pixel density in pixels per inch (only relevant for PNG output.\
-		Default = 300")
+		help="Pixel density in pixels per inch (Default = 300")
 	plotting.add_argument(
 		"--tree-width", type=float, default=3, metavar="",
 		help="Width of plot in inches. Default = 3")
@@ -365,6 +364,19 @@ def main(args):
 	branch_spacing = 2.3*args.branch_spacing
 	brlen_scale=0.5*args.brlen_scale
 
+	
+	for node in new_tree.postorder_node_iter():
+		if node.parent_node == new_tree.seed_node:
+			break
+
+		child_id = node.taxon.label
+		child_array = final_array_dict[child_id]
+
+		parent_id = node.parent_node.taxon.label
+		parent_array = final_array_dict[parent_id]
+
+		child_array = array_parsimony.count_parsimony_events(
+			child_array, parent_array, final_array_dict, new_tree, True)
 
 	tree_operations.plot_tree(
 		new_tree, final_array_dict, outdir+"test_temp.png",
@@ -372,7 +384,7 @@ def main(args):
 		dpi=dpi, line_scale=line_scale, branch_lengths=args.brlen_labels,
 		branch_spacing=branch_spacing, brlen_scale=brlen_scale,
 		label_text_size=label_text_size, annot_text_size=annot_text_size,
-		align_labels=args.align)
+		align_labels=args.align, emphasize_diffs=True)
 
 if __name__ == '__main__':
 	args = cmdline_args()
