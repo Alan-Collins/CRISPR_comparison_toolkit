@@ -367,6 +367,16 @@ def main(args):
 	
 	for node in new_tree.postorder_node_iter():
 		if node.parent_node == new_tree.seed_node:
+			# Reset root array modules after comparisons
+			root_id = node.taxon.label
+			array = final_array_dict[root_id]
+			array.reset()
+			array.aligned = array.spacers
+			for i, s in enumerate(array.spacers):
+				sm = array_parsimony.SpacerModule()
+				sm.indices.append(i)
+				sm.spacers.append(s)
+				array.module_lookup[i] = sm
 			break
 
 		child_id = node.taxon.label
@@ -377,6 +387,7 @@ def main(args):
 
 		child_array = array_parsimony.count_parsimony_events(
 			child_array, parent_array, final_array_dict, new_tree, True)
+
 
 	tree_operations.plot_tree(
 		new_tree, final_array_dict, outdir+"test_temp.png",
