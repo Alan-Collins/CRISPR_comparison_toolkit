@@ -5,6 +5,8 @@ import os
 import argparse
 import random
 from copy import deepcopy
+from collections import Counter
+import json
 
 import dendropy
 
@@ -327,32 +329,42 @@ def main(args):
 		else:
 			node.edge_length = 5
 
-	# print(new_tree.as_string(schema='newick'))
-
-	# print(new_tree.as_ascii_plot(show_internal_node_labels=True))
-
-	# Plot tree
-	active_spacers = []
-	for array in active_arrays:
-		active_spacers += array.spacers
-
-	active_spacers = set(active_spacers)
-
-	ncols = len(active_spacers)
-
-	col_scheme = colour_schemes.choose_col_scheme(ncols)
-
-	spacer_colours = {i: j for i,j in zip(active_spacers, col_scheme)}
-
 	array_dict = {a.id: a for a in all_arrays}
 
 	# Only keep spacers that there is evidence for the existence of in
 	# final arrays
 
+	active_spacers = []
+	for array in active_arrays:
+		active_spacers += array.spacers
+
+	non_singleton_spacers = [
+		spacer for spacer, count in Counter(active_spacers).items() if count >1]
+
+	ncols = len(non_singleton_spacers)
+
+	col_scheme = colour_schemes.choose_col_scheme(ncols)
+
+	spacer_colours = {i: j for i,j in zip(non_singleton_spacers, col_scheme)}
+	
+	active_spacers = set(active_spacers)
+
 	final_array_dict = remove_lost_spacers(array_dict, active_spacers)
 
-	# tree_operations.plot_tree(new_tree, final_array_dict, args.outdir+"test.png", spacer_colours)
+	# Save active arrays
 
+	with open(outdir+"evolved_arrays.txt", 'w') as fout:
+		for leaf in new_tree.leaf_node_iter():
+			array_id = leaf.taxon.label
+			fout.write("{}\t{}\n".format(
+				array_id, " ".join(
+					[str(i) for i in final_array_dict[array_id].spacers])))
+
+	with open(outdir+"color_scheme.json", 'w', encoding='utf-8') as fout:
+		json.dump(spacer_colours, fout, ensure_ascii=False, indent=4)
+
+
+	# Plot tree
 	fig_h = args.tree_height
 	fig_w = args.tree_width
 	# Scale font size according to image dimensions and user-input
