@@ -106,11 +106,6 @@ def choose_col_scheme(ncolours, s=None, cf_list=None):
 		return colours
 
 
-	elif ncolours <= 40:
-		colours = [(i, "#000000") for i in Cols_hex_40]
-		return colours
-
-
 	elif ncolours < 65:
 		col_scheme = Cols_tol
 	elif ncolours < 145:
