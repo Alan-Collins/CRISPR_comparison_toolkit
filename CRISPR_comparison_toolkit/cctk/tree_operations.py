@@ -138,8 +138,7 @@ def find_node_locs(tree, brlen_scale=0.5, branch_spacing=2.3):
 
 
 def draw_branches(tree, node_locs, ax, branch_lengths=True, brlen_scale=0.5,
-	font_scale=1, line_scale=1, label_text_size=False, annot_text_size=False,
-	align_labels=False):
+	font_scale=1, line_scale=1, label_text_size=False, annot_text_size=False):
 
 	for name, location in node_locs.items():
 		x, y = location
@@ -148,7 +147,7 @@ def draw_branches(tree, node_locs, ax, branch_lengths=True, brlen_scale=0.5,
 		# Draw branch from this node to its parent
 		
 		# identify x location for parent depth if the parent is not seed
-		if node != tree.seed_node:
+		if node != tree.seed_node and node.parent_node.taxon != None:
 			x2 = node_locs[node.parent_node.taxon.label][0]
 		else:
 			x2 = x + brlen_scale
@@ -195,7 +194,7 @@ def add_labels(tree, node_locs, ax, branch_lengths=True,font_scale=1,
 		else:
 			label_x = x
 
-		ax.text(label_x-1, y, name, ha='right', va='center_baseline', 
+		ax.text(label_x-0.1, y, name, ha='right', va='center_baseline', 
 			fontsize=label_text_size, color=label_color)
 
 		# add branch lengths if user desires and if branch has a length
@@ -537,6 +536,9 @@ def calc_label_pad_size(label, text_size, fig_w, fig_h, xlim, ylim):
 	bb = t.get_window_extent(renderer=r)
 	width = Bbox(ax.transData.inverted().transform(bb)).width
 
+	# Add a bit of space so the cartoons aren't right up against labels
+	width += 0.5
+
 	return width
 
 
@@ -544,7 +546,7 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict,
 	branch_lengths=False, emphasize_diffs=False, dpi=600, line_scale=1,
 	brlen_scale=0.5, branch_spacing=2.3, font_scale=1, fig_h=1, fig_w=1,
 	no_align_cartoons=False, no_align_labels=False, fade_ancestral=False,
-	label_text_size=False, annot_text_size=False, align_labels=False):
+	label_text_size=False, annot_text_size=False):
 
 	outline = 0.3 #line_widths = 3 # Thickness of lines
 	spacing = 0.5
@@ -568,7 +570,7 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict,
 	ax = draw_branches(tree, node_locs, ax, font_scale=font_scale,
 		line_scale=line_scale, branch_lengths=branch_lengths,
 		label_text_size=label_text_size, annot_text_size=annot_text_size,
-		brlen_scale=brlen_scale, align_labels=align_labels)
+		brlen_scale=brlen_scale)
 
 	ax = add_labels(tree, node_locs, ax, font_scale=font_scale,
 		branch_lengths=branch_lengths, label_text_size=label_text_size,
