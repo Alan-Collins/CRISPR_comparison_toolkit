@@ -91,7 +91,7 @@ def cmdline_args():
 		"--brlen-scale", type=float, default=1, metavar="",
 		help="Branch lengths will be multiplied by this number. Default = 1")
 	plotting.add_argument(
-		"--align", action="store_true",
+		"--no-align", action="store_true", default=False,
 		help="Align array labels and cartoons rather than drawing them at \
 		leaf tips and intenal nodes.")
 
@@ -356,7 +356,7 @@ def main(args):
 	with open(outdir+"evolved_arrays.txt", 'w') as fout:
 		for leaf in new_tree.leaf_node_iter():
 			array_id = leaf.taxon.label
-			fout.write("{}\t{}\n".format(
+			fout.write("{}\tspacers:\t{}\n".format(
 				array_id, " ".join(
 					[str(i) for i in final_array_dict[array_id].spacers])))
 
@@ -367,8 +367,7 @@ def main(args):
 	# Plot tree
 	fig_h = args.tree_height
 	fig_w = args.tree_width
-	# Scale font size according to image dimensions and user-input
-	font_scale = min(fig_h,fig_w)*args.font_scale
+	font_scale = args.font_scale
 	dpi = args.dpi
 	line_scale = args.branch_weight
 	label_text_size = args.font_override_labels
@@ -400,6 +399,8 @@ def main(args):
 		child_array = array_parsimony.count_parsimony_events(
 			child_array, parent_array, final_array_dict, new_tree, True)
 
+	# reroot at seed for consistency with CRISPRtree output
+	tree.reroot_at_node(tree.seed_node, update_bipartitions=False)
 
 	tree_operations.plot_tree(
 		new_tree, final_array_dict, outdir+"test_temp.png",
@@ -407,7 +408,7 @@ def main(args):
 		dpi=dpi, line_scale=line_scale, branch_lengths=args.brlen_labels,
 		branch_spacing=branch_spacing, brlen_scale=brlen_scale,
 		label_text_size=label_text_size, annot_text_size=annot_text_size,
-		align_labels=args.align, emphasize_diffs=True)
+		no_align_labels=args.no_align, emphasize_diffs=True)
 
 if __name__ == '__main__':
 	args = cmdline_args()
