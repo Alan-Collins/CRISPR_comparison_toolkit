@@ -335,7 +335,9 @@ def main(args):
 	# final arrays
 
 	active_spacers = []
-	for array in active_arrays:
+	for leaf in tree.leaf_node_iter():
+		array_id = leaf.taxon.label
+		array = array_dict[array_id]
 		active_spacers += array.spacers
 
 	non_singleton_spacers = [
