@@ -1,7 +1,9 @@
 from string import ascii_lowercase
 from math import ceil, log, sin, pi
 from itertools import product
+from copy import copy
 import matplotlib.pyplot as plt
+from matplotlib.transforms import Bbox
 import numpy as np
 
 
@@ -170,16 +172,12 @@ def draw_branches(tree, node_locs, ax, branch_lengths=True, brlen_scale=0.5,
 
 def add_labels(tree, node_locs, ax, branch_lengths=True,font_scale=1,
 	line_scale=1, label_text_size=False, annot_text_size=False,
-	align_labels=False, brlen_scale=0.5,):
+	no_align_labels=False, brlen_scale=0.5,):
 
-	if label_text_size:
-		node_font_size = label_text_size
-	else:
-		node_font_size = 2*font_scale
 	if annot_text_size:
 		brlen_font_size = annot_text_size
 	else:
-		brlen_font_size = 1.5*font_scale
+		brlen_font_size = 8*font_scale
 	
 	for name, location in node_locs.items():
 		# Extract relevant node from tree
@@ -188,7 +186,7 @@ def add_labels(tree, node_locs, ax, branch_lengths=True,font_scale=1,
 		# Add node label
 		x, y = location
 		label_color = "#000000"
-		if align_labels:
+		if not no_align_labels:
 			# Draw labels at the most extreme x position (negativen number)
 			label_x = min([int(i[0]) for i in node_locs.values()])
 			# Draw dashed line from node to label for visual aid
@@ -198,7 +196,7 @@ def add_labels(tree, node_locs, ax, branch_lengths=True,font_scale=1,
 			label_x = x
 
 		ax.text(label_x-1, y, name, ha='right', va='center_baseline', 
-			fontsize=node_font_size, color=label_color)
+			fontsize=label_text_size, color=label_color)
 
 		# add branch lengths if user desires and if branch has a length
 		if not branch_lengths:
@@ -493,8 +491,8 @@ def plot_rep_indel_text(ax, nspacers, x, y, spacer_size, spacer_count,
 	return ax
 			
 
-def calc_vh_ratio(tree, array_dict, spacing, spacer_size, label_pad, 
-	branch_spacing, brlen_scale, fig_w, fig_h):
+def calc_vh_ratio_and_label_pad(tree, array_dict, spacing, spacer_size, 
+	branch_spacing, brlen_scale, fig_w, fig_h, text_size):
 	
 	# Find approx max horizontal axis range
 	max_h = 0 # Initialize at 0
@@ -502,18 +500,44 @@ def calc_vh_ratio(tree, array_dict, spacing, spacer_size, label_pad,
 		name = leaf.taxon.label
 		brlen = leaf.root_distance
 		nspacers = len(array_dict[name].spacers)
-		total_h = (
-			brlen*brlen_scale 
-			+ nspacers*(spacing+spacer_size)
-			+label_pad)
+		total_h = (brlen*brlen_scale + nspacers*(spacing+spacer_size))
 		if total_h > max_h:
 			max_h = total_h
 	
 	max_v = len(tree.nodes())*branch_spacing
 
-	v_scaling_factor = (max_v*fig_h)/(max_h*fig_w)
+	# Find label padding size
+	longest_label = max([i for i in array_dict.keys()], key=len)
 
-	return v_scaling_factor
+	# Find approx asymptote point as label pad will increase with axis
+	# limits, but increasing label pad will increase axis limits.
+	last_max = copy(max_h)-1 # Init at higher value to init loop
+	new_max_h = copy(max_h) # Store max_h updated with each pad
+	
+	while new_max_h > last_max+0.0001: # Stop once label pad stable
+		last_max = copy(new_max_h)
+		label_pad = calc_label_pad_size(
+			longest_label, text_size, fig_w, fig_h,
+			xlim=(0, new_max_h), ylim=(0, max_v))
+		new_max_h = max_h+label_pad
+
+	v_scaling_factor = (max_v*fig_h)/(new_max_h*fig_w)
+
+	return v_scaling_factor, label_pad
+
+
+def calc_label_pad_size(label, text_size, fig_w, fig_h, xlim, ylim):
+
+	f,ax = plt.subplots(figsize=(fig_w,fig_h))
+	plt.ylim(ylim)
+	plt.xlim(xlim)
+	r = f.canvas.get_renderer()
+	t = plt.text(5, 5, label, fontsize=text_size)
+
+	bb = t.get_window_extent(renderer=r)
+	width = Bbox(ax.transData.inverted().transform(bb)).width
+
+	return width
 
 
 def plot_tree(tree, array_dict, filename, spacer_cols_dict, 
@@ -526,15 +550,15 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict,
 	spacing = 0.5
 	spacer_size = 2
 
-	# add 1 unit of space per character in longest array ID. Min space = 5 units
-	label_pad = max([len(i) for i in array_dict.keys()] + [5]) 
-
+	if not label_text_size:
+		label_text_size = 10 * font_scale
 
 	node_locs = find_node_locs(tree, branch_spacing=branch_spacing,
 		brlen_scale=brlen_scale)
 
-	v_scaling_factor = calc_vh_ratio(tree, array_dict, spacing, spacer_size,
-		label_pad, branch_spacing, brlen_scale, fig_w, fig_h)
+	v_scaling_factor, label_pad = calc_vh_ratio_and_label_pad(tree, array_dict,
+		spacing, spacer_size, branch_spacing, brlen_scale, fig_w, fig_h,
+		label_text_size)
 
 	# Set spacer width based on vertical vs horizontal ratio. Max 1.3
 	spacer_width = min([spacer_size*v_scaling_factor, 1.3])
@@ -546,18 +570,18 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict,
 		label_text_size=label_text_size, annot_text_size=annot_text_size,
 		brlen_scale=brlen_scale, align_labels=align_labels)
 
-	ax = add_labels(tree, node_locs, ax, font_scale=font_scale,
-		branch_lengths=branch_lengths, label_text_size=label_text_size,
-		annot_text_size=annot_text_size, align_labels=align_labels,
-		brlen_scale=brlen_scale)
+	print(tree.as_string("newick"))
 
-	ax = add_cartoons(node_locs, ax, array_dict, spacer_cols_dict,
-		label_pad=label_pad, spacer_size=spacer_size, spacer_outline=outline,
-		spacer_spacing=spacing, spacer_width=spacer_width,
-		no_align_cartoons=no_align_cartoons, emphasize_diffs=emphasize_diffs,
-		v_scaling_factor=v_scaling_factor, annot_text_size=annot_text_size)
+	# ax = add_labels(tree, node_locs, ax, font_scale=font_scale,
+	# 	branch_lengths=branch_lengths, label_text_size=label_text_size,
+	# 	annot_text_size=annot_text_size, no_align_labels=no_align_labels,
+	# 	brlen_scale=brlen_scale)
 
-
+	# ax = add_cartoons(node_locs, ax, array_dict, spacer_cols_dict,
+	# 	label_pad=label_pad, spacer_size=spacer_size, spacer_outline=outline,
+	# 	spacer_spacing=spacing, spacer_width=spacer_width,
+	# 	no_align_cartoons=no_align_cartoons, emphasize_diffs=emphasize_diffs,
+	# 	v_scaling_factor=v_scaling_factor, annot_text_size=annot_text_size)
 
 	plt.axis('off')
 	plt.tight_layout()
