@@ -695,7 +695,7 @@ def identify_repeat_indels(child, ancestor, array_dict, module,
 					for a in set(arrays_to_check):
 						x = Array("x", spacers_to_check)
 						y = Array("y", arrays_of_concern[a])
-						x.aligned, y.aligned = needle(x.spacers, y.spacers) # Find where the match is by aligning
+						x.aligned, y.aligned = sequence_operations.needle(x.spacers, y.spacers) # Find where the match is by aligning
 						x,y = find_modules(x,y) # Then identify any shared regions
 						for m in x.modules: # Pull out the shared modules
 							if m.type == "shared":
