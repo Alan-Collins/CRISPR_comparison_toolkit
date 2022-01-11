@@ -599,11 +599,7 @@ def build_tree_multi(arrays, tree_namespace, all_arrays, node_ids, event_costs):
 			return array_dict, tree, initial_arrays
 
 
-def main():
-
-	start_time = time.time()
-
-
+def parse_args():
 	parser = argparse.ArgumentParser(
 		description="Perform maximum parsimony analysis on CRISPR arrays to infer a tree representing their evolutionary relationship."
 		)
@@ -700,14 +696,21 @@ def main():
 		help="Specify the IDs of the arrays you want to join. If none provided, joins all arrays in the provided array representatives file. **If given, must come at the end of your command after all other arguments.**"
 		)
 
-
-
-	args = parser.parse_args(sys.argv[1:])
+	args = parser.parse_args()
 
 	if args.no_align_labels and not args.no_align_cartoons:
 		print("\n\nYou chose settings that would align node labels but not array cartoons in the output tree image. Labels cannot be aligned without also aligning array cartoons so that setting has been overwritten. Both will be aligned.\n\n")
 		args.no_align_cartoons = True
-	
+
+	return args
+
+
+def main():
+
+	start_time = time.time()
+
+	args = parse_args()
+
 	print("Running with the following command:\n{}\n".format(" ".join(sys.argv)))
 
 	event_costs = { 
@@ -1001,6 +1004,7 @@ def main():
 				print(best_tree.as_ascii_plot(show_internal_node_labels=True))
 			print(best_tree.as_string("newick"))
 			if args.output_tree:
+				tree_operations.resolve_polytomies(best_tree)
 				print("Saving image of tree with array diagrams to {}\n".format(args.output_tree))
 				tree_operations.plot_tree(tree=best_tree,
 					array_dict=best_arrays, filename=args.output_tree,
@@ -1030,8 +1034,3 @@ def main():
 if __name__ == '__main__':
 	main()
 
-# def plot_tree(tree, array_dict, filename, spacer_cols_dict, 
-# 	branch_lengths=False, emphasize_diffs=False, dpi=600, line_scale=1,
-# 	brlen_scale=0.5, branch_spacing=2.3, font_scale=1, fig_h=1, fig_w=1,
-# 	no_align_cartoons=False, no_align_labels=False, fade_ancestral=False,
-# 	label_text_size=False, annot_text_size=False, align_labels=False)
