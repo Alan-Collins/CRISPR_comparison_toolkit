@@ -120,7 +120,7 @@ def yield_nodes(node):
 
 def find_node_locs(tree, brlen_scale=0.5, branch_spacing=2.3):
 
-	node_list = [n for n in yield_nodes(tree.seed_node.child_nodes()[0])]
+	node_list = [n for n in yield_nodes(tree.seed_node)]
 
 	node_locs = {}
 
@@ -148,7 +148,7 @@ def draw_branches(tree, node_locs, ax, branch_lengths=True, brlen_scale=0.5,
 		# Draw branch from this node to its parent
 		
 		# identify x location for parent depth if the parent is not seed
-		if node.parent_node != tree.seed_node:
+		if node != tree.seed_node:
 			x2 = node_locs[node.parent_node.taxon.label][0]
 		else:
 			x2 = x + brlen_scale
@@ -521,7 +521,7 @@ def calc_vh_ratio_and_label_pad(tree, array_dict, spacing, spacer_size,
 			xlim=(0, new_max_h), ylim=(0, max_v))
 		new_max_h = max_h+label_pad
 
-	v_scaling_factor = (max_v*fig_h)/(new_max_h*fig_w)
+	v_scaling_factor = max_v/new_max_h
 
 	return v_scaling_factor, label_pad
 
@@ -570,18 +570,16 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict,
 		label_text_size=label_text_size, annot_text_size=annot_text_size,
 		brlen_scale=brlen_scale, align_labels=align_labels)
 
-	print(tree.as_string("newick"))
+	ax = add_labels(tree, node_locs, ax, font_scale=font_scale,
+		branch_lengths=branch_lengths, label_text_size=label_text_size,
+		annot_text_size=annot_text_size, no_align_labels=no_align_labels,
+		brlen_scale=brlen_scale)
 
-	# ax = add_labels(tree, node_locs, ax, font_scale=font_scale,
-	# 	branch_lengths=branch_lengths, label_text_size=label_text_size,
-	# 	annot_text_size=annot_text_size, no_align_labels=no_align_labels,
-	# 	brlen_scale=brlen_scale)
-
-	# ax = add_cartoons(node_locs, ax, array_dict, spacer_cols_dict,
-	# 	label_pad=label_pad, spacer_size=spacer_size, spacer_outline=outline,
-	# 	spacer_spacing=spacing, spacer_width=spacer_width,
-	# 	no_align_cartoons=no_align_cartoons, emphasize_diffs=emphasize_diffs,
-	# 	v_scaling_factor=v_scaling_factor, annot_text_size=annot_text_size)
+	ax = add_cartoons(node_locs, ax, array_dict, spacer_cols_dict,
+		label_pad=label_pad, spacer_size=spacer_size, spacer_outline=outline,
+		spacer_spacing=spacing, spacer_width=spacer_width,
+		no_align_cartoons=no_align_cartoons, emphasize_diffs=emphasize_diffs,
+		v_scaling_factor=v_scaling_factor, annot_text_size=annot_text_size)
 
 	plt.axis('off')
 	plt.tight_layout()
