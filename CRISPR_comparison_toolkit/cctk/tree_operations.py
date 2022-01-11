@@ -187,7 +187,7 @@ def add_labels(tree, node_locs, ax, branch_lengths=True,font_scale=1,
 		label_color = "#000000"
 		if not no_align_labels:
 			# Draw labels at the most extreme x position (negativen number)
-			label_x = min([int(i[0]) for i in node_locs.values()])
+			label_x = min([float(i[0]) for i in node_locs.values()])
 			# Draw dashed line from node to label for visual aid
 			ax.plot([label_x, x], [y,y], linestyle='--', color='black',
 				linewidth=line_scale*0.5, dashes=(10, 2), alpha=0.3)
@@ -202,7 +202,6 @@ def add_labels(tree, node_locs, ax, branch_lengths=True,font_scale=1,
 			continue	
 		if node.edge_length == 0:
 			continue
-		
 		ax.text(x + (node.edge_length/2)*brlen_scale, y-0.6,node.edge_length,
 			ha='center', va='top', fontsize=brlen_font_size)
 	
