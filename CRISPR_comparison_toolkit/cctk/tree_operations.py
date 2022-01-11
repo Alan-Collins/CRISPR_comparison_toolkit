@@ -587,3 +587,17 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict,
 
 	plt.savefig(filename, dpi=dpi, bbox_inches='tight')
 
+
+def resolve_polytomies(tree):
+	""" Collapse internal node branches with len == 0
+	"""
+	for node in tree.seed_node.postorder_internal_node_iter(
+		exclude_seed_node=True):
+		if node.edge_length == 0:
+			# Transfer node children to parent node
+			parent_children = [
+			i for i in node.parent_node.child_nodes() if i != node]
+			node.parent_node.set_child_nodes(
+				node.child_nodes() + parent_children)
+	
+	return tree
