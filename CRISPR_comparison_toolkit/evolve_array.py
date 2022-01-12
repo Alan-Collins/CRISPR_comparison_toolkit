@@ -94,6 +94,10 @@ def cmdline_args():
 		"--no-align", action="store_true", default=False,
 		help="Align array labels and cartoons rather than drawing them at \
 		leaf tips and intenal nodes.")
+	plotting.add_argument(
+		"--no-fade-ancestral", action="store_true", default=False,
+		help="Remove transparency from the spacer cartoons of ancestral \
+		arrays.")
 
 
 	return p.parse_args()
@@ -405,12 +409,13 @@ def main(args):
 	tree.reroot_at_node(tree.seed_node, update_bipartitions=False)
 
 	tree_operations.plot_tree(
-		new_tree, final_array_dict, outdir+"test_temp.png",
+		new_tree, final_array_dict, outdir+"evolved_tree.png",
 		spacer_colours, fig_h=fig_h, fig_w=fig_w, font_scale=font_scale,
 		dpi=dpi, line_scale=line_scale, branch_lengths=args.brlen_labels,
 		branch_spacing=branch_spacing, brlen_scale=brlen_scale,
 		label_text_size=label_text_size, annot_text_size=annot_text_size,
-		no_align_labels=args.no_align, emphasize_diffs=True)
+		no_align_labels=args.no_align, emphasize_diffs=True,
+		no_fade_ancestral=args.no_fade_ancestral)
 
 if __name__ == '__main__':
 	args = cmdline_args()
