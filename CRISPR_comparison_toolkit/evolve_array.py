@@ -279,7 +279,20 @@ def main(args):
 	outdir = check_outdir(args.outdir)
 
 	if args.seed:
-		random.seed(args.seed)	
+		seed = args.seed
+	else:
+		seed = random.randint(0, 1_000_000)
+
+	random.seed(seed)
+
+	run_name = "{}_{}_{}_{}_{}_{}_{}".format(
+		args.initial_length,
+		args.num_events,
+		args.acquisition,
+		args.deletion,
+		args.trailer_loss,
+		args.loss_rate,
+		seed)
 
 	spacer_n = 1 # Track ID of spacers
 	array_name = 0
@@ -359,14 +372,15 @@ def main(args):
 
 	# Save active arrays
 
-	with open(outdir+"evolved_arrays.txt", 'w') as fout:
+	with open(outdir+f"evolved_arrays_{run_name}.txt", 'w') as fout:
 		for leaf in new_tree.leaf_node_iter():
 			array_id = leaf.taxon.label
 			fout.write("{}\tspacers:\t{}\n".format(
 				array_id, " ".join(
 					[str(i) for i in final_array_dict[array_id].spacers])))
 
-	with open(outdir+"color_scheme.json", 'w', encoding='utf-8') as fout:
+	with open(
+		outdir+f"color_scheme_{run_name}.json", 'w', encoding='utf-8') as fout:
 		json.dump(spacer_colours, fout, ensure_ascii=False, indent=4)
 
 
@@ -408,8 +422,14 @@ def main(args):
 	# reroot at seed for consistency with CRISPRtree output
 	tree.reroot_at_node(tree.seed_node, update_bipartitions=False)
 
+	# Save tree newick string
+	with open(outdir+f"evolved_tree_file_{run_name}.nwk", 'w') as fout:
+		fout.write(tree.as_string(schema='newick'))
+
+	tree_name = f"evolved_tree_{run_name}.png"
+
 	tree_operations.plot_tree(
-		new_tree, final_array_dict, outdir+"evolved_tree.png",
+		new_tree, final_array_dict, outdir+tree_name,
 		spacer_colours, fig_h=fig_h, fig_w=fig_w, font_scale=font_scale,
 		dpi=dpi, line_scale=line_scale, branch_lengths=args.brlen_labels,
 		branch_spacing=branch_spacing, brlen_scale=brlen_scale,
