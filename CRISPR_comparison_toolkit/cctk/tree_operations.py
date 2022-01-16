@@ -276,9 +276,9 @@ def add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict, spacer_width
 						colour += "80"
 					# Plot blue box around spacers
 					ax = plot_box(
-						ax, nspacers, start_pos_x, y, spacer_size,
+						ax, nspacers-1, start_pos_x, y, spacer_size,
 						spacer_count, spacer_spacing, spacer_width, colour,
-						box_thickness=0.3, hpad=1, vpad=1,
+						box_thickness=0.5, hpad=1, vpad=0.35,
 						v_scaling_factor=v_scaling_factor)
 
 					# Shift future spacers to make spacer for this line.
@@ -292,9 +292,9 @@ def add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict, spacer_width
 						colour += "80"
 					# Plot a red box around repeated indels
 					ax = plot_box(
-						ax, nspacers, start_pos_x, y, spacer_size,
+						ax, nspacers-1, start_pos_x, y, spacer_size,
 						spacer_count, spacer_spacing, spacer_width, colour,
-						box_thickness=0.5, hpad=1, vpad=0.2,
+						box_thickness=0.5, hpad=1, vpad=0.4,
 							v_scaling_factor=v_scaling_factor)
 
 					# Shift future spacers to make spacer for this line.
@@ -434,16 +434,16 @@ def plot_box(ax, nspacers, x, y, spacer_size, spacer_count, spacer_spacing,
 
 	# Top bar
 	ax.fill_between(
-		[x-spacer_size*(spacer_count+nspacers)-spacer_size-box_thickness/2-hpad,
-			x-spacer_size*spacer_count-spacer_spacing+box_thickness/2],
+		[x-spacer_size*(spacer_count+nspacers)-spacer_size+box_thickness/2-hpad,
+			x-spacer_size*spacer_count-spacer_spacing-box_thickness/2],
 		y+spacer_width/2+vpad+box_thickness_v/2, 
 		y+spacer_width/2+vpad-box_thickness_v/2,
 		color=box_colour, edgecolor='none', linewidth=0)
 
 	# Bottom bar
 	ax.fill_between(
-		[x-spacer_size*(spacer_count+nspacers)-spacer_size-box_thickness/2-hpad,
-			x-spacer_size*spacer_count-spacer_spacing+box_thickness/2],
+		[x-spacer_size*(spacer_count+nspacers)-spacer_size+box_thickness/2-hpad,
+			x-spacer_size*spacer_count-spacer_spacing-box_thickness/2],
 		y-spacer_width/2-vpad+box_thickness_v/2, 
 		y-spacer_width/2-vpad-box_thickness_v/2,
 		color=box_colour, edgecolor='none', linewidth=0)
