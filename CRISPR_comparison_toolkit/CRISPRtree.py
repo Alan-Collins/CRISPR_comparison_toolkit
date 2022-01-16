@@ -477,7 +477,7 @@ def build_tree_single(arrays, tree_namespace, score, all_arrays, node_ids, event
 
 
 			# Recheck child - ancestor branch length to find indels that would have to occur multiple times
-			for node in tree:
+			for node in tree.postorder_node_iter():
 				if node.level() != 0:
 					if node.parent_node.level() != 0:
 						node_array = array_dict[node.taxon.label]
@@ -583,7 +583,7 @@ def build_tree_multi(arrays, tree_namespace, all_arrays, node_ids, event_costs):
 		
 		if a == arrays[-1]:
 			# Recheck child - ancestor branch length to find indels that would have to occur multiple times
-			for node in tree:
+			for node in tree.postorder_node_iter():
 				if node.level() != 0:
 					if node.parent_node.level() != 0:
 						node_array = array_dict[node.taxon.label]
@@ -680,16 +680,16 @@ def parse_args():
 		help="Specify input file containing json format dictionary of the colour scheme to be used for spacers in this run. Any spacers not in the input file will be coloured according to the normal process."
 		)
 	parser.add_argument(
-		"--seed", dest="seed", type=int, required = False, default = 2,
+		"--seed", type=int, required = False, default = 2,
 		help="The order of outline and fill colours assigned to spacers is semi-random. Change it by providing a number here to change which colours are assigned to each spacer."
 		)
 	parser.add_argument(
-		"--dpi", dest="dpi", type=int, required = False, default = 600,
+		"--dpi", type=int, required = False, default = 600,
 		help="The desired resolution of the output image."
 		)
 	parser.add_argument(
-		"--fade_anc", dest="fade_ancestral", action='store_true', 
-		help="De-emphasize ancestral array cartoons using transparency. This option helps to make it clear which are the inferred ancestral arrays and which are the arrays being analyzed. However, this option reduces colour contrast between spacers."
+		"--no-fade-anc", action='store_true', 
+		help="Do not de-emphasize ancestral array cartoons using transparency. This option helps to make it clear which are the inferred ancestral arrays and which are the arrays being analyzed. However, this option reduces colour contrast between spacers."
 		)
 	parser.add_argument(
 		"arrays_to_join", nargs="*",  
@@ -971,6 +971,7 @@ def main():
 			for n, good_tree in enumerate(best_tree):
 				order = [i.id for i in best_addition_order[n]]
 				print("\nThe addition order to make the following tree was: {}\n".format(" ".join(order)))
+				tree_operations.resolve_polytomies(good_tree)
 				if args.print_tree:
 					print(good_tree.as_ascii_plot(show_internal_node_labels=True))
 					print('\n\n')
@@ -986,7 +987,7 @@ def main():
 						emphasize_diffs=args.emphasize_diffs, dpi=args.dpi,
 						no_align_cartoons=args.no_align_cartoons,
 						no_align_labels=args.no_align_labels,
-						fade_ancestral=args.fade_ancestral, fig_h=6, fig_w=6,
+						no_fade_ancestral=args.no_fade_anc, fig_h=6, fig_w=6,
 						label_text_size=10, annot_text_size=5
 						# brlen_scale=0.5, font_scale=1, fig_h=1, fig_w=1,
 						# label_text_size=False, annot_text_size=False
@@ -1000,11 +1001,11 @@ def main():
 		else:
 			order = [i.id for i in best_addition_order]
 			print("\nThe addition order to make the best tree was: {}\n\n".format(" ".join(order)))
+			tree_operations.resolve_polytomies(best_tree)
 			if args.print_tree:
 				print(best_tree.as_ascii_plot(show_internal_node_labels=True))
 			print(best_tree.as_string("newick"))
 			if args.output_tree:
-				tree_operations.resolve_polytomies(best_tree)
 				print("Saving image of tree with array diagrams to {}\n".format(args.output_tree))
 				tree_operations.plot_tree(tree=best_tree,
 					array_dict=best_arrays, filename=args.output_tree,
@@ -1013,8 +1014,8 @@ def main():
 					emphasize_diffs=args.emphasize_diffs, dpi=args.dpi,
 					no_align_cartoons=args.no_align_cartoons,
 					no_align_labels=args.no_align_labels,
-					fade_ancestral=args.fade_ancestral, fig_h=6, fig_w=6,
-					label_text_size=10, annot_text_size=5)
+					no_fade_ancestral=args.no_fade_anc, fig_h=6, fig_w=6,
+					label_text_size=10, annot_text_size=False)
 				# plot_tree_old(best_tree, best_arrays, args.output_tree, spacer_cols_dict, 
 				# 	args.branch_lengths, args.emphasize_diffs, args.dpi, 
 				# 	args.no_align_cartoons, args.no_align_labels, args.fade_ancestral)
