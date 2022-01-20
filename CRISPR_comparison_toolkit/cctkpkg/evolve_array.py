@@ -10,7 +10,7 @@ import json
 
 import dendropy
 
-from cctk import array_parsimony, tree_operations, colour_schemes
+from . import array_parsimony, tree_operations, colour_schemes
 
 
 def build_parser(parser):

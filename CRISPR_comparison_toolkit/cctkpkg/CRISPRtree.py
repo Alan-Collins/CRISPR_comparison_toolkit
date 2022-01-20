@@ -21,7 +21,7 @@ import time
 from datetime import timedelta
 import json
 
-from cctkpkg import array_parsimony, sequence_operations, tree_operations
+from . import array_parsimony, sequence_operations, tree_operations
 
 
 def infer_ancestor(array1, array2, all_arrays, node_ids, node_count, existing_ancestor):

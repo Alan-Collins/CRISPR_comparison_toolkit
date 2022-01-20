@@ -7,7 +7,7 @@ import sys
 import subprocess
 from shutil import which
 
-from cctk import file_handling, sequence_operations
+from . import file_handling, sequence_operations
 
 
 class MincedObj():

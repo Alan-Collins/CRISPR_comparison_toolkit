@@ -8,7 +8,7 @@ from random import sample, randrange, seed
 import argparse
 import json
 
-from cctkpkg import colour_schemes, file_handling
+from . import colour_schemes, file_handling
 
 
 def get_list_score(arrays_dict, arrays_order):
