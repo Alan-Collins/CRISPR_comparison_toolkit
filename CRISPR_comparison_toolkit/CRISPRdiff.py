@@ -8,7 +8,7 @@ from random import sample, randrange, seed
 import argparse
 import json
 
-from cctk import colour_schemes, file_handling
+from cctkpkg import colour_schemes, file_handling
 
 
 def get_list_score(arrays_dict, arrays_order):
@@ -282,16 +282,7 @@ def find_indices(lst, element):
 		result.append(offset)
 
 
-def cmdline_args():
-	parser = argparse.ArgumentParser(
-		description="Given an array file and a list of arrays to "
-		"align, produces a plot showing shared spacers among arrays "
-		"and their location within each array. Array file format is "
-		"whitespace separated columns where column 1 is the array ID "
-		"and columns 3 onwards are spacer IDs, names, or sequences."
-		"\ne.g. CRISPRdiff.py -a Array_IDs.txt -o "
-		"test.png -c cols.txt -iter 100 155 9 204 73 97",
-		formatter_class=argparse.RawTextHelpFormatter)
+def build_parser(parser):
 	parser.add_argument(
 		"-a", "--array-file",
 		required=True,
@@ -403,9 +394,7 @@ def cmdline_args():
 		"other arguments.**"
 		)
 
-	args = parser.parse_args()
-
-	return args
+	return parser
 
 
 def main(args):
@@ -648,6 +637,20 @@ def main(args):
 
 
 if __name__ == '__main__':
-	args = cmdline_args()
+	parser = argparse.ArgumentParser(
+		description="Given an array file and a list of arrays to "
+		"align, produces a plot showing shared spacers among arrays "
+		"and their location within each array. Array file format is "
+		"whitespace separated columns where column 1 is the array ID "
+		"and columns 3 onwards are spacer IDs, names, or sequences."
+		"\ne.g. CRISPRdiff.py -a Array_IDs.txt -o "
+		"test.png -c cols.txt -iter 100 155 9 204 73 97",
+		)
+	parser = build_parser(parser)
+
+	if len(sys.argv) == 1:
+		parser.parse_args(['--help'])
+	else:
+		args = parser.parse_args()
 
 	main(args)

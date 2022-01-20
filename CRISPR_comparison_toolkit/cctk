@@ -1,0 +1,111 @@
+#!/usr/bin/env python3
+
+import sys
+import argparse
+
+# cctk imports
+import CRISPRtree
+import CRISPRdiff
+import evolve_array
+import minced2arrays
+import blast2arrays
+import CRISPRcasfinder2arrays
+
+
+def parse_args(args=None):
+	cli = argparse.ArgumentParser()
+	subparsers = cli.add_subparsers(dest="command",
+		help="Available commands in the CRISPR comparison toolkit")
+
+	# CRISPR array finding tools
+	find = subparsers.add_parser(
+		'find',
+		help="Find CRISPR arrays in assemblies.")
+	CR_find = find.add_subparsers(dest="subcommand",
+		help="Available tools to find CRISPR arrays")
+	
+	# blast2arrays.py CLI options
+	blast = CR_find.add_parser(
+		'blast',
+		help="Find CRISPR arrays with the provided repeat using BLASTn."
+		)
+	blast = blast2arrays.build_parser(blast)
+
+	# CRISPRcasfinder2arrays.py CLI options
+	crcasfinder = CR_find.add_parser(
+		'ccf',
+		help="Find CRISPR arrays using CRISPRCasFinder."
+		)
+	crcasfinder = CRISPRcasfinder2arrays.build_parser(crcasfinder)
+
+	# minced2arrays.py CLI options
+	minced = CR_find.add_parser(
+		'minced',
+		help="Find CRISPR arrays using minced."
+		)
+	minced = minced2arrays.build_parser(minced)
+	
+	# CRISPRtree.py CLI options
+	tree = subparsers.add_parser(
+		'CRISPRtree',
+		help="Perform a maximum parsimony analysis on CRISPR arrays.")
+	tree = CRISPRtree.build_parser(tree)
+
+	# CRISPRdiff.py CLI options
+	diff = subparsers.add_parser(
+		'CRISPRdiff',
+		help="Produce a CRISPRdiff plot comparing CRISPR arrays.")
+	diff = CRISPRdiff.build_parser(diff)
+
+	# evolve_array.py CLI options
+	evolve = subparsers.add_parser(
+		'evolve',
+		help="Perform in silico evolution of CRISPR arrays."
+		)
+	evolve = evolve_array.build_parser(evolve)
+
+
+	args = cli.parse_args(args)
+
+	return args
+
+
+def main():
+
+
+	if len(sys.argv) == 1:
+		parse_args(['--help'])
+	else:
+		args = parse_args()
+
+	if args.command == "evolve":
+		evolve_array.main(args)
+	elif args.command == "CRISPRtree":
+		CRISPRtree.main(args)
+	elif args.command == "CRISPRdiff":
+		CRISPRdiff.main(args)
+	elif args.command == "find":
+		if args.subcommand == "blast":
+			blast2arrays.main(args)
+		elif args.subcommand == "CRISPRCasFinder":
+			CRISPRcasfinder2arrays.main(args)
+		elif args.subcommand == "minced":
+			minced2arrays.main(args)
+	elif args.command == "CRISPRtree":
+		CRISPRtree.main(args)
+	elif args.command == "CRISPRtree":
+		CRISPRtree.main(args)
+
+
+# CRISPRcasfinder2arrays
+# CRISPRdiff
+# CRISPRspacers2network
+# CRtree_constrained
+# minced2arrays
+# narbl2arrays
+# process_CRISPR_blast
+# Process_CRISPR_cas_finder_out
+# reps2arrays
+
+if __name__ == '__main__':
+	main()

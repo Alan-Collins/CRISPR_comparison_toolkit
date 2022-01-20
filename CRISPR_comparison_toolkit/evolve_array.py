@@ -13,26 +13,23 @@ import dendropy
 from cctk import array_parsimony, tree_operations, colour_schemes
 
 
-def cmdline_args():
+def build_parser(parser):
 
-	p = argparse.ArgumentParser(
-		description="evolve CRISPR arrays in silico. Starts with a single \
-		array and performs a simple in silico evolution process."
-		)
-	p.add_argument(
+	
+	parser.add_argument(
 		"-s", "--seed", type=int, metavar="", help="Set seed for consistency")
-	p.add_argument(
+	parser.add_argument(
 		"-n", "--num-events", type=int, default=20, metavar="",
 		help="How many events should be allowed to occur before the \
 		simulation ends? Default = 20"
 		)
-	p.add_argument(
+	parser.add_argument(
 		"-o", "--outdir", type=str, default="./", metavar="",
 		help="Directory in which output files should be written. \
 		Defalt is your current directory"
 		)
 
-	parameters = p.add_argument_group('Evolution parameters', 
+	parameters = parser.add_argument_group('Evolution parameters', 
 		"Specify the relative frequencies with which different events \
 		should occur.")
 	parameters.add_argument(
@@ -53,7 +50,7 @@ def cmdline_args():
 		help="Rate (percent) at which arrays are lost after spawning a \
 		descendant. Default = 50")
 
-	plotting = p.add_argument_group('Plotting parameters', 
+	plotting = parser.add_argument_group('Plotting parameters', 
 		"Set parameters for plotting the tree to file")
 	plotting.add_argument(
 		"-f", "--font-scale", type=float, default=1, metavar="",
@@ -100,7 +97,7 @@ def cmdline_args():
 		arrays.")
 
 
-	return p.parse_args()
+	return parser
 
 
 def check_outdir(outdir):
@@ -438,5 +435,15 @@ def main(args):
 		no_fade_ancestral=args.no_fade_ancestral)
 
 if __name__ == '__main__':
-	args = cmdline_args()
-	main(args)	
+
+	parser = argparse.ArgumentParser(
+		description="Perform in silico evolution of CRISPR arrays."
+		)
+	parser = build_parser(parser)
+
+	if len(sys.argv) == 1:
+		parser.parse_args(['--help'])
+	else:
+		args = parser.parse_args()
+
+	main(args)

@@ -21,7 +21,7 @@ import time
 from datetime import timedelta
 import json
 
-from cctk import array_parsimony, sequence_operations, tree_operations
+from cctkpkg import array_parsimony, sequence_operations, tree_operations
 
 
 def infer_ancestor(array1, array2, all_arrays, node_ids, node_count, existing_ancestor):
@@ -599,10 +599,7 @@ def build_tree_multi(arrays, tree_namespace, all_arrays, node_ids, event_costs):
 			return array_dict, tree, initial_arrays
 
 
-def parse_args():
-	parser = argparse.ArgumentParser(
-		description="Perform maximum parsimony analysis on CRISPR arrays to infer a tree representing their evolutionary relationship."
-		)
+def build_parser(parser):
 	parser.add_argument(
 		"-a", dest="array_file", required = True,
 		help="Specify array representatives file."
@@ -696,20 +693,16 @@ def parse_args():
 		help="Specify the IDs of the arrays you want to join. If none provided, joins all arrays in the provided array representatives file. **If given, must come at the end of your command after all other arguments.**"
 		)
 
-	args = parser.parse_args()
+	return parser
+
+
+def main(args):
+
+	start_time = time.time()
 
 	if args.no_align_labels and not args.no_align_cartoons:
 		print("\n\nYou chose settings that would align node labels but not array cartoons in the output tree image. Labels cannot be aligned without also aligning array cartoons so that setting has been overwritten. Both will be aligned.\n\n")
 		args.no_align_cartoons = True
-
-	return args
-
-
-def main():
-
-	start_time = time.time()
-
-	args = parse_args()
 
 	print("Running with the following command:\n{}\n".format(" ".join(sys.argv)))
 
@@ -1033,5 +1026,14 @@ def main():
 	print("Total run time: {}".format(time_taken))
 
 if __name__ == '__main__':
-	main()
+	parser = argparse.ArgumentParser(
+		description="Perform maximum parsimony analysis on CRISPR arrays to infer a tree representing their relationship."
+		)
+	parser = build_parser(parser)
+
+	if len(sys.argv) == 1:
+		parser.parse_args(['--help'])
+	else:
+		args = parser.parse_args()
+	main(sys.argv[1:])
 
