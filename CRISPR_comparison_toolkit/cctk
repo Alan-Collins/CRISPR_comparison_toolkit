@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+__version__ = "0.2.1"
+__author__ = "Alan Collins"
+
 import sys
 import argparse
 
@@ -10,22 +13,34 @@ from cctkpkg import evolve_array
 from cctkpkg import minced2arrays
 from cctkpkg import blast2arrays
 from cctkpkg import CRISPRcasfinder2arrays
+from cctkpkg import CRISPRspacers2network
+from cctkpkg import process_CRISPR_blast
 
 description = """
 Find CRISPR arrays in assemblies:
-  blast         Find CRISPR arrays with user-provided repeat(s) using BLASTn
-  ccf           Find CRISPR arrays using CRISPRCasFinder
-  minced        Find CRISPR arrays using minced
+  blast        find CRISPR arrays with user-provided repeat(s) using BLASTn
+  ccf          find CRISPR arrays using CRISPRCasFinder
+  minced       find CRISPR arrays using minced
 
 Analyze the differences between CRISPR arrays:
-  CRISPRtree    Perform a maximum parsimony analysis on CRISPR arrays
-  CRISPRdiff    Produce a CRISPRdiff plot comparing CRISPR arrays
+  CRISPRdiff   produce a CRISPRdiff plot comparing CRISPR arrays
+  CRISPRtree   perform a maximum parsimony analysis on CRISPR arrays
+  constrain    predict array relationships constrained by a tree ## TO ADD ##
+  network      produce a network representation of spacer sharing among arrays
+
+Other:
+  evolve       perform in silico evolution of CRISPR arrays
+  spacerblast  BLAST spacers against something, process output & check for PAMs
 
 """
 
 def parse_args(args=None):
 	cli = argparse.ArgumentParser(
 		formatter_class=argparse.RawDescriptionHelpFormatter)
+	cli.add_argument(
+		"--version",
+		action="version",
+		version=f"%(prog)s {__version__}")
 
 	subparsers = cli.add_subparsers(
 		title="Available commands in the CRISPR comparison toolkit",
@@ -68,12 +83,26 @@ def parse_args(args=None):
 		help="Produce a CRISPRdiff plot comparing CRISPR arrays.")
 	diff = CRISPRdiff.build_parser(diff)
 
+	# CRISPRspacers2network.py CLI options
+	network = subparsers.add_parser(
+		'network',
+		help="Produce a network representation of spacer sharing among arrays."
+		)
+	network = CRISPRspacers2network.build_parser(network)
+
 	# evolve_array.py CLI options
 	evolve = subparsers.add_parser(
 		'evolve',
 		help="Perform in silico evolution of CRISPR arrays."
 		)
 	evolve = evolve_array.build_parser(evolve)
+
+	# process_CRISPR_blast.py CLI options
+	spacerblast = subparsers.add_parser(
+		'spacerblast',
+		help="BLAST spacers against something, process output & check for PAMs."
+		)
+	spacerblast = process_CRISPR_blast.build_parser(spacerblast)
 
 
 	args = cli.parse_args(args)

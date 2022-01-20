@@ -10,7 +10,7 @@ import argparse
 import subprocess
 import re
 
-class blast_result():
+class BlastResult():
 	"""
 	A class to store column contents from a blast result in an easily retrieved form.
 	Allows improved code readability when interacting with blast result lines
@@ -51,7 +51,7 @@ class blast_result():
 		self.strand = 'plus' if self.sstart < self.send else 'minus'
 
 
-class protospacer():
+class Protospacer():
 	"""
 	Class to store information about predicted protospacers.
 	
@@ -128,7 +128,7 @@ def run_blastn(args):
 	if blast_run.stderr:
 		print("ERROR running blast on {}:\n{}".format(args.blast_db_path, blast_run.stderr))
 		sys.exit()
-	blast_lines = [blast_result(i) for i in blast_run.stdout.split('\n') if len(i) > 0]
+	blast_lines = [BlastResult(i) for i in blast_run.stdout.split('\n') if len(i) > 0]
 	return blast_lines
 
 
@@ -187,17 +187,17 @@ def fasta_to_dict(FASTA_file):
 def fill_initial_info(result, flanking_n):
 	"""
 	Args:
-		result (blast_result class): The blast_result instance to process.
+		result (BlastResult class): The BlastResult instance to process.
 		flanking_n (tuple): How many bases upstream and downstream do you want?
 	
 	Returns:
-		tuple(protospacer class, str, str) protospacer class instance with some info added and the fstring and batch_locations for the protospacer and flanking sequence
+		tuple(Protospacer class, str, str) Protospacer class instance with some info added and the fstring and batch_locations for the protospacer and flanking sequence
 	"""
 
 	if int(result.gapopen) > 0: # If there are gaps between spacer and protospacer then ignore.
 		return None, None, None
 	
-	proto = protospacer(spacer=result.qseqid,target=result.sseqid, strand=result.strand, length=result.qlen)
+	proto = Protospacer(spacer=result.qseqid,target=result.sseqid, strand=result.strand, length=result.qlen)
 	up_n, down_n = flanking_n
 	# Adjust for missing edges due to blast not extending through mismatches. If there are no missing edges this won't add anything.
 	if proto.strand == 'plus':
@@ -238,12 +238,12 @@ def fill_initial_info(result, flanking_n):
 def fill_remaining_info(proto, spacer, blastdbcmd_output):
 	"""
 	Args:
-		proto (protospacer class) protospacer instance containing initial information that you want to fill.
+		proto (Protospacer class) Protospacer instance containing initial information that you want to fill.
 		spacer (str): sequence of the spacer.
 		blastdbcmd_output (list): elements of the blastdbcmd output for this protospacer.
 	
 	Returns:
-		(protospacer class) protospacer instance with the rest of the information filled in.
+		(Protospacer class) Protospacer instance with the rest of the information filled in.
 	"""
 
 	proto.up, proto.protoseq, proto.down = blastdbcmd_output 
@@ -287,109 +287,200 @@ def find_pam(pattern, sequence, is_regex):
 	return bool(pat.match(sequence))
 
 
-def main():
-
-	class CustomHelpFormatter(argparse.HelpFormatter):
-		def _format_action_invocation(self, action):
-			if not action.option_strings or action.nargs == 0:
-				return super()._format_action_invocation(action)
-			default = self._get_default_metavar_for_optional(action)
-			args_string = self._format_args(action, default)
-			return ', '.join(action.option_strings)
-
-	fmt = lambda prog: CustomHelpFormatter(prog)
-
-	parser = argparse.ArgumentParser(
-		description="Process BLAST output of spacers against a blastdb. For results that have cut off due to mismatches, extend the hit to the full length and report mismatches. Report up- and down-stream bases for PAM analysis.",
-		formatter_class=fmt
-		)
-
-	#### Options for this script ####
+def build_parser(parser):
 	req_options = parser.add_argument_group("Required arguments")
 	req_options.add_argument(
-		"-d", "--blastdb", dest="blast_db_path", required = True,
-		help="path to blast db files (not including the file extensions). The blastdb must have been made with the option '-parse_seqids' for this script to function."
+		"-d", "--blastdb",
+		dest="blast_db_path",
+		required = True,
+		help="path to blast db files (not including the file extensions). The \
+		blastdb must have been made with the option '-parse_seqids' for this \
+		script to function."
 		)
 	req_options.add_argument(
-		"-s", "--spacers", dest="spacer_file", required = True,
+		"-s", "--spacers",
+		dest="spacer_file",
+		required = True,
 		help="The file with your spacers in fasta format."
 		)
 	
 	out_options = parser.add_argument_group("Output control arguments")
 	out_options.add_argument(
-		"-o", "--out", dest="outfile", required = False,
+		"-o", "--out",
+		dest="outfile",
+		required = False,
 		help="path to output file. If none provided, outputs to stdout."
 		)
 	out_options.add_argument(
-		"-q", "--no_pam_out", dest="no_pam_outfile", required = False,
+		"-q", "--no_pam_out",
+		dest="no_pam_outfile",
+		required = False,
 		help="path to output file for protospacers with no PAM if desired."
 		)
 	out_options.add_argument(
-		"-n", "--flanking", dest="flanking_n", required = False, default=0, type=int,
-		help="DEFAULT: 0. Number of bases you want returned from the 5' and 3' sequences flanking your protospacers. N.B. In order to consistently return these sequences, protospacers that are closer to the end of the target sequence than the number specified here will be discarded."
+		"-n", "--flanking",
+		dest="flanking_n",
+		required = False,
+		default=0,
+		type=int,
+		help="DEFAULT: 0. Number of bases you want returned from the 5' and \
+		3' sequences flanking your protospacers. N.B. In order to \
+		consistently return these sequences, protospacers that are closer to \
+		the end of the target sequence than the number specified here will be \
+		discarded."
 		)
 	out_options.add_argument(
-		"-u", "--upstream", dest="upstream_n", required = False, default=0, type=int,
-		help="DEFAULT: 0. Number of bases you want returned from the 5' sequences flanking your protospacers. N.B. In order to consistently return these sequences, protospacers that are closer to the end of the target sequence than the number specified here will be discarded."
+		"-u", "--upstream",
+		dest="upstream_n",
+		required = False,
+		default=0,
+		type=int,
+		help="DEFAULT: 0. Number of bases you want returned from the 5' \
+		sequences flanking your protospacers. N.B. In order to consistently \
+		return these sequences, protospacers that are closer to the end of \
+		the target sequence than the number specified here will be discarded."
 		)
 	out_options.add_argument(
-		"-w", "--downstream", dest="downstream_n", required = False, default=0, type=int,
-		help="DEFAULT: 0. Number of bases you want returned from the 3' sequences flanking your protospacers. N.B. In order to consistently return these sequences, protospacers that are closer to the end of the target sequence than the number specified here will be discarded."
+		"-w", "--downstream",
+		dest="downstream_n", 
+		required = False,
+		default=0,
+		type=int,
+		help="DEFAULT: 0. Number of bases you want returned from the 3' \
+		sequences flanking your protospacers. N.B. In order to consistently \
+		return these sequences, protospacers that are closer to the end of \
+		the target sequence than the number specified here will be discarded."
 		)
 	out_options.add_argument(
-		"-R", "--regex_pam", dest="regex_pam", required = False,
-		help='A regex describing the PAM sequence you would like to look for. E.g. if your PAM is C or T then two Gs, you could describe that as "[CT]GG"'
+		"-R", "--regex_pam",
+		dest="regex_pam",
+		required = False,
+		help='A regex describing the PAM sequence you would like to look for. \
+		E.g. if your PAM is C or T then two Gs, you could describe that as \
+		"[CT]GG"'
 		)
 	out_options.add_argument(
-		"-P", "--pam", dest="pam", required = False,
-		help="A pattern describing the PAM sequence you would like to look for. Ns can be used to indicate positions with no sequence requirement. Case insensitive. E.g. if your PAM is 3 of any base followed by CC you could provide NNNCC or nnncc here."
+		"-P", "--pam",
+		dest="pam",
+		required = False,
+		help="A pattern describing the PAM sequence you would like to look \
+		for. Ns can be used to indicate positions with no sequence \
+		requirement. Case insensitive. E.g. if your PAM is 3 of any base \
+		followed by CC you could provide NNNCC or nnncc here."
 		)
 	out_options.add_argument(
-		"-l", "--pam_location", dest="pam_location", required = False, choices=['up', 'down'],
-		help="['up', 'down'] Where is your PAM relative to your protospacer? 'up' indicates 5' and down indicates 3'."
+		"-l", "--pam_location",
+		dest="pam_location",
+		required = False,
+		choices=['up', 'down'],
+		help="['up', 'down'] Where is your PAM relative to your protospacer? \
+		'up' indicates 5' and down indicates 3'."
 		)
 	out_options.add_argument(
-		"-p", "--percent_id", dest="pid", required = False, default=0, type=float,
-		help="DEFAULT: 0. Minimum percent identity between spacer and protospacer in order for the result to be output. Default is output all protospacers that are returned by BLAST."
+		"-p", "--percent_id",
+		dest="pid",
+		required = False,
+		default=0,
+		type=float,
+		help="DEFAULT: 0. Minimum percent identity between spacer and \
+		protospacer in order for the result to be output. Default is output \
+		all protospacers that are returned by BLAST."
 		)
 	out_options.add_argument(
-		"-b", "--batch_size", dest="blastdbcmd_batch_size", required = False, default=1000, type=int,
-		help="DEFAULT: 1000. This runs quicker if it calls blastdbcmd fewer times. To get the sequences of protospacers and flanking sequence, locations are retrieved from blastdbcmd in batches. The larger the batch, the quicker this runs. However, your OS may have a limit on the number that can be used. If you get an error like 'OSError: [Errno 7] Argument list too long: '/bin/sh'' then decrease this value and try again. In my experience, 500 often works."
+		"-b", "--batch_size",
+		dest="blastdbcmd_batch_size",
+		required = False,
+		default=1000,
+		type=int,
+		help="DEFAULT: 1000. This runs quicker if it calls blastdbcmd fewer \
+		times. To get the sequences of protospacers and flanking sequence, \
+		locations are retrieved from blastdbcmd in batches. The larger the \
+		batch, the quicker this runs. However, your OS may have a limit on \
+		the number that can be used. If you get an error like 'OSError: \
+		[Errno 7] Argument list too long: '/bin/sh'' then decrease this value \
+		and try again. In my experience, 500 often works."
 		)
 	out_options.add_argument(
-		"-r", "--mask_regions", dest="mask_regions", required = False,
-		help="If you would like to mask regions in your blastdb to exclude hits in those regions, provide a .bed format file with those regions here. This is useful for example if you know that the sequences in your blastdb contain CRISPR arrays and would like to exclude hits of CRISPR spacers against similar spacers in the array."
+		"-r", "--mask_regions",
+		dest="mask_regions",
+		required = False,
+		help="If you would like to mask regions in your blastdb to exclude \
+		hits in those regions, provide a .bed format file with those regions \
+		here. This is useful for example if you know that the sequences in \
+		your blastdb contain CRISPR arrays and would like to exclude hits of \
+		CRISPR spacers against similar spacers in the array."
 		)
 
 	### Options for blastn ####
 
-	blast_options = parser.add_argument_group("BLAST arguments", "Arguments to control the blastn command used by this script.")
+	blast_options = parser.add_argument_group(
+		"BLAST arguments", 
+		"Arguments to control the blastn command used by this script.")
 	blast_options.add_argument(
-		"-e", "--evalue", dest="evalue", required = False, default='10',
-		help="DEFAULT: 10. set the evalue cutoff below which blastn will keep blast hits when looking for CRISPR repeats in your blast database. Useful for reducing inclusion of low quality blast hits with big databases in combination with the -m option."
+		"-e", "--evalue",
+		dest="evalue",
+		required = False,
+		default='10',
+		help="DEFAULT: 10. set the evalue cutoff below which blastn will keep \
+		blast hits when looking for CRISPR repeats in your blast database. \
+		Useful for reducing inclusion of low quality blast hits with big \
+		databases in combination with the -m option."
 		)
 	blast_options.add_argument(
-		"-m", "--max_target_seqs", dest="max_target_seqs", required = False, default='10000',
-		help="DEFAULT: 10000. Set the max_target_seqs option for blastn when looking for CRISPR repeats in your blast database. Blast stops looking for hits after finding and internal limit (N_i) sequences for each query sequence, where N_i=2*N+50. These are just the first N_i sequences with better evalue scores than the cutoff, not the best N_i hits. Because of the nature of the blast used here (small number of queries with many expected hits) it may be necessary to increase the max_target_seqs value to avoid blast ceasing to search for repeats before all have been found. The blast default value is 500. The default used here is 10,000. You may want to reduce it to increase speed or increase it to make sure every repeat is being found. If increasing this value (e.g. doubling it) finds no new spacers then you can be confident that this is not an issue with your dataset."
+		"-m", "--max_target_seqs",
+		dest="max_target_seqs",
+		required = False,
+		default='10000',
+		help="DEFAULT: 10000. Set the max_target_seqs option for blastn when \
+		looking for CRISPR repeats in your blast database. Blast stops \
+		looking for hits after finding and internal limit (N_i) sequences for \
+		each query sequence, where N_i=2*N+50. These are just the first N_i \
+		sequences with better evalue scores than the cutoff, not the best N_i \
+		hits. Because of the nature of the blast used here (small number of \
+		queries with many expected hits) it may be necessary to increase the \
+		max_target_seqs value to avoid blast ceasing to search for repeats \
+		before all have been found. The blast default value is 500. The \
+		default used here is 10,000. You may want to reduce it to increase \
+		speed or increase it to make sure every repeat is being found. If \
+		increasing this value (e.g. doubling it) finds no new spacers then \
+		you can be confident that this is not an issue with your dataset."
 		)
 	blast_options.add_argument(
-		"-t", "--threads", dest="num_threads", required = False, default=1, type=int,
-		help="DEFAULT: 1. Number of threads you want to use for the blastn step of this script."
+		"-t", "--threads",
+		dest="num_threads", 
+		required = False,
+		default=1,
+		type=int,
+		help="DEFAULT: 1. Number of threads you want to use for the blastn \
+		step of this script."
 		)
 	blast_options.add_argument(
-		"-x", "--other_options", dest="other_blast_options", required = False, default='',
-		help="DEFAULT: none. If you want to include any other options to control the blastn command, you can add them here. Options you should not provide here are: blastn -query -db -task -outfmt -num_threads -max_target_seqs -evalue"
+		"-x", "--other_options",
+		dest="other_blast_options",
+		required = False,
+		default='',
+		help="DEFAULT: none. If you want to include any other options to \
+		control the blastn command, you can add them here. Options you should \
+		not provide here are: blastn -query -db -task -outfmt -num_threads \
+		-max_target_seqs -evalue"
 		)
 
+	return parser
 
-	args = parser.parse_args(sys.argv[1:])
+
+def main():
 
 	if any([args.pam_location, args.pam, args.regex_pam]):
 		if all([args.pam, args.regex_pam]):
-			print("Please provide either a PAM pattern using -P/--pam or a regex using -R/--regex_pam but not both.")
+			print("Please provide either a PAM pattern using -P/--pam or a \
+				regex using -R/--regex_pam but not both.")
 			sys.exit()
-		if not all([args.pam_location, args.pam]) and not all([args.pam_location, args.regex_pam]):
-			print("Please provide both a PAM pattern using -P/--pam or -R/--regex_pam AND a location to search for the PAM using -l/--pam_location.")
+		if not all(
+			[args.pam_location, args.pam]) and not all(
+			[args.pam_location, args.regex_pam]):
+			print("Please provide both a PAM pattern using -P/--pam or \
+				-R/--regex_pam AND a location to search for the PAM using \
+				-l/--pam_location.")
 			sys.exit()
 
 	spacer_dict = fasta_to_dict(args.spacer_file)
@@ -404,15 +495,20 @@ def main():
 			for line in fin.readlines():
 				bits = line.split()
 				if len(bits) != 3:
-					print("Error: Number of columns in your mask_regions bed file must be 3:\nFasta_header\tstart\tstop")
+					print("Error: Number of columns in your mask_regions bed \
+						file must be 3:\nFasta_header\tstart\tstop")
 					sys.exit()
 				mask_dict[bits[0]] = [int(_) for _ in bits[1:]]
 
 
 	blast_output = run_blastn(args)
 
-	outcontents = ["Spacer_ID\tTarget_contig\tProtospacer_start\tProtospacer_end\tPercent_identity\tmismatches\tprotospacer_sequence\tupstream_bases\tdownstream_bases\ttarget_strand"]
-	no_pam_outcontents = ["Spacer_ID\tTarget_contig\tProtospacer_start\tProtospacer_end\tPercent_identity\tmismatches\tprotospacer_sequence\tupstream_bases\tdownstream_bases\ttarget_strand"]
+	outcontents = ["Spacer_ID\tTarget_contig\tProtospacer_start\t\
+	Protospacer_end\tPercent_identity\tmismatches\tprotospacer_sequence\t\
+	upstream_bases\tdownstream_bases\ttarget_strand"]
+	no_pam_outcontents = ["Spacer_ID\tTarget_contig\tProtospacer_start\t\
+	Protospacer_end\tPercent_identity\tmismatches\tprotospacer_sequence\t\
+	upstream_bases\tdownstream_bases\ttarget_strand"]
 	fstring = batch_locations = ""
 	protos = []
 
@@ -420,7 +516,9 @@ def main():
 	all_protospacer_infos = []
 	for result in blast_output:
 		p, f, b = fill_initial_info(result, flanking_n)
-		if p == None: # If the match couldn't be extended because it is at the end of the contig then skip this one.
+		# If the match couldn't be extended because it is at the end of
+		# the contig then skip this one.
+		if p == None:
 			continue
 		protos.append(p)
 		fstring += f
@@ -429,10 +527,16 @@ def main():
 
 		if count == args.blastdbcmd_batch_size:
 			count = 0
-			all_protospacer_infos += run_blastcmd(args.blast_db_path, fstring, batch_locations)
+			all_protospacer_infos += run_blastcmd(
+				args.blast_db_path,
+				fstring,
+				batch_locations)
 			fstring = batch_locations = ""
 	if count != 0:
-		all_protospacer_infos += run_blastcmd(args.blast_db_path, fstring, batch_locations)
+		all_protospacer_infos += run_blastcmd(
+			args.blast_db_path,
+			fstring,
+			batch_locations)
 
 	p_count = 0
 
@@ -443,13 +547,25 @@ def main():
 		# Depending on which flanking sequence was requested, fill in unrequested sequence with empty string.
 
 		if flanking_n[0] and flanking_n[1]:
-			p = fill_remaining_info(p, spacer_dict[p.spacer], all_protospacer_infos[i:i+3])
+			p = fill_remaining_info(
+				p,
+				spacer_dict[p.spacer],
+			all_protospacer_infos[i:i+3])
 		elif flanking_n[0]:
-			p = fill_remaining_info(p, spacer_dict[p.spacer], all_protospacer_infos[i:i+2]+[''])
+			p = fill_remaining_info(
+				p,
+				spacer_dict[p.spacer],
+				all_protospacer_infos[i:i+2]+[''])
 		elif flanking_n[1]:
-			p = fill_remaining_info(p, spacer_dict[p.spacer], ['']+all_protospacer_infos[i:i+2])
+			p = fill_remaining_info(
+				p,
+				spacer_dict[p.spacer],
+				['']+all_protospacer_infos[i:i+2])
 		else:
-			p = fill_remaining_info(p, spacer_dict[p.spacer], ['', all_protospacer_infos[i], ''])
+			p = fill_remaining_info(
+				p,
+				spacer_dict[p.spacer],
+				['', all_protospacer_infos[i], ''])
 
 		if p.pid >= args.pid:
 			if p.target in mask_dict.keys():
@@ -468,15 +584,48 @@ def main():
 					seq = p.down
 				if args.pam:
 					if not find_pam(args.pam, seq, False):
-						no_pam_outcontents.append("\t".join([str(_) for _ in [p.spacer, p.target, p.start, p.stop, p.pid, p.mismatch, p.protoseq, p.up, p.down, p.strand]]))
+						no_pam_outcontents.append(
+							"\t".join([str(_) for _ in [
+								p.spacer,
+								p.target,
+								p.start,
+								p.stop,
+								p.pid,
+								p.mismatch,
+								p.protoseq,
+								p.up,
+								p.down,
+								p.strand]]))
 						p_count += 1
 						continue
 				else:
 					if not find_pam(args.regex_pam, seq, True):
-						no_pam_outcontents.append("\t".join([str(_) for _ in [p.spacer, p.target, p.start, p.stop, p.pid, p.mismatch, p.protoseq, p.up, p.down, p.strand]]))
+						no_pam_outcontents.append(
+							"\t".join([str(_) for _ in [
+								p.spacer,
+								p.target,
+								p.start,
+								p.stop,
+								p.pid,
+								p.mismatch,
+								p.protoseq,
+								p.up,
+								p.down,
+								p.strand]]))
 						p_count += 1
 						continue
-			outcontents.append("\t".join([str(_) for _ in [p.spacer, p.target, p.start, p.stop, p.pid, p.mismatch, p.protoseq, p.up, p.down, p.strand]]))
+			outcontents.append(
+				"\t".join([str(_) for _ in [
+					p.spacer,
+					p.target,
+					p.start,
+					p.stop,
+					p.pid,
+					p.mismatch,
+					p.protoseq,
+					p.up,
+					p.down,
+					p.strand]]))
 
 		p_count += 1
 
@@ -496,4 +645,16 @@ def main():
 
 
 if __name__ == '__main__':
-	main()
+	parser = argparse.ArgumentParser(
+		description="Process BLAST output of spacers against a blastdb. For \
+		results that have cut off due to mismatches, extend the hit to the \
+		full length and report mismatches. Report up- and down-stream bases \
+		for PAM analysis.")
+	parser = build_parser(parser)
+
+	if len(sys.argv) == 1:
+		parser.parse_args(['--help'])
+	else:
+		args = parser.parse_args()
+
+	main(args)

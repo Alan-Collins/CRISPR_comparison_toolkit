@@ -52,12 +52,7 @@ class CRISPR_info():
 		self.type = assembly.types[array_num]
 
 
-def cmdline_args():
-
-	parser = argparse.ArgumentParser(
-		description="Create a network representation of the relationships "
-		"between arrays."
-		)
+def build_parser(parser):
 	parser.add_argument(
 		"-i", "--input", required = True,
 		help="Input file. CRISPR_summary_table.csv produced by one of the "
@@ -74,7 +69,7 @@ def cmdline_args():
 		"Path to location to write a list of which assemblies have each array."
 		)
 
-	return parser.parse_args()
+	return parser
 
 
 def main(args):
@@ -132,7 +127,15 @@ def main(args):
 
 
 if __name__ == '__main__':
-	args = cmdline_args()
-	main(args)	
-	
+	parser = argparse.ArgumentParser(
+		description="Create a network representation of the relationships \
+		between arrays."
+		)
+	parser = build_parser(parser)
 
+	if len(sys.argv) == 1:
+		parser.parse_args(['--help'])
+	else:
+		args = parser.parse_args()
+
+	main(args)	
