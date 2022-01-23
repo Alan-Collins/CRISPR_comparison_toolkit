@@ -105,7 +105,6 @@ def parse_args(args=None):
 
 def main():
 
-
 	if len(sys.argv) == 1:
 		parse_args(['--help'])
 	else:
@@ -127,18 +126,6 @@ def main():
 		CRISPRtree.main(args)
 	elif args.command == "spacerblast":
 		process_CRISPR_blast.main(args)
-
-
-
-# CRISPRcasfinder2arrays
-# CRISPRdiff
-# CRISPRspacers2network
-# CRtree_constrained
-# minced2arrays
-# narbl2arrays
-# process_CRISPR_blast
-# Process_CRISPR_cas_finder_out
-# reps2arrays
 
 if __name__ == '__main__':
 	main()
