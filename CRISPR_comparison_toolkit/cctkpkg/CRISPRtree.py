@@ -599,6 +599,29 @@ def build_tree_multi(arrays, tree_namespace, all_arrays, node_ids, event_costs):
 			return array_dict, tree, initial_arrays
 
 
+def reset_anc_mods(tree, array_dict):
+	"""Ensures modules identified in ancestor during comparison with
+	child aren't plotted"""
+
+	root_array_name = tree.seed_node.taxon.label
+	array = array_dict[root_array_name]
+
+	array.reset()
+	array.aligned = array.spacers
+
+	new_module = array_parsimony.SpacerModule()
+	new_module.type = "shared"
+	new_module.spacers = array.spacers
+	new_module.indices = [i for i in range(len(new_module.spacers))]
+
+	array.modules.append(new_module)
+	array.module_lookup = {i: new_module for i in new_module.indices}
+
+	array_dict[root_array_name] = array
+
+	return array_dict
+
+
 def build_parser(parser):
 	parser.add_argument(
 		"-a", dest="array_file", required = True,
@@ -971,6 +994,8 @@ def main(args):
 				print(good_tree.as_string("newick"))
 				print('\n\n')
 				if args.output_tree:
+					# Reset events in root array
+					best_arrays[n] = reset_anc_mods(good_tree, best_arrays[n])
 					filename = "{}_{}.png".format(args.output_tree[:-4], n+1)
 					print("Saving image of tree with array diagrams to {}\n".format(filename))
 					tree_operations.plot_tree(tree=good_tree,
@@ -999,6 +1024,8 @@ def main(args):
 				print(best_tree.as_ascii_plot(show_internal_node_labels=True))
 			print(best_tree.as_string("newick"))
 			if args.output_tree:
+				# Reset events in root array
+				best_arrays = reset_anc_mods(best_tree, best_arrays)
 				print("Saving image of tree with array diagrams to {}\n".format(args.output_tree))
 				tree_operations.plot_tree(tree=best_tree,
 					array_dict=best_arrays, filename=args.output_tree,
