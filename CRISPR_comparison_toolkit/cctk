@@ -12,14 +12,14 @@ from cctkpkg import CRISPRdiff
 from cctkpkg import evolve_array
 from cctkpkg import minced2arrays
 from cctkpkg import blast2arrays
-from cctkpkg import CRISPRcasfinder2arrays
 from cctkpkg import CRISPRspacers2network
 from cctkpkg import process_CRISPR_blast
 
 description = """
+Call any command followed by -h or --help to show help for that command
+
 Find CRISPR arrays in assemblies:
   blast        find CRISPR arrays with user-provided repeat(s) using BLASTn
-  ccf          find CRISPR arrays using CRISPRCasFinder
   minced       find CRISPR arrays using minced
 
 Analyze the differences between CRISPR arrays:
@@ -56,13 +56,6 @@ def parse_args(args=None):
 		help="Find CRISPR arrays with the provided repeat using BLASTn."
 		)
 	blast = blast2arrays.build_parser(blast)
-
-	# CRISPRcasfinder2arrays.py CLI options
-	crcasfinder = subparsers.add_parser(
-		'ccf',
-		help="Find CRISPR arrays using CRISPRCasFinder."
-		)
-	crcasfinder = CRISPRcasfinder2arrays.build_parser(crcasfinder)
 
 	# minced2arrays.py CLI options
 	minced = subparsers.add_parser(
@@ -126,14 +119,15 @@ def main():
 		CRISPRdiff.main(args)
 	elif args.command == "blast":
 		blast2arrays.main(args)
-	elif args.command == "CRISPRCasFinder":
-		CRISPRcasfinder2arrays.main(args)
 	elif args.command == "minced":
 		minced2arrays.main(args)
 	elif args.command == "CRISPRtree":
 		CRISPRtree.main(args)
 	elif args.command == "CRISPRtree":
 		CRISPRtree.main(args)
+	elif args.command == "spacerblast":
+		process_CRISPR_blast.main(args)
+
 
 
 # CRISPRcasfinder2arrays
