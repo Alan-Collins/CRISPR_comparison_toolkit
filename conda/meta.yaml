@@ -10,21 +10,17 @@ source:
 
 requirements:
   host:
-    - python
+    - python >=3.7
     - pip
     - setuptools
 
   run:
-    - python
+    - python >=3.7
     - numpy
     - matplotlib
     - bioconda::dendropy
     - bioconda::minced
     - bioconda::blast
-    - bioconda::emboss
-    - bioconda::fastx_toolkit
-
-
 
 about:
   home: https://github.com/Alan-Collins/CRISPR_comparison_toolkit
