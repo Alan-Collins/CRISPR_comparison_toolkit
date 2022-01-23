@@ -468,7 +468,7 @@ def build_parser(parser):
 	return parser
 
 
-def main():
+def main(args):
 
 	if any([args.pam_location, args.pam, args.regex_pam]):
 		if all([args.pam, args.regex_pam]):
