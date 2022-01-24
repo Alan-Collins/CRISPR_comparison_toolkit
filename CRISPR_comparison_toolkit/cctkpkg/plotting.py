@@ -1,0 +1,509 @@
+from math import ceil, log, sin, pi
+from copy import copy
+
+import matplotlib.pyplot as plt
+from matplotlib.transforms import Bbox
+import numpy as np
+
+from . import tree_operations
+
+def draw_branches(tree, node_locs, ax, branch_lengths=True, brlen_scale=0.5,
+	font_scale=1, line_scale=1, label_text_size=False, annot_text_size=False):
+
+	for name, location in node_locs.items():
+		x, y = location
+		node = tree.find_node_with_taxon_label(name)
+		
+		# Draw branch from this node to its parent
+		
+		# identify x location for parent depth if the parent is not seed
+		if node != tree.seed_node and node.parent_node.taxon != None:
+			x2 = node_locs[node.parent_node.taxon.label][0]
+		else:
+			x2 = x + brlen_scale
+
+		ax.plot([x, x2], [y, y], color='black', linewidth=line_scale,
+			solid_capstyle="round")
+
+		# If internal node, draw line connecting lines to children
+		if node.is_internal():
+			child_locations = [
+				node_locs[i.taxon.label] for i in node.child_nodes()]
+			# Draw line between the highest and smallest child y value
+			y1 = max([i[1] for i in child_locations])
+			y2 = min([i[1] for i in child_locations])
+
+			ax.plot([x, x], [y1, y2], color='black', linewidth=line_scale,
+				solid_capstyle="round")
+
+	return ax
+
+
+def add_labels(tree, node_locs, ax, branch_lengths=True,font_scale=1,
+	line_scale=1, label_text_size=False, annot_text_size=False,
+	no_align_labels=False, brlen_scale=0.5, no_fade_ancestral=False):
+
+	if annot_text_size:
+		brlen_font_size = annot_text_size
+	else:
+		brlen_font_size = 8*font_scale
+
+	leaves = [i.taxon.label for i in tree.leaf_nodes()]
+	
+	for name, location in node_locs.items():
+		# Extract relevant node from tree
+		node = tree.find_node_with_taxon_label(name)
+		
+		# Add node label
+		x, y = location
+		label_color = "#000000"
+
+		# Fade if not leaf node if no_fade_ancestral == False
+		if not no_fade_ancestral and node.taxon.label not in leaves:
+			label_color += "80"
+		if not no_align_labels:
+			# Draw labels at the most extreme x position (negativen number)
+			label_x = min([float(i[0]) for i in node_locs.values()])
+			# Draw dashed line from node to label for visual aid
+			ax.plot([label_x, x], [y,y], linestyle='--', color='black',
+				linewidth=line_scale*0.5, dashes=(10, 2), alpha=0.3)
+		else:
+			label_x = x
+
+		ax.text(label_x-0.1, y, name, ha='right', va='center_baseline', 
+			fontsize=label_text_size, color=label_color)
+
+		# add branch lengths if user desires and if branch has a length
+		if not branch_lengths:
+			continue	
+		if node.edge_length == 0:
+			continue
+		ax.text(x + (node.edge_length/2)*brlen_scale, y-0.6,node.edge_length,
+			ha='center', va='top', fontsize=brlen_font_size)
+	
+	return ax
+
+
+def add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict, spacer_width=0.3, 
+	spacer_outline=3, spacer_spacing=0.45, spacer_size=2.5, label_pad=5,
+	no_fade_ancestral=False, no_align_cartoons=False, emphasize_diffs=False,
+	v_scaling_factor=1, annot_text_size=False):
+
+	# Add cartoon arrays to show hypothetical ancestral states
+	# plot each array using the coordinates of the array label on the plotted
+	# tree.
+	
+	# List of leaf nodes for identification of internal nodes used if
+	# no_fade_ancestral == False
+
+	leaves = [i.taxon.label for i in tree.leaf_nodes()]
+
+	# If repeat_indel found with multiple arrays as possible partners,
+	# annotate one on the tree and print the rest to stdout if user wants
+	# emphasis.
+	rep_indel_report_count = 1 
+	
+	# Print a help message the first time a list of possible rep indel partners
+	# are found.
+	rep_indel_message_printed = False 
+	
+	for array, location in node_locs.items():
+		if array not in leaves:
+			ancestral = True
+		else:
+			ancestral = False
+
+		child = array_dict[array]
+		x, y = location
+		if not no_align_cartoons:
+			x = min([int(i[0]) for i in node_locs.values()])
+
+		start_pos_x = x-label_pad
+
+		spacer_count = 0 # How many spacers have been plotted?
+		reshift_loc = 1000 # init to number that won't be seen
+
+		for n, diff_type in reversed(child.module_lookup.items()):
+			spacer = child.aligned[n]
+
+			nspacers = len([
+				child.aligned[i] for i in diff_type.indices if child.aligned[i] != '-'])
+
+			# Add change info
+			if n == reshift_loc:
+				start_pos_x-=0.5 # Shift future spacers to make space for line
+	
+			if n == diff_type.indices[-1]:
+				# If this is the start of a new module (working from the
+				# back of the module) then process this module
+				if diff_type == "shared":
+					# If these spacers are shared then no annotation.
+					continue
+			
+				elif diff_type.type == "no_ident":
+					colour = "#02a8b1"
+					if not no_fade_ancestral and ancestral:
+						colour += "80"
+					# Plot blue box around spacers
+					ax = plot_box(
+						ax, nspacers-1, start_pos_x, y, spacer_size,
+						spacer_count, spacer_spacing, spacer_width, colour,
+						box_thickness=0.5, hpad=1, vpad=0.35,
+						v_scaling_factor=v_scaling_factor)
+
+					# Shift future spacers to make spacer for this line.
+					start_pos_x-=0.5
+					# Shift again after the indel region for next line
+					reshift_loc = diff_type.indices[0]-1
+					
+				elif diff_type.type == "repeated_indel":
+					colour = "#cc3300"
+					if not no_fade_ancestral and ancestral:
+						colour += "80"
+					# Plot a red box around repeated indels
+					ax = plot_box(
+						ax, nspacers-1, start_pos_x, y, spacer_size,
+						spacer_count, spacer_spacing, spacer_width, colour,
+						box_thickness=0.5, hpad=1, vpad=0.4,
+							v_scaling_factor=v_scaling_factor)
+
+					# Shift future spacers to make spacer for this line.
+					start_pos_x-=0.5
+					# Shift again after the indel region for next line
+					reshift_loc = diff_type.indices[0]-1
+
+					# Add Array ID of the array in which the spacers of this predicted repeated_indel can be found
+					num_partners = len(diff_type.partner)
+					
+					ax = plot_rep_indel_text(
+						ax, nspacers, start_pos_x, y, spacer_size, spacer_count,
+						spacer_spacing,	spacer_width, num_partners,
+						rep_indel_report_count,	rep_indel_message_printed,
+						annot_text_size=annot_text_size)
+
+					rep_indel_report_count += 1
+					rep_indel_message_printed = True
+					
+				elif diff_type.type in ['indel_gap', 'indel_mm', 'indel']:
+					if spacer == '-':
+						colour = "#666666"
+						if not no_fade_ancestral and ancestral:
+							colour += "80"
+						# Draw an X as this is a deletion
+						ax = plot_x_or_slash(ax, start_pos_x, y,
+							spacer_size, spacer_count, spacer_spacing, 
+							spacer_width, 'x', colour)
+						# Shift future spacers a bit to make spacer for
+						# this line.
+						spacer_count+=1
+					else:
+						colour = "#666666"
+						if not no_fade_ancestral and ancestral:
+							colour += "80"
+						# Insertion so plot a grey box
+						# hpad = box_thickness + start_pos_x shift
+						ax = plot_box(
+							ax, nspacers-1, start_pos_x, y, spacer_size,
+							spacer_count, spacer_spacing, spacer_width,
+							colour, box_thickness=0.5, hpad=1, vpad=0.2,
+							v_scaling_factor=v_scaling_factor)
+
+						# Shift future spacers to make spacer for this line.
+						start_pos_x-=0.5
+						# Shift again after the indel region for next line
+						reshift_loc = diff_type.indices[0]-1
+
+				elif diff_type.type == "acquisition":
+					colour = "#666666"
+					if not no_fade_ancestral and ancestral:
+						colour += "80"
+					ax = plot_line(ax, nspacers, start_pos_x, y, spacer_size,
+						spacer_count, spacer_spacing, spacer_width, wavy=True,
+						colour=colour)
+
+				elif diff_type.type == "trailer_loss":
+					if spacer == '-': # Draw a single sloped line
+						colour = "#666666"
+						if not no_fade_ancestral and ancestral:
+							colour += "80"
+						ax = plot_x_or_slash(ax, start_pos_x, y, 
+							spacer_size, spacer_count, spacer_spacing, spacer_width,
+							'/', colour)
+						 # Shift future spacers a bit to make spacer for this
+						 # line.
+						spacer_count+=1
+				elif diff_type.type == "duplication":
+					colour = "#666666"
+					if not no_fade_ancestral and ancestral:
+						colour += "80"
+					ax = plot_line(ax, nspacers, start_pos_x, y, spacer_size,
+						spacer_count, spacer_spacing, spacer_width, wavy=False,
+						colour=colour)
+
+			# Plot spacer cartoon
+			if spacer == '-':
+				continue
+			if spacer in spacer_cols_dict.keys():
+				spacer_colour = spacer_cols_dict[spacer]
+				sp_width = spacer_width
+			else:
+				spacer_colour = ("#000000", "#000000") #black
+				sp_width = 0.25*spacer_width
+			ax = plot_spacer(ax, start_pos_x, y, spacer_size, sp_width,
+				spacer_colour, spacer_outline, spacer_count, spacer_spacing,
+				v_scaling_factor)
+			if not no_fade_ancestral and ancestral:
+				# Plot translucent box over spacers to fade them
+				ax.fill_between(
+					[(start_pos_x-spacer_size*spacer_count-spacer_spacing
+						+spacer_outline/2),
+					(start_pos_x-spacer_size*spacer_count-spacer_size
+						-spacer_outline/2)],
+					y-spacer_width/2-(spacer_outline*v_scaling_factor)/2,
+					y+spacer_width/2+(spacer_outline*v_scaling_factor)/2,
+					edgecolor='none', linewidth=0, color="#ffffff80")
+			spacer_count+=1
+
+	return ax
+
+
+def plot_spacer(ax, x, y, spacer_size, spacer_width, spacer_colour,
+	spacer_outline, spacer_count, spacer_spacing, v_scaling_factor):
+
+	ax.fill_between([x-spacer_size*spacer_count-spacer_spacing,
+		x-spacer_size*spacer_count-spacer_size],
+		y-spacer_width/2, y+spacer_width/2,	color=spacer_colour[0],
+		edgecolor='none', linewidth=0)
+	
+	# Plot outline
+	ax = plot_box(ax, 0, x, y, spacer_size, spacer_count, spacer_spacing,
+		spacer_width, spacer_colour[1], box_thickness=spacer_outline, hpad=0, vpad=0,
+		v_scaling_factor=v_scaling_factor)
+
+	return ax
+
+
+def plot_box(ax, nspacers, x, y, spacer_size, spacer_count, spacer_spacing,
+	spacer_width, box_colour, box_thickness, hpad, vpad, v_scaling_factor):
+	
+	box_thickness_v = box_thickness * v_scaling_factor
+
+
+	# Right bar
+	ax.fill_between(
+		[x-spacer_size*spacer_count-spacer_spacing-box_thickness/2,
+			x-spacer_size*spacer_count-spacer_spacing+box_thickness/2],
+		y+spacer_width/2+vpad+box_thickness_v/2, y-spacer_width/2-vpad-box_thickness_v/2,
+		color=box_colour, edgecolor='none', linewidth=0)
+	# Left bar
+	ax.fill_between(
+		[x-spacer_size*(spacer_count+nspacers)-spacer_size-box_thickness/2-hpad,
+			x-spacer_size*(spacer_count+nspacers)-spacer_size+box_thickness/2-hpad],
+		y+spacer_width/2+vpad+box_thickness_v/2, y-spacer_width/2-vpad-box_thickness_v/2,
+		color=box_colour, edgecolor='none', linewidth=0)
+
+	# Top bar
+	ax.fill_between(
+		[x-spacer_size*(spacer_count+nspacers)-spacer_size+box_thickness/2-hpad,
+			x-spacer_size*spacer_count-spacer_spacing-box_thickness/2],
+		y+spacer_width/2+vpad+box_thickness_v/2, 
+		y+spacer_width/2+vpad-box_thickness_v/2,
+		color=box_colour, edgecolor='none', linewidth=0)
+
+	# Bottom bar
+	ax.fill_between(
+		[x-spacer_size*(spacer_count+nspacers)-spacer_size+box_thickness/2-hpad,
+			x-spacer_size*spacer_count-spacer_spacing-box_thickness/2],
+		y-spacer_width/2-vpad+box_thickness_v/2, 
+		y-spacer_width/2-vpad-box_thickness_v/2,
+		color=box_colour, edgecolor='none', linewidth=0)
+
+	return ax
+
+
+def plot_x_or_slash(ax, x, y, spacer_size, spacer_count,
+	spacer_spacing, spacer_width, x_or_slash, colour):
+		
+	shift = 0.1#*(spacer_width/spacer_size)
+
+	xs = np.linspace(x-spacer_size*spacer_count-spacer_spacing,
+		x-spacer_size*spacer_count-spacer_size, 100)
+
+	ys = np.linspace(y+shift/2-spacer_width/2,
+		y+shift/2+spacer_width/2, 100)
+	ys2 = [i-shift for i in ys]
+
+	ax.fill_between(xs, ys, ys2, color=colour, edgecolor='none', linewidth=0)
+	
+	if x_or_slash == 'x':
+		# Reverse order of y values for second line
+		ys = [i for i in reversed(ys)]
+		ys2.reverse()
+		ax.fill_between(xs, ys, ys2, color=colour, edgecolor='none',
+			linewidth=0)
+
+	return ax
+
+
+def plot_line(ax, nspacers, x, y, spacer_size, spacer_count, spacer_spacing, 
+	spacer_width, wavy=False, colour="#666666"):
+		
+	padded_y = y-spacer_width/2-0.2
+	shift = 0.1
+
+	xs = np.linspace(x-spacer_size*(spacer_count+nspacers),
+		x-spacer_size*spacer_count-spacer_spacing, nspacers*100)
+
+	if wavy:
+		ys = [padded_y+0.05*sin(2*pi*i) for i in xs]
+		ys2 = [(padded_y-shift)+0.05*sin(2*pi*i) for i in xs]
+		
+
+	else:
+		ys = [padded_y for _ in xs]
+		ys2 = [(padded_y-shift) for _ in xs]
+
+	ax.fill_between(xs, ys, ys2, color=colour, edgecolor='none', linewidth=0)
+
+	return ax
+
+
+def plot_rep_indel_text(ax, nspacers, x, y, spacer_size, spacer_count,
+	spacer_width, partners, rep_indel_report_count, rep_indel_message_printed,
+	font_scale=1, annot_text_size=False):
+	
+	if annot_text_size:
+		font_size = annot_text_size
+	else:
+		font_size = 1.5*font_scale
+
+	if len(partners) > 2:
+		vpad = 1.3
+		message = "\n".join(
+				[partners[0],
+				"event {}".format(rep_indel_report_count)])
+		
+		if not rep_indel_message_printed:
+			print("Repeated indels were identified with multiple possible "
+				+ "partners. Those cases will be annotated in the tree png "
+				+ "file with the one of the arrays identified as a partner "
+				+ "followed by an event number corresponding to one of the "
+				+ "lists of partner arrays below:\n\n")
+		print("Event {}: {}\n\n".format(
+			rep_indel_report_count,
+			" ".join(diff_type.partner)))
+	else:
+		if len(partners) == 2:
+			vpad = 1.3
+			message = "\n".join(partners)
+		else:
+			vpad = 1
+			message = partners[0]
+
+		ax.text(x-spacer_size*(spacer_count+nspacers/2)-0.5,
+			y-spacer_width/2-vpad, message,
+			color="#cc3300", ha='center', fontsize=font_size)
+
+	return ax
+
+
+
+def calc_vh_ratio_and_label_pad(tree, array_dict, spacing, spacer_size, 
+	branch_spacing, brlen_scale, fig_w, fig_h, text_size):
+	
+	# Find approx max horizontal axis range
+	max_h = 0 # Initialize at 0
+	for leaf in tree.leaf_node_iter():
+		name = leaf.taxon.label
+		brlen = leaf.root_distance
+		nspacers = len(array_dict[name].spacers)
+		total_h = (brlen*brlen_scale + nspacers*(spacing+spacer_size))
+		if total_h > max_h:
+			max_h = total_h
+	
+	max_v = len(tree.nodes())*branch_spacing
+
+	# Find label padding size
+	longest_label = max([i for i in array_dict.keys()], key=len)
+
+	# Find approx asymptote point as label pad will increase with axis
+	# limits, but increasing label pad will increase axis limits.
+	last_max = copy(max_h)-1 # Init at higher value to init loop
+	new_max_h = copy(max_h) # Store max_h updated with each pad
+	
+	while new_max_h > last_max+0.0001: # Stop once label pad stable
+		last_max = copy(new_max_h)
+		label_pad = calc_label_pad_size(
+			longest_label, text_size, fig_w, fig_h,
+			xlim=(0, new_max_h), ylim=(0, max_v))
+		new_max_h = max_h+label_pad
+
+	v_scaling_factor = max_v/new_max_h
+
+	return v_scaling_factor, label_pad
+
+
+def calc_label_pad_size(label, text_size, fig_w, fig_h, xlim, ylim):
+
+	f,ax = plt.subplots(figsize=(fig_w,fig_h))
+	plt.ylim(ylim)
+	plt.xlim(xlim)
+	r = f.canvas.get_renderer()
+	t = plt.text(5, 5, label, fontsize=text_size)
+
+	bb = t.get_window_extent(renderer=r)
+	width = Bbox(ax.transData.inverted().transform(bb)).width
+
+	# Add a bit of space so the cartoons aren't right up against labels
+	width += 0.5
+
+	return width
+
+
+def plot_tree(tree, array_dict, filename, spacer_cols_dict, 
+	branch_lengths=False, emphasize_diffs=False, dpi=600, line_scale=1,
+	brlen_scale=0.5, branch_spacing=2, font_scale=1, fig_h=1, fig_w=1,
+	no_align_cartoons=False, no_align_labels=False, no_fade_ancestral=False,
+	label_text_size=False, annot_text_size=False):
+
+	outline = 0.3 #line_widths = 3 # Thickness of lines
+	spacing = 0.5
+	spacer_size = 2
+
+	if not label_text_size:
+		label_text_size = 10 * font_scale
+
+	node_locs = tree_operations.find_node_locs(tree, branch_spacing=branch_spacing,
+		brlen_scale=brlen_scale)
+
+	v_scaling_factor, label_pad = calc_vh_ratio_and_label_pad(tree, array_dict,
+		spacing, spacer_size, branch_spacing, brlen_scale, fig_w, fig_h,
+		label_text_size)
+
+	# Set spacer width based on vertical vs horizontal ratio. Max 1.3
+	spacer_width = min([spacer_size*v_scaling_factor, 1.3])
+
+	fig, ax = plt.subplots(figsize=(fig_w,fig_h))
+
+	ax = draw_branches(tree, node_locs, ax, font_scale=font_scale,
+		line_scale=line_scale, branch_lengths=branch_lengths,
+		label_text_size=label_text_size, annot_text_size=annot_text_size,
+		brlen_scale=brlen_scale)
+
+	ax = add_labels(tree, node_locs, ax, font_scale=font_scale,
+		branch_lengths=branch_lengths, label_text_size=label_text_size,
+		annot_text_size=annot_text_size, no_align_labels=no_align_labels,
+		brlen_scale=brlen_scale, no_fade_ancestral=no_fade_ancestral)
+
+	ax = add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict,
+		label_pad=label_pad, spacer_size=spacer_size, spacer_outline=outline,
+		spacer_spacing=spacing, spacer_width=spacer_width,
+		no_align_cartoons=no_align_cartoons, emphasize_diffs=emphasize_diffs,
+		v_scaling_factor=v_scaling_factor, annot_text_size=annot_text_size,
+		no_fade_ancestral=no_fade_ancestral)
+
+	plt.axis('off')
+	plt.tight_layout()
+
+	plt.savefig(filename, dpi=dpi, bbox_inches='tight')
+
