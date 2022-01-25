@@ -3,7 +3,7 @@ import copy
 
 import sys
 
-from cctkpkg import sequence_operations
+from . import sequence_operations
 
 class Array():
 	"""Store information about arrays and aid in their comparison.

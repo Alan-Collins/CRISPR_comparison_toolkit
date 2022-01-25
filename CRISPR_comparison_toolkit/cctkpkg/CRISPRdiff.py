@@ -6,9 +6,11 @@ import collections
 from itertools import combinations, permutations
 from random import sample, randrange, seed
 import argparse
-import json
 
-from . import colour_schemes, file_handling
+from . import (colour_schemes,
+	file_handling,
+	sequence_operations,
+	plotting)
 
 
 def get_list_score(arrays_dict, arrays_order):
@@ -100,7 +102,7 @@ def decide_array_order_global_best(arrays_dict):
 def jiggle_list_to_local_max(arrays_dict, order):
 	"""Perform slight changes to array order to improve score.
 
-	Given a dict of arrays and the spacers they contain and a list of 
+	Given a dict of arrays and the spacers they contain, and a list of 
 	arrays, first calculates the score for the order of arrays using 
 	get_list_score function. Then swaps the order to the first and 
 	second array in the list and calculates score again. If score 
@@ -247,41 +249,6 @@ def decide_array_order_local_best(arrays_dict, reps, nits):
 	return overall_best_order, overall_best_score
 
 
-def find_indices(lst, element):
-	"""Return all indices of list at which an specified element is found.
-	
-	Given a list and an element found in that list, return all of the 
-	indices at which that element is found.
-	e.g. for a list ['apple', 'tomatoe', 'apple', 'banana']
-	Returns [0,2] for 'apple'
-
-	lst.index() only returns the first instance by default. 
-	The second argument provided to index is the position to start
-	searching. This approach starts looking again from the index after
-	the last found index.
-
-
-	Args:
-	  lst (list): 
-	    a list of anything
-	  element (any type):
-	    An element you expect to find in the list
-	
-	returns:
-	  result (list)
-	    A list of indices at which the element was found in the list.
-	    Returns an empty list if no indices were found.
-	"""
-	result = []
-	offset = -1
-	while True:
-		try:
-			offset = lst.index(element, offset+1) 
-		except ValueError:
-			return result
-		result.append(offset)
-
-
 def build_parser(parser):
 	parser.add_argument(
 		"-a", "--array-file",
@@ -296,102 +263,112 @@ def build_parser(parser):
 	parser.add_argument(
 		"-c", "--colour-file",
 		required=False, 
-		help="Specify file with custom colour list (Optional). "
-		"Colours must be hex codes. One colour per line with no header "
-		"line in file. e.g. #fd5925."
+		help="Specify file with custom colour list (Optional). \
+		Colours must be hex codes. One colour per line with no header \
+		line in file. e.g. #fd5925."
 		)
 	parser.add_argument(
 		"-m", "--colour-scheme-outfile",
 		required=False, 
-		help="Specify output file to store json format dictionary of "
-		"the colour schemes used for spacers in this run."
+		help="Specify output file to store json format dictionary of \
+		the colour schemes used for spacers in this run."
 		)
 	parser.add_argument(
 		"-s", "--colour-scheme-infile",
 		required=False,
-		help="Specify input file containing json format dictionary of "
-		"the colour scheme to be used for spacers in this run. Any "
-		"spacers not in the input file will be coloured according to "
-		"the normal process."
+		help="Specify input file containing json format dictionary of \
+		the colour scheme to be used for spacers in this run. Any \
+		spacers not in the input file will be coloured according to \
+		the normal process."
 		)
 	parser.add_argument(
 		"-i", "--iterations",
 		required=False,
 		default=10,
 		type=int,
-		help="(Default = 10) If you are aligning fewer than 9 arrays, "
-		"a good order will be found using a repeated shuffling search "
-		"method. Set the number of replicates of this search you want "
-		"performed. Higher numbers more likely to find the best "
-		"possible ordering, but take longer."
+		help="(Default = 10) If you are aligning fewer than 9 arrays, \
+		a good order will be found using a repeated shuffling search \
+		method. Set the number of replicates of this search you want \
+		performed. Higher numbers more likely to find the best \
+		possible ordering, but take longer."
 		)
 	parser.add_argument(
-		"-l", "--legend",
+		"-l", "--line-width",
 		required=False,
-		action='store_true',  
-		help="Include a legend in the output plot (Highly recommended "
-		"to use spacer IDs rather than sequences with this setting). "
-		"N.B. Spacer order in the legend is the same as the order of "
-		"first instance of spacers working from bottom to top, right "
-		"to left along your plotted arrays."
+		default=1,
+		type=float,  
+		help="Control the width of lines connecting shared spacers. Line width\
+		will be multiplied by the given number. Default = 1.0"
 		)
 	parser.add_argument(
 		"--leader-align",
 		required=False,
 		action='store_true',  
-		help="Declare that you want the plot to line up all the leader "
-		"ends instead of the default of lining up the trailer ends."
+		help="Declare that you want the plot to line up all the leader \
+		ends instead of the default of lining up the trailer ends."
 		)
 	parser.add_argument(
 		"--preordered",
 		required=False, 
 		action='store_true',  
-		help="Declare that the array order you provided is the one you "
-		"want plotted."
+		help="Declare that the array order you provided is the one you \
+		want plotted."
 		)
 	parser.add_argument(
 		"--approxordered",
 		required=False,
 		action='store_true',  
-		help="Declare that the array order you provided should be "
-		"optimized slightly before plotting. Optimization involves "
-		"switching order of adjacent arrays in list as long as that "
-		"increases the total number of shared spacers among all "
-		"neighbours."
+		help="Declare that the array order you provided should be \
+		optimized slightly before plotting. Optimization involves \
+		switching order of adjacent arrays in list as long as that \
+		increases the total number of shared spacers among all \
+		neighbours."
 		)
 	parser.add_argument(
 		"--seed",
 		required=False, 
 		type=int,
 		default=2,
-		help="The order of outline and fill colours assigned to "
-		"spacers is semi-random. Change it by providing a number here "
-		"to change which colours are assigned to each spacer."
+		help="The order of outline and fill colours assigned to \
+		spacers is semi-random. Change it by providing a number here \
+		to change which colours are assigned to each spacer."
 		)
 	parser.add_argument(
 		"--dpi",
 		required=False,
 		type=int,
 		default=300,
-		help="Resolution of output image. Only relevant for bitmap "
-		"formats such as PNG. Has no effect on SVG outputs."
+		help="Resolution of output image. Only relevant for bitmap \
+		formats such as PNG. Has no effect on SVG outputs."
 		)
 	parser.add_argument(
 		"--connection-outline",
 		required=False,
 		action='store_true',
-		help="Identical spacers in arrays plotted adjacent to one "
-		"another are connected by a line with the fill colour of the "
-		"spacer by default. If you would like the line connecting "
-		"those spacers to have the same outline as the spacers as well "
-		"then use this option."
+		help="Identical spacers in arrays plotted adjacent to one \
+		another are connected by a line with the fill colour of the \
+		spacer by default. If you would like the line connecting \
+		those spacers to have the same outline as the spacers as well \
+		then use this option."
+		)
+	parser.add_argument(
+		"--plot-width", type=float, default=3, metavar="",
+		help="Width of plot in inches. Default = 3"
+		)
+	parser.add_argument(
+		"--plot-height", type=float, default=3, metavar="",
+		help="Height of plot in inches. Default = 3"
+		)
+	parser.add_argument(
+		"--font-size", type=float, metavar="", default=10,
+		help="Set font size. Defualt 10pt."
 		)
 	parser.add_argument(
 		"arrays_to_align",
-		nargs="+",  
-		help="Specify the arrays for which you want to plot an "
-		"alignment. **Must come at the end of your command after all "
-		"other arguments.**"
+		nargs="*",  
+		help="Specify the arrays for which you want to plot an \
+		alignment. **Must come at the end of your command after all \
+		other arguments.**"
 		)
 
 	return parser
@@ -403,28 +380,28 @@ def main(args):
 
 	if len(args.arrays_to_align) == 0:
 		arrays_of_interest_dict = array_dict
-		array_network = [a for a in array_dict.keys()]
+		arrays_of_interest = [a for a in array_dict.keys()]
 	else:
 		arrays_of_interest_dict = {}
-		array_network = args.arrays_to_align
-		for array in array_network:
+		arrays_of_interest = args.arrays_to_align
+		for array in arrays_of_interest:
 			arrays_of_interest_dict[array] = array_dict[array]
 
 	if args.preordered:
-		array_order = array_network
+		array_order = arrays_of_interest
 	elif args.approxordered:
 		array_order, _ = jiggle_list_to_local_max(
-			arrays_of_interest_dict, array_network)
+			arrays_of_interest_dict, arrays_of_interest)
 	else:
-		if len(array_network) < 9:
+		if len(arrays_of_interest) < 9:
 			array_order = decide_array_order_global_best(
 				arrays_of_interest_dict)
 		else:
 			array_order, local_best_score = decide_array_order_local_best(
 				arrays_of_interest_dict, 100, args.iterations)
 			print(
-				"The score (sum of spacers shared between all neighbouring"
-				"arrays) of the best ordering found was: {}".format(
+				"The score (sum of spacers shared between all neighbouring \
+				arrays) of the best ordering found was: {}".format(
 					local_best_score))
 
 	## Find spacers present in more than one array
@@ -439,202 +416,55 @@ def main(args):
 		if v > 1:
 			imp_spacers.append(k)
 
-	print("Identified {} spacers present in more than one array.".format(
-		len(imp_spacers)))
-
-	## Figure out colour scheme to use
-
-	if args.colour_file:
-		with open(args.colour_file, 'r') as fin:
-			cf_list = [i.strip() for i in fin.readlines()]
-		colours = colour_schemes.choose_col_scheme(
-			len(imp_spacers),
-			args.seed,
-			cf_list)
-	else:
-		colours = colour_schemes.choose_col_scheme(
-			len(imp_spacers),
-			args.seed)
+	sys.stderr.write(
+		"Identified {} spacers present in more than one array.\n".format(
+			len(imp_spacers)))
 
 	# if provided, read in colour scheme.
 
 	if args.colour_scheme_infile:
-		with open(args.colour_scheme_infile, 'r') as fin:
-			spacer_colours = json.load(fin)
+		spacer_colours = file_handling.read_colour_scheme(
+			args.colour_scheme_infile)
+
+		# If the given colour scheme is insufficient, add more colours
 		if any([s not in spacer_colours.keys() for s in imp_spacers]):
-			colour_idx = 0
-			for s in imp_spacers:
-				if s not in spacer_colours.keys():
-					while colours[colour_idx] in spacer_colours.values():
-						colour_idx += 1
-					spacer_colours[s] = colours[colour_idx]
-					colour_idx += 1
+			spacer_colours = colour_schemes.fill_col_scheme_gaps(
+				spacer_colours,
+				imp_spacers,
+				args.seed)
+
 	else:
+		# Else, figure out colour scheme to use
+		if args.colour_file:
+			cf_list = file_handling.read_colour_file(args.colour_file)
+			colours = colour_schemes.choose_col_scheme(
+				len(imp_spacers),
+				args.seed,
+				cf_list)
+		else:
+			colours = colour_schemes.choose_col_scheme(
+				len(imp_spacers),
+				args.seed)
+
 		# build a dictionary with colours assigned to each spacer.
 		spacer_colours  = {}
-
 		for i, spacer in enumerate(sorted(imp_spacers)):
 			spacer_colours[spacer] = colours[i]
 
-
 	if args.colour_scheme_outfile:
-		with open(args.colour_scheme_outfile, 'w', encoding='utf-8') as fout:
-			json.dump(spacer_colours, fout, ensure_ascii=False, indent=4)
-
+		file_handling.write_colour_scheme(
+			args.colour_scheme_outfile,
+			spacer_colours)
 
 	largest_array_size = max(
-		[len(x) for x in [array_dict[y] for y in array_network]])
-
-	dim_y = max(len(array_network)*0.5, 2)
-	if args.legend:
-		ratio_of_heights = ((len(imp_spacers)+1)*0.2)/dim_y
-		ncols = int(1+ ratio_of_heights)
-		dim_x = max(largest_array_size*0.25 + 1.2*ncols, 3)
-	else:
-		dim_x = max(largest_array_size*0.25, 2)
-	
+		[len(x) for x in [array_dict[y] for y in arrays_of_interest]])
 
 
-	plt.rcParams.update({'font.size': 7})
-	fig, ax = plt.subplots()
-
-	fig.set_size_inches(dim_x, dim_y)
-
-	### Plot array alignments
-
-	if not args.leader_align:
-		longest_array = max(
-			[len(arrays_of_interest_dict[i]) for i in array_order])
-		pad_dict = {
-		array: longest_array-len(arrays_of_interest_dict[array]) for array in array_order}
-
-	else:
-		pad_dict = {array:0 for array in array_order}
-
-	# count of which array we are on (i.e. y axis value to plot at)
-	arcount = 1 
-	for array in array_order:
-		# count of which spacer in array we are on 
-		# (i.e. which x-axis value to plot at)
-		spcount = 0+pad_dict[array] 
-		for spacer in arrays_of_interest_dict[array]:
-			if spacer in imp_spacers:
-				line_width= 0.1
-				spcolour = spacer_colours[spacer]
-			else: 
-				spcolour = ("#000000", "#000000") #black
-				line_width = 0.01
-			ax.fill_between(
-				[spcount+0.60, spcount+1.40], 
-				arcount-line_width, 
-				arcount+line_width, 
-				color = spcolour[0], 
-				edgecolor=spcolour[1],
-				linewidth=1.5,
-				joinstyle='miter',
-				zorder=2
-				)
-
-			spcount+=1
-		arcount+=1
-
-	### Plot lines connecting identical spacers in neighbouring arrays
-
-	arcount = 0
-	for i in range(len(array_order)-1):
-		array1 = arrays_of_interest_dict[array_order[i]]
-		array2 = arrays_of_interest_dict[array_order[i+1]]
-		for spacer in list(set(array1).intersection(array2)):
-			array1_indices = find_indices(array1, spacer)
-			array2_indices = find_indices(array2, spacer)
-			for a in array1_indices:
-				for b in array2_indices:
-					sp_x1 = a+1+pad_dict[array_order[i]]
-					sp_y1 = i+1
-					sp_x2 = b+1+pad_dict[array_order[i+1]]
-					sp_y2 = i+2
-					spcolour = spacer_colours[spacer]
-					if args.connection_outline:
-						ax.plot(
-							[sp_x1, sp_x2],
-							[sp_y1+0.1, sp_y2-0.1],
-							color=spcolour[1],
-							linewidth=2.0,
-							label=spacer, 
-							zorder=0
-							)
-					ax.plot(
-						[sp_x1, sp_x2],
-						[sp_y1+0.1, sp_y2-0.1],
-						color=spcolour[0],
-						linewidth=1.0,
-						solid_capstyle="butt",
-						label=spacer,
-						zorder=1
-						)
-
-
-
-	axes = plt.gca()
-	plt.yticks(range(1, len(arrays_of_interest_dict.keys())+1, 1))
-	if args.leader_align:
-		plt.tick_params(
-			axis='x',
-			which='both',
-			bottom=False,
-			labelbottom=False
-			)
-	else:
-		plt.xticks(
-			range(1, max(
-					[len(x) for x in arrays_of_interest_dict.values()])+1, 1))
-		plt.xlabel("Spacer in array", fontsize=11)
-
-	ax.set_yticklabels(array_order)
-	plt.ylabel("Array ID", fontsize=11)
-
-	if args.legend:
-		#Approx height of each legend entry is 0.2 inches. Each array
-		# is allocated 0.5 inches. Add 1 to number of spacers to
-		# account for legend title.
-		ratio_of_heights = ((len(imp_spacers)+1)*0.2)/dim_y
-		# Split the legend over multiple columns if it would be taller
-		# than the y axis. Plus 1 to account for rounding down and a bit of extra security.
-		ncols = int(1+ ratio_of_heights)
-		# What is the height of the legend now,
-		# having split it over columns?
-		h_leg = 0.2 + (len(imp_spacers)*0.2)/ncols 
-		# Add blank space half the difference in height between legend
-		# and y axis to approximately center the legend relative
-		# to y axis. Then scale that on 0-1 relative to y axis size.
-		vert_pad = ((dim_y - h_leg)/2)/dim_y 
-		# Build the legend manually as the automatic legend included
-		# duplicates as spacers are plotted once per array they are in.
-		colors = list(spacer_colours.values()) 
-		lines = [
-			plt.fill_between(
-				[1, 1],
-				1,
-				1,
-				color=c[0],
-				edgecolor=c[1]) 
-			for c in colors
-			]
-		labels = list(spacer_colours.keys())
-		plt.legend(
-			lines,
-			labels,
-			ncol=ncols,
-			loc=(1.01,vert_pad),
-			title="Spacer IDs"
-			) 
-
-
-	fig.tight_layout()
-
-	plt.savefig(args.out_file, dpi=args.dpi)
-	plt.close(fig)
-
+	plotting.plot_diffplot(arrays_of_interest_dict, array_order, imp_spacers,
+		spacer_colours, text_size=args.font_size,
+		plot_width=args.plot_width, plot_height=args.plot_height,
+		dpi=args.dpi, outfile=args.out_file, line_width=args.line_width,
+		 connection_outline=args.connection_outline)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(

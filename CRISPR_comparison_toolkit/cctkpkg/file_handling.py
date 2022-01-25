@@ -1,4 +1,5 @@
 import os
+import json
 
 def read_array_file(file):
 	"""Read array spacers file into dict.
@@ -83,3 +84,25 @@ def fasta_to_dict(FASTA_file):
 		fasta_dict[header] = seq
 
 	return fasta_dict
+
+
+def read_colour_scheme(infile):
+	with open(infile, 'r') as fin:
+		spacer_colours = json.load(fin)
+	return spacer_colours
+
+def write_colour_scheme(outfile, colours):
+	with open(outfile, 'w', encoding='utf-8') as fout:
+		json.dump(colours,
+			fout,
+			ensure_ascii=False,
+			indent=4)
+
+
+def read_colour_file(colour_file):
+	with open(colour_file, 'r') as fin:
+		cf_list = [
+		i.strip().replace('"', '').replace("'", "") for i in fin.readlines()]
+	return cf_list
+
+

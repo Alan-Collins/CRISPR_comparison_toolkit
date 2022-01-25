@@ -55,18 +55,18 @@ class CRISPR_info():
 def build_parser(parser):
 	parser.add_argument(
 		"-i", "--input", required = True,
-		help="Input file. CRISPR_summary_table.csv produced by one of the "
-		"CRISPR identification scripts."
+		help="Input file. CRISPR_summary_table.csv produced by one of the \
+		CRISPR identification scripts."
 		)
 	parser.add_argument(
 		"-n", "--network-file", default="Array_network",
-		help="Output network file. Path to location to write network " 
-		"representation of array relationships."
+		help="Output network file. Path to location to write network \
+		representation of array relationships."
 		)
 	parser.add_argument(
 		"-r", "--reps-file", default="Array_representatives",
-		help="Output array representatives file. "
-		"Path to location to write a list of which assemblies have each array."
+		help="Output array representatives file. Path to location to write a \
+		list of which assemblies have each array."
 		)
 
 	return parser

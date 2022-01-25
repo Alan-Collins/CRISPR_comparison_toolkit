@@ -1,11 +1,14 @@
 from math import ceil, log, sin, pi
 from copy import copy
+import itertools
 
 import matplotlib.pyplot as plt
 from matplotlib.transforms import Bbox
 import numpy as np
 
-from . import tree_operations
+from . import (
+	tree_operations,
+	sequence_operations)
 
 def draw_branches(tree, node_locs, ax, branch_lengths=True, brlen_scale=0.5,
 	font_scale=1, line_scale=1, label_text_size=False, annot_text_size=False):
@@ -35,8 +38,6 @@ def draw_branches(tree, node_locs, ax, branch_lengths=True, brlen_scale=0.5,
 
 			ax.plot([x, x], [y1, y2], color='black', linewidth=line_scale,
 				solid_capstyle="round")
-
-	return ax
 
 
 def add_labels(tree, node_locs, ax, branch_lengths=True,font_scale=1,
@@ -80,14 +81,12 @@ def add_labels(tree, node_locs, ax, branch_lengths=True,font_scale=1,
 			continue
 		ax.text(x + (node.edge_length/2)*brlen_scale, y-0.6,node.edge_length,
 			ha='center', va='top', fontsize=brlen_font_size)
-	
-	return ax
 
 
-def add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict, spacer_width=0.3, 
-	spacer_outline=3, spacer_spacing=0.45, spacer_size=2.5, label_pad=5,
-	no_fade_ancestral=False, no_align_cartoons=False, emphasize_diffs=False,
-	v_scaling_factor=1, annot_text_size=False):
+def add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict,
+	spacer_width=0.3, spacer_outline=3, spacer_spacing=0.45, spacer_size=2.5,
+	label_pad=5, no_fade_ancestral=False, no_align_cartoons=False,
+	emphasize_diffs=False, v_scaling_factor=1, annot_text_size=False):
 
 	# Add cartoon arrays to show hypothetical ancestral states
 	# plot each array using the coordinates of the array label on the plotted
@@ -145,7 +144,7 @@ def add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict, spacer_width
 					if not no_fade_ancestral and ancestral:
 						colour += "80"
 					# Plot blue box around spacers
-					ax = plot_box(
+					plot_box(
 						ax, nspacers-1, start_pos_x, y, spacer_size,
 						spacer_count, spacer_spacing, spacer_width, colour,
 						box_thickness=0.5, hpad=1, vpad=0.35,
@@ -161,7 +160,7 @@ def add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict, spacer_width
 					if not no_fade_ancestral and ancestral:
 						colour += "80"
 					# Plot a red box around repeated indels
-					ax = plot_box(
+					plot_box(
 						ax, nspacers-1, start_pos_x, y, spacer_size,
 						spacer_count, spacer_spacing, spacer_width, colour,
 						box_thickness=0.5, hpad=1, vpad=0.4,
@@ -173,11 +172,10 @@ def add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict, spacer_width
 					reshift_loc = diff_type.indices[0]-1
 
 					# Add Array ID of the array in which the spacers of this predicted repeated_indel can be found
-					num_partners = len(diff_type.partner)
 					
-					ax = plot_rep_indel_text(
+					plot_rep_indel_text(
 						ax, nspacers, start_pos_x, y, spacer_size, spacer_count,
-						spacer_spacing,	spacer_width, num_partners,
+						spacer_width, diff_type.partner,
 						rep_indel_report_count,	rep_indel_message_printed,
 						annot_text_size=annot_text_size)
 
@@ -190,7 +188,7 @@ def add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict, spacer_width
 						if not no_fade_ancestral and ancestral:
 							colour += "80"
 						# Draw an X as this is a deletion
-						ax = plot_x_or_slash(ax, start_pos_x, y,
+						plot_x_or_slash(ax, start_pos_x, y,
 							spacer_size, spacer_count, spacer_spacing, 
 							spacer_width, 'x', colour)
 						# Shift future spacers a bit to make spacer for
@@ -202,7 +200,7 @@ def add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict, spacer_width
 							colour += "80"
 						# Insertion so plot a grey box
 						# hpad = box_thickness + start_pos_x shift
-						ax = plot_box(
+						plot_box(
 							ax, nspacers-1, start_pos_x, y, spacer_size,
 							spacer_count, spacer_spacing, spacer_width,
 							colour, box_thickness=0.5, hpad=1, vpad=0.2,
@@ -217,7 +215,7 @@ def add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict, spacer_width
 					colour = "#666666"
 					if not no_fade_ancestral and ancestral:
 						colour += "80"
-					ax = plot_line(ax, nspacers, start_pos_x, y, spacer_size,
+					plot_line(ax, nspacers, start_pos_x, y, spacer_size,
 						spacer_count, spacer_spacing, spacer_width, wavy=True,
 						colour=colour)
 
@@ -226,7 +224,7 @@ def add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict, spacer_width
 						colour = "#666666"
 						if not no_fade_ancestral and ancestral:
 							colour += "80"
-						ax = plot_x_or_slash(ax, start_pos_x, y, 
+						plot_x_or_slash(ax, start_pos_x, y, 
 							spacer_size, spacer_count, spacer_spacing, spacer_width,
 							'/', colour)
 						 # Shift future spacers a bit to make spacer for this
@@ -236,7 +234,7 @@ def add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict, spacer_width
 					colour = "#666666"
 					if not no_fade_ancestral and ancestral:
 						colour += "80"
-					ax = plot_line(ax, nspacers, start_pos_x, y, spacer_size,
+					plot_line(ax, nspacers, start_pos_x, y, spacer_size,
 						spacer_count, spacer_spacing, spacer_width, wavy=False,
 						colour=colour)
 
@@ -249,7 +247,7 @@ def add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict, spacer_width
 			else:
 				spacer_colour = ("#000000", "#000000") #black
 				sp_width = 0.25*spacer_width
-			ax = plot_spacer(ax, start_pos_x, y, spacer_size, sp_width,
+			plot_spacer(ax, start_pos_x, y, spacer_size, sp_width,
 				spacer_colour, spacer_outline, spacer_count, spacer_spacing,
 				v_scaling_factor)
 			if not no_fade_ancestral and ancestral:
@@ -264,8 +262,6 @@ def add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict, spacer_width
 					edgecolor='none', linewidth=0, color="#ffffff80")
 			spacer_count+=1
 
-	return ax
-
 
 def plot_spacer(ax, x, y, spacer_size, spacer_width, spacer_colour,
 	spacer_outline, spacer_count, spacer_spacing, v_scaling_factor):
@@ -276,11 +272,9 @@ def plot_spacer(ax, x, y, spacer_size, spacer_width, spacer_colour,
 		edgecolor='none', linewidth=0)
 	
 	# Plot outline
-	ax = plot_box(ax, 0, x, y, spacer_size, spacer_count, spacer_spacing,
+	plot_box(ax, 0, x, y, spacer_size, spacer_count, spacer_spacing,
 		spacer_width, spacer_colour[1], box_thickness=spacer_outline, hpad=0, vpad=0,
 		v_scaling_factor=v_scaling_factor)
-
-	return ax
 
 
 def plot_box(ax, nspacers, x, y, spacer_size, spacer_count, spacer_spacing,
@@ -318,8 +312,6 @@ def plot_box(ax, nspacers, x, y, spacer_size, spacer_count, spacer_spacing,
 		y-spacer_width/2-vpad-box_thickness_v/2,
 		color=box_colour, edgecolor='none', linewidth=0)
 
-	return ax
-
 
 def plot_x_or_slash(ax, x, y, spacer_size, spacer_count,
 	spacer_spacing, spacer_width, x_or_slash, colour):
@@ -342,8 +334,6 @@ def plot_x_or_slash(ax, x, y, spacer_size, spacer_count,
 		ax.fill_between(xs, ys, ys2, color=colour, edgecolor='none',
 			linewidth=0)
 
-	return ax
-
 
 def plot_line(ax, nspacers, x, y, spacer_size, spacer_count, spacer_spacing, 
 	spacer_width, wavy=False, colour="#666666"):
@@ -364,8 +354,6 @@ def plot_line(ax, nspacers, x, y, spacer_size, spacer_count, spacer_spacing,
 		ys2 = [(padded_y-shift) for _ in xs]
 
 	ax.fill_between(xs, ys, ys2, color=colour, edgecolor='none', linewidth=0)
-
-	return ax
 
 
 def plot_rep_indel_text(ax, nspacers, x, y, spacer_size, spacer_count,
@@ -404,11 +392,8 @@ def plot_rep_indel_text(ax, nspacers, x, y, spacer_size, spacer_count,
 			y-spacer_width/2-vpad, message,
 			color="#cc3300", ha='center', fontsize=font_size)
 
-	return ax
 
-
-
-def calc_vh_ratio_and_label_pad(tree, array_dict, spacing, spacer_size, 
+def calc_vh_ratio_and_label_pad_tree(tree, array_dict, spacing, spacer_size, 
 	branch_spacing, brlen_scale, fig_w, fig_h, text_size):
 	
 	# Find approx max horizontal axis range
@@ -443,21 +428,88 @@ def calc_vh_ratio_and_label_pad(tree, array_dict, spacing, spacer_size,
 	return v_scaling_factor, label_pad
 
 
+def calc_vh_ratio_and_label_pad_diffplot(array_dict, spacer_size,
+	spacer_spacing, ylim, text_size=10, fig_w=3, fig_h=3):
+
+	max_h = 0
+	for array, spacers in array_dict.items():
+		spacer_h = len(spacers)*(spacer_size+spacer_spacing)
+		last_max = spacer_h-1 # Init at higher value to init loop
+		new_max_h = spacer_h # Store max_h updated with each pad
+		
+		while new_max_h > last_max+0.0001: # Stop once label pad stable
+			last_max = copy(new_max_h)
+			pad = calc_label_pad_size(array, text_size, fig_w, fig_h,
+				xlim=(0,new_max_h), ylim=ylim)
+			new_max_h = spacer_h-pad
+		if new_max_h > max_h:
+			max_h = copy(new_max_h)
+
+	v_scaling_factor = (ylim[1]-ylim[0])/max_h
+
+	return v_scaling_factor
+
+
 def calc_label_pad_size(label, text_size, fig_w, fig_h, xlim, ylim):
 
 	f,ax = plt.subplots(figsize=(fig_w,fig_h))
 	plt.ylim(ylim)
 	plt.xlim(xlim)
 	r = f.canvas.get_renderer()
-	t = plt.text(5, 5, label, fontsize=text_size)
+	t = plt.text(1, 1, label, fontsize=text_size, ha='right',
+		va='center_baseline')
 
 	bb = t.get_window_extent(renderer=r)
 	width = Bbox(ax.transData.inverted().transform(bb)).width
+	plt.close()
 
 	# Add a bit of space so the cartoons aren't right up against labels
 	width += 0.5
 
 	return width
+
+
+def draw_diffplot_lines(ax, y, array_order, array_dict, spacer_colours,
+				spacer_size, spacer_width, spacer_spacing, spacer_outline,
+				vh_ratio, line_width, connection_outline):
+	array1_id = array_order[y]
+	array2_id = array_order[y+1]
+	array1_spacers_rev = [i for i in reversed(array_dict[array1_id])]
+	array2_spacers_rev = [i for i in reversed(array_dict[array2_id])]
+	for n, spacer in enumerate(array1_spacers_rev):
+		if spacer not in spacer_colours:
+			continue
+		spcolour = spacer_colours[spacer]
+		array1_indices = sequence_operations.find_indices(
+			array1_spacers_rev, spacer)
+		array2_indices = sequence_operations.find_indices(
+			array2_spacers_rev, spacer)
+		for a, b in itertools.product(array1_indices, array2_indices):
+			sp_x1 = -a*spacer_size-(spacer_size/2)-(spacer_spacing/2)
+			sp_y1 = y+1+(spacer_width/2)+(spacer_outline*vh_ratio)/4
+			sp_x2 = -b*spacer_size-(spacer_size/2)-(spacer_spacing/2)
+			sp_y2 = y+2-(spacer_width/2)-(spacer_outline*vh_ratio)/4
+			
+			if connection_outline:
+				ax.plot(
+					[sp_x1, sp_x2],
+					[sp_y1, sp_y2],
+					color=spcolour[1],
+					linewidth=2*line_width,
+					solid_capstyle="round",
+					label=spacer, 
+					zorder=0
+					)
+
+			ax.plot(
+				[sp_x1, sp_x2],
+				[sp_y1, sp_y2],
+				color=spcolour[0],
+				linewidth=1*line_width,
+				solid_capstyle="round",
+				label=spacer,
+				zorder=0.5
+				)
 
 
 def plot_tree(tree, array_dict, filename, spacer_cols_dict, 
@@ -476,26 +528,26 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict,
 	node_locs = tree_operations.find_node_locs(tree, branch_spacing=branch_spacing,
 		brlen_scale=brlen_scale)
 
-	v_scaling_factor, label_pad = calc_vh_ratio_and_label_pad(tree, array_dict,
-		spacing, spacer_size, branch_spacing, brlen_scale, fig_w, fig_h,
-		label_text_size)
+	v_scaling_factor, label_pad = calc_vh_ratio_and_label_pad_tree(
+		tree, array_dict, spacing, spacer_size, branch_spacing, brlen_scale,
+		fig_w, fig_h, label_text_size)
 
 	# Set spacer width based on vertical vs horizontal ratio. Max 1.3
 	spacer_width = min([spacer_size*v_scaling_factor, 1.3])
 
 	fig, ax = plt.subplots(figsize=(fig_w,fig_h))
 
-	ax = draw_branches(tree, node_locs, ax, font_scale=font_scale,
+	draw_branches(tree, node_locs, ax, font_scale=font_scale,
 		line_scale=line_scale, branch_lengths=branch_lengths,
 		label_text_size=label_text_size, annot_text_size=annot_text_size,
 		brlen_scale=brlen_scale)
 
-	ax = add_labels(tree, node_locs, ax, font_scale=font_scale,
+	add_labels(tree, node_locs, ax, font_scale=font_scale,
 		branch_lengths=branch_lengths, label_text_size=label_text_size,
 		annot_text_size=annot_text_size, no_align_labels=no_align_labels,
 		brlen_scale=brlen_scale, no_fade_ancestral=no_fade_ancestral)
 
-	ax = add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict,
+	add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict,
 		label_pad=label_pad, spacer_size=spacer_size, spacer_outline=outline,
 		spacer_spacing=spacing, spacer_width=spacer_width,
 		no_align_cartoons=no_align_cartoons, emphasize_diffs=emphasize_diffs,
@@ -506,4 +558,53 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict,
 	plt.tight_layout()
 
 	plt.savefig(filename, dpi=dpi, bbox_inches='tight')
+
+
+def plot_diffplot(array_dict, array_order, imp_spacers, spacer_colours,
+	text_size=10, plot_width=3, plot_height=3, dpi=300,
+	outfile="diffplot.png", line_width=1, connection_outline=False):
+
+	outline = 0.3 # Thickness of lines
+	spacer_spacing= 0.5
+	spacer_size = 2
+
+	vh_ratio = calc_vh_ratio_and_label_pad_diffplot(array_dict, spacer_size,
+	spacer_spacing, (0.5, len(array_dict)+0.5), text_size=text_size,
+	fig_w=plot_width, fig_h=plot_height)
+
+	w_h_ratio = plot_width/plot_height
+	vh_ratio*=w_h_ratio
+
+	spacer_width = spacer_size*vh_ratio
+
+	fig, ax = plt.subplots(figsize=(plot_width,plot_height))
+
+	for y, array in enumerate(array_order):
+		# Add array name
+		ax.text(0.5, y+1, array, ha='left', va='center_baseline', 
+			fontsize=text_size, color='black')
+
+		# plot spacers
+		for n, spacer in enumerate(reversed(array_dict[array])):
+			if spacer in imp_spacers:
+				spacer_w = spacer_width
+				spcolour = spacer_colours[spacer]
+			else: 
+				spcolour = ("#000000", "#000000") #black
+				spacer_w = 0.25*spacer_width
+
+			plot_spacer(ax, 0, y+1, spacer_size, spacer_w,
+				spcolour, outline, n, spacer_spacing, vh_ratio)
+		if array != array_order[-1]:
+			# plot lines between shared spacers
+			draw_diffplot_lines(ax, y, array_order, array_dict, spacer_colours,
+				spacer_size, spacer_width, spacer_spacing, outline, vh_ratio,
+				line_width=line_width, connection_outline=connection_outline)
+
+
+	plt.ylim(0.5,len(array_dict)+0.5)
+	plt.axis('off')
+	plt.tight_layout()
+	# plt.show()
+	plt.savefig(outfile, dpi=dpi)
 

@@ -222,3 +222,37 @@ def needle(seq1, seq2, match = 100, mismatch = -1, gap = -2):
 	
 	return align1, align2
 
+
+def find_indices(lst, element):
+	"""Return all indices of list at which an specified element is found.
+	
+	Given a list and an element found in that list, return all of the 
+	indices at which that element is found.
+	e.g. for a list ['apple', 'tomatoe', 'apple', 'banana']
+	Returns [0,2] for 'apple'
+
+	lst.index() only returns the first instance by default. 
+	The second argument provided to index is the position to start
+	searching. This approach starts looking again from the index after
+	the last found index.
+
+
+	Args:
+	  lst (list): 
+	    a list of anything
+	  element (any type):
+	    An element you expect to find in the list
+	
+	returns:
+	  result (list)
+	    A list of indices at which the element was found in the list.
+	    Returns an empty list if no indices were found.
+	"""
+	result = []
+	offset = -1
+	while True:
+		try:
+			offset = lst.index(element, offset+1) 
+		except ValueError:
+			return result
+		result.append(offset)

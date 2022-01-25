@@ -21,7 +21,12 @@ import time
 from datetime import timedelta
 import json
 
-from . import array_parsimony, sequence_operations, tree_operations
+from . import (
+	file_handling,
+	array_parsimony,
+	sequence_operations,
+	tree_operations,
+	plotting)
 
 
 def infer_ancestor(array1, array2, all_arrays, node_ids, node_count, existing_ancestor):
@@ -712,6 +717,25 @@ def build_parser(parser):
 		help="Do not de-emphasize ancestral array cartoons using transparency. This option helps to make it clear which are the inferred ancestral arrays and which are the arrays being analyzed. However, this option reduces colour contrast between spacers."
 		)
 	parser.add_argument(
+		"--plot-width", type=float, default=3, metavar="",
+		help="Width of plot in inches. Default = 3"
+		)
+	parser.add_argument(
+		"--plot-height", type=float, default=3, metavar="",
+		help="Height of plot in inches. Default = 3"
+		)
+	parser.add_argument(
+		"--font-override-labels", type=float, metavar="",
+		help="If you want to force a label font size to be used rather than \
+		using scaling to determine font size, provide it here"
+		)
+	parser.add_argument(
+		"--font-override-annotations", type=float, metavar="",
+		help="If you want to force a specific font size (pts) to be used for \
+		annotations such as branch length labels, rather than using scaling \
+		to determine font size, provide it here"
+		)
+	parser.add_argument(
 		"arrays_to_join", nargs="*",  
 		help="Specify the IDs of the arrays you want to join. If none provided, joins all arrays in the provided array representatives file. **If given, must come at the end of your command after all other arguments.**"
 		)
@@ -753,12 +777,7 @@ def main(args):
 	if len(args.arrays_to_join) > 27: # Maximum internal nodes in tree is n-2 so only need more than 26 if n >= 28
 		node_ids += ["Anc " + "".join(i) for i in product(ascii_uppercase, repeat=(ceil(log(len(args.arrays_to_join), 26))))]
 
-
-	array_spacers_dict = {}
-	with open(args.array_file, 'r') as fin:
-		for line in fin.readlines():
-			bits = line.split()
-			array_spacers_dict[bits[0]] = bits[2:]
+	array_spacers_dict = file_handling.read_array_file(args.array_file)
 
 	if args.arrays_to_join:
 		arrays = [array_parsimony.Array(i, array_spacers_dict[i]) for i in args.arrays_to_join]
@@ -998,18 +1017,17 @@ def main(args):
 					best_arrays[n] = reset_anc_mods(good_tree, best_arrays[n])
 					filename = "{}_{}.png".format(args.output_tree[:-4], n+1)
 					print("Saving image of tree with array diagrams to {}\n".format(filename))
-					tree_operations.plot_tree(tree=good_tree,
+					plotting.plot_tree(tree=good_tree,
 						array_dict=best_arrays[n], filename=filename,
 						spacer_cols_dict=spacer_cols_dict,
 						branch_lengths=args.branch_lengths,
 						emphasize_diffs=args.emphasize_diffs, dpi=args.dpi,
 						no_align_cartoons=args.no_align_cartoons,
 						no_align_labels=args.no_align_labels,
-						no_fade_ancestral=args.no_fade_anc, fig_h=6, fig_w=6,
-						label_text_size=10, annot_text_size=5
-						# brlen_scale=0.5, font_scale=1, fig_h=1, fig_w=1,
-						# label_text_size=False, annot_text_size=False
-						)
+						no_fade_ancestral=args.no_fade_anc,
+						fig_h=args.plot_height, fig_w=args.plot_width,
+						label_text_size=args.font_override_labels,
+						annot_text_size=args.font_override_annotations)
 
 				if args.output_arrays:
 					filename = "{}_{}.txt".format(args.output_arrays[:-4], n+1)
@@ -1027,18 +1045,17 @@ def main(args):
 				# Reset events in root array
 				best_arrays = reset_anc_mods(best_tree, best_arrays)
 				print("Saving image of tree with array diagrams to {}\n".format(args.output_tree))
-				tree_operations.plot_tree(tree=best_tree,
+				plotting.plot_tree(tree=best_tree,
 					array_dict=best_arrays, filename=args.output_tree,
 					spacer_cols_dict=spacer_cols_dict,
 					branch_lengths=args.branch_lengths,
 					emphasize_diffs=args.emphasize_diffs, dpi=args.dpi,
 					no_align_cartoons=args.no_align_cartoons,
 					no_align_labels=args.no_align_labels,
-					no_fade_ancestral=args.no_fade_anc, fig_h=6, fig_w=6,
-					label_text_size=10, annot_text_size=False)
-				# plot_tree_old(best_tree, best_arrays, args.output_tree, spacer_cols_dict, 
-				# 	args.branch_lengths, args.emphasize_diffs, args.dpi, 
-				# 	args.no_align_cartoons, args.no_align_labels, args.fade_ancestral)
+					no_fade_ancestral=args.no_fade_anc,
+					fig_h=args.plot_height, fig_w=args.plot_width,
+					label_text_size=args.font_override_labels,
+					annot_text_size=False)
 			if args.output_arrays:
 				print("Saving details of arrays to {}\n".format(args.output_arrays))
 				with open(args.output_arrays, 'w') as fout:

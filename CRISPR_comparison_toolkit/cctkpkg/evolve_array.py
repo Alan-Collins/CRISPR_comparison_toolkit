@@ -10,7 +10,10 @@ import json
 
 import dendropy
 
-from . import array_parsimony, tree_operations, colour_schemes
+from . import (array_parsimony,
+	tree_operations,
+	colour_schemes,
+	plotting)
 
 
 def build_parser(parser):
@@ -425,7 +428,7 @@ def main(args):
 
 	tree_name = f"evolved_tree_{run_name}.png"
 
-	tree_operations.plot_tree(
+	plotting.plot_tree(
 		new_tree, final_array_dict, outdir+tree_name,
 		spacer_colours, fig_h=fig_h, fig_w=fig_w, font_scale=font_scale,
 		dpi=dpi, line_scale=line_scale, branch_lengths=args.brlen_labels,

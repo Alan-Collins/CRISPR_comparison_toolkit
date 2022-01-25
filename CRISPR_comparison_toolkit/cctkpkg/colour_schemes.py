@@ -164,3 +164,14 @@ def random_colour_pairs(n, s=None):
 
 	return colours
 
+
+def fill_col_scheme_gaps(col_scheme, spacers, seed):
+	for s in spacers:
+		if s not in col_scheme.keys():
+			rand_col = random_colour_pairs(1, seed)[0]
+			while rand_col in col_scheme.values():
+				seed+=1
+				rand_col = random_colour_pairs(1, seed)[0]
+			col_scheme[s] = rand_col
+
+	return col_scheme
