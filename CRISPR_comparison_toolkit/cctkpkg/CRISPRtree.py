@@ -917,8 +917,9 @@ def main(args):
 				"the number of possible trees. All possible trees will be "
 				"checked.\n")
 	else:
-		array_choices = [copy.deepcopy(
-		random.sample(arrays, len(arrays)) for i in range(args.replicates))]
+		array_choices = [
+		random.sample(copy.deepcopy(arrays), len(arrays)) for i in range(
+			args.replicates)]
 
 	taxon_namespace = dendropy.TaxonNamespace(labels + node_ids)
 
