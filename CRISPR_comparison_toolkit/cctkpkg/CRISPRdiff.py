@@ -260,61 +260,25 @@ def build_parser(parser):
 		required=True, 
 		help="Specify output file."
 		)
-	parser.add_argument(
-		"-c", "--colour-file",
-		required=False, 
-		help="Specify file with custom colour list (Optional). \
-		Colours must be hex codes. One colour per line with no header \
-		line in file. e.g. #fd5925."
-		)
-	parser.add_argument(
-		"-m", "--colour-scheme-outfile",
-		required=False, 
-		help="Specify output file to store json format dictionary of \
-		the colour schemes used for spacers in this run."
-		)
-	parser.add_argument(
-		"-s", "--colour-scheme-infile",
-		required=False,
-		help="Specify input file containing json format dictionary of \
-		the colour scheme to be used for spacers in this run. Any \
-		spacers not in the input file will be coloured according to \
-		the normal process."
-		)
-	parser.add_argument(
-		"-i", "--iterations",
+
+	run_params = parser.add_argument_group('Running parameters', 
+		"Control run behaviour.")
+	run_params.add_argument(
+		"--iterations",
 		required=False,
 		default=10,
 		type=int,
-		help="(Default = 10) If you are aligning fewer than 9 arrays, \
-		a good order will be found using a repeated shuffling search \
-		method. Set the number of replicates of this search you want \
-		performed. Higher numbers more likely to find the best \
-		possible ordering, but take longer."
+		help="Number of attempts to find the best order of arrays for \
+		plotting. Higher number can improve the array order. Default = 10"
 		)
-	parser.add_argument(
-		"-l", "--line-width",
-		required=False,
-		default=1,
-		type=float,  
-		help="Control the width of lines connecting shared spacers. Line width\
-		will be multiplied by the given number. Default = 1.0"
-		)
-	parser.add_argument(
-		"--leader-align",
-		required=False,
-		action='store_true',  
-		help="Declare that you want the plot to line up all the leader \
-		ends instead of the default of lining up the trailer ends."
-		)
-	parser.add_argument(
+	run_params.add_argument(
 		"--preordered",
 		required=False, 
 		action='store_true',  
 		help="Declare that the array order you provided is the one you \
 		want plotted."
 		)
-	parser.add_argument(
+	run_params.add_argument(
 		"--approxordered",
 		required=False,
 		action='store_true',  
@@ -324,8 +288,9 @@ def build_parser(parser):
 		increases the total number of shared spacers among all \
 		neighbours."
 		)
-	parser.add_argument(
+	run_params.add_argument(
 		"--seed",
+		metavar=' ',
 		required=False, 
 		type=int,
 		default=2,
@@ -333,36 +298,89 @@ def build_parser(parser):
 		spacers is semi-random. Change it by providing a number here \
 		to change which colours are assigned to each spacer."
 		)
-	parser.add_argument(
+
+	cs_files = parser.add_argument_group('Colour scheme files', 
+		"Set inputs and outputs for optional colour scheme files.")
+	cs_files.add_argument(
+		"--colour-file",
+		metavar=' ',
+		required=False, 
+		help="Specify file with custom colour list (Optional). \
+		Colours must be hex codes. One colour per line with no header \
+		line in file. e.g. #fd5925."
+		)
+	cs_files.add_argument(
+		"--colour-scheme-outfile",
+		metavar=' ',
+		required=False, 
+		help="Specify output file to store json format dictionary of \
+		the colour schemes used for spacers in this run."
+		)
+	cs_files.add_argument(
+		"--colour-scheme-infile",
+		metavar=' ',
+		required=False,
+		help="Specify input file containing json format dictionary of \
+		the colour scheme to be used for spacers in this run. Any \
+		spacers not in the input file will be coloured according to \
+		the normal process."
+		)
+
+	plot_params = parser.add_argument_group('Plotting parameters', 
+		"Control elements of the produced plot.")
+	plot_params.add_argument(
+		"--line-width",
+		metavar=' ',
+		required=False,
+		default=1,
+		type=float,  
+		help="Control the width of lines connecting shared spacers. Line width\
+		will be multiplied by the given number. Default = 1.0"
+		)
+	plot_params.add_argument(
+		"--leader-align",
+		required=False,
+		action='store_true',  
+		help="Declare that you want the plot to line up all the leader \
+		ends instead of the default of lining up the trailer ends."
+		)
+	plot_params.add_argument(
 		"--dpi",
+		metavar=' ',
 		required=False,
 		type=int,
 		default=300,
 		help="Resolution of output image. Only relevant for bitmap \
 		formats such as PNG. Has no effect on SVG outputs."
 		)
-	parser.add_argument(
+	plot_params.add_argument(
 		"--connection-outline",
 		required=False,
 		action='store_true',
-		help="Identical spacers in arrays plotted adjacent to one \
-		another are connected by a line with the fill colour of the \
-		spacer by default. If you would like the line connecting \
-		those spacers to have the same outline as the spacers as well \
-		then use this option."
+		help="Add outline colour to lines connecting identical spacers."
 		)
-	parser.add_argument(
-		"--plot-width", type=float, default=3, metavar="",
+	plot_params.add_argument(
+		"--plot-width",
+		type=float,
+		default=3,
+		metavar="",
 		help="Width of plot in inches. Default = 3"
 		)
-	parser.add_argument(
-		"--plot-height", type=float, default=3, metavar="",
+	plot_params.add_argument(
+		"--plot-height",
+		type=float,
+		default=3,
+		metavar="",
 		help="Height of plot in inches. Default = 3"
 		)
-	parser.add_argument(
-		"--font-size", type=float, metavar="", default=10,
+	plot_params.add_argument(
+		"--font-size",
+		type=float,
+		metavar="",
+		default=10,
 		help="Set font size. Defualt 10pt."
 		)
+
 	parser.add_argument(
 		"arrays_to_align",
 		nargs="*",  

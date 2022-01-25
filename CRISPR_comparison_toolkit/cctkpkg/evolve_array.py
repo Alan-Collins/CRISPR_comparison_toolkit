@@ -20,82 +20,135 @@ def build_parser(parser):
 
 	
 	parser.add_argument(
-		"-s", "--seed", type=int, metavar="", help="Set seed for consistency")
+		"-s", "--seed",
+		type=int,
+		metavar="",
+		help="Set seed for consistency")
 	parser.add_argument(
-		"-n", "--num-events", type=int, default=20, metavar="",
+		"-n", "--num-events",
+		type=int,
+		default=20,
+		metavar="",
 		help="How many events should be allowed to occur before the \
 		simulation ends? Default = 20"
 		)
 	parser.add_argument(
-		"-o", "--outdir", type=str, default="./", metavar="",
+		"-o", "--outdir",
+		type=str,
+		default="./",
+		metavar="",
 		help="Directory in which output files should be written. \
 		Defalt is your current directory"
 		)
-
 	parameters = parser.add_argument_group('Evolution parameters', 
 		"Specify the relative frequencies with which different events \
 		should occur.")
 	parameters.add_argument(
-		"-i", "--initial-length", type=int, default=5, metavar="",
+		"-i", "--initial-length",
+		type=int,
+		default=5,
+		metavar="",
 		help="Length of the starting array. Default = 5")
 	parameters.add_argument(
-		"-a", "--acquisition", type=int, default=75, metavar="",
+		"-a", "--acquisition",
+		type=int,
+		default=75,
+		metavar="",
 		help="Relative frequency of spacer acquisitions. Default = 75")
 	parameters.add_argument(
-		"-t", "--trailer-loss", type=int, default=15, metavar="",
+		"-t", "--trailer-loss",
+		type=int,
+		default=15,
+		metavar="",
 		help="Relative frequency of trailer spacer decay. Default = 15")
 	parameters.add_argument(
-		"-d", "--deletion", type=int, default=10, metavar="",
+		"-d", "--deletion",
+		type=int,
+		default=10,
+		metavar="",
 		help="Relative frequency of deletions of one or more spacers.\
 		Default = 10")
 	parameters.add_argument(
-		"-l", "--loss-rate", type=int, default=50, metavar="",
+		"-l", "--loss-rate",
+		type=int,
+		default=50,
+		metavar="",
 		help="Rate (percent) at which arrays are lost after spawning a \
 		descendant. Default = 50")
 
 	plotting = parser.add_argument_group('Plotting parameters', 
 		"Set parameters for plotting the tree to file")
 	plotting.add_argument(
-		"-f", "--font-scale", type=float, default=1, metavar="",
+		"-f", "--font-scale",
+		type=float,
+		default=1,
+		metavar="",
 		help="Font size is multiplied by this number. Default is to scale \
 		based on the plot size")
 	plotting.add_argument(
-		"--font-override-labels", type=float, metavar="",
+		"--font-override-labels",
+		type=float,
+		metavar="",
 		help="If you want to force a label font size to be used rather than \
 		using scaling to determine font size, provide it here")
 	plotting.add_argument(
-		"--font-override-annotations", type=float, metavar="",
+		"--font-override-annotations",
+		type=float,
+		metavar="",
 		help="If you want to force a specific font size (pts) to be used for \
 		annotations such as branch length labels, rather than using scaling \
 		to determine font size, provide it here")
 	plotting.add_argument(
-		"-b", "--brlen-labels", action="store_true",
+		"-b", "--brlen-labels",
+		action="store_true",
 		help="Add branch length labels to plot.")
 	plotting.add_argument(
-		"--dpi", type=float, default=300, metavar="",
+		"--dpi",
+		type=float,
+		default=300,
+		metavar="",
 		help="Pixel density in pixels per inch (Default = 300")
 	plotting.add_argument(
-		"--tree-width", type=float, default=3, metavar="",
+		"--tree-width",
+		type=float,
+		default=3,
+		metavar="",
 		help="Width of plot in inches. Default = 3")
 	plotting.add_argument(
-		"--tree-height", type=float, default=3, metavar="",
+		"--tree-height",
+		type=float,
+		default=3,
+		metavar="",
 		help="Height of plot in inches. Default = 3")
 	plotting.add_argument(
-		"--branch-weight", type=float, default=1, metavar="",
+		"--branch-weight",
+		type=float,
+		default=1,
+		metavar="",
 		help="Thickness of branch lines. Default = 1")
 	plotting.add_argument(
-		"--branch-spacing", type=float, default=1, metavar="",
+		"--branch-spacing",
+		type=float,
+		default=1,
+		metavar="",
 		help="The vertical space between branches will be multiplied by this \
 		number. Default = 1")
 	plotting.add_argument(
-		"--brlen-scale", type=float, default=1, metavar="",
+		"--brlen-scale",
+		type=float,
+		default=1,
+		metavar="",
 		help="Branch lengths will be multiplied by this number. Default = 1")
 	plotting.add_argument(
-		"--no-align", action="store_true", default=False,
+		"--no-align",
+		action="store_true",
+		default=False,
 		help="Align array labels and cartoons rather than drawing them at \
 		leaf tips and intenal nodes.")
 	plotting.add_argument(
-		"--no-fade-ancestral", action="store_true", default=False,
+		"--no-fade-ancestral",
+		action="store_true",
+		default=False,
 		help="Remove transparency from the spacer cartoons of ancestral \
 		arrays.")
 

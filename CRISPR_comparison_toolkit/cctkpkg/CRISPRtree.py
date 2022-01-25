@@ -652,125 +652,204 @@ def reset_anc_mods(tree, array_dict):
 
 def build_parser(parser):
 	parser.add_argument(
-		"-a", dest="array_file", required = True,
+		"-a",
+		dest="array_file",
+		required=True,
 		help="Specify array representatives file."
 		)
-	parser.add_argument(
-		"-p", dest="print_tree", action='store_true',  
-		help="Print a graphical representation of the tree using ascii characters."
+
+	output_params = parser.add_argument_group('Output control', 
+		"Set which of the optional outputs you want.")
+	output_params.add_argument(
+		"-o", "--out-file",
+		metavar="",
+		required=False,
+		help="Specify filename for the graphical representation of your tree with hypothetical intermediate arrays."
 		)
-	parser.add_argument(
-		"-x", dest="fix_order", action='store_true',  
-		help="Only build one tree using the provided order of arrays. Good for recreating previously found trees."
-		)
-	parser.add_argument(
-		"-e", dest="emphasize_diffs", action='store_true',  
-		help="When plotting a representation of the tree with cartooned arrays, emphasize locations where arrays differ from their hypothetical ancestor."
-		)
-	parser.add_argument(
-		"-b", dest="branch_lengths", action='store_true', 
-		help="When plotting a representation of the tree Include branch lengths at midpoint on branches. N.B. This does not control inclusion of branch lengths in newick format tree output, which are always included."
-		)
-	parser.add_argument(
-		"--no-align-cartoons", action='store_true', default=False,
-		help="When plotting a representation of the tree with cartooned arrays, this option controls whether those cartoons are drawn next to the corresponding node in the tree. By default cartoons will be aligned at the trailer end."
-		)
-	parser.add_argument(
-		"--no-align-labels", action='store_true', default=False,
-		help="Should node labels be placed at the corresponding internal node or leaf. By default they are all aligned. N.B. For this setting to work, cartoons must also placed at nodes using the -g option."
-		)
-	parser.add_argument(
-		"-r",  dest="replicates", type=int, nargs="?", default = 100,
-			help="Specify number of replicates of tree building to perform. The more replicates, the greater the chance that a better tree will be found. Default: 1"
-		)
-	parser.add_argument(
-		"-q",  dest="acquisition", type=int, nargs="?", default = 1,
-			help="Specify the parsimony cost of a spacer acquisition event. Default: 1"
-		)
-	parser.add_argument(
-		"-i",  dest="indel", type=int, nargs="?", default = 10,
-			help="Specify the parsimony cost of an indel event involving one or more spacers. Default: 10"
-		)
-	parser.add_argument(
-		"-z",  dest="rep_indel", type=int, nargs="?", default = 50,
-			help="Specify the parsimony cost of an indel event involving one or more spacers that is independently acquired in multiple arrays. Default: 50"
-		)
-	parser.add_argument(
-		"-d",  dest="duplication", type=int, nargs="?", default = 1,
-			help="Specify the parsimony cost of a duplication event involving one or more spacers. Default: 1"
-		)
-	parser.add_argument(
-		"-l",  dest="trailer_loss", type=int, nargs="?", default = 1,
-			help="Specify the parsimony cost of the loss of a spacer from the trailer end of the array. Default: 1"
-		)
-	parser.add_argument(
-		"-n",  dest="no_ident", type=int, nargs="?", default = 100,
-			help="Specify the parsimony cost of a tree in which an array is predicted to have descended from another array with which it shares no spacers. Default: 100"
-		)
-	parser.add_argument(
-		"-o", dest="output_tree", required = False,
-		help="Specify filename for the graphical representation of your tree with hypothetical intermediate arrays as a png."
-		)
-	parser.add_argument(
-		"-t",  dest="num_threads", type=int, nargs="?", default = 1,
-			help="Specify number of threads to use for building trees. Using multiple threads will speed up the search for trees when performing many replicates with the -r option. Default: 1"
-		)
-	parser.add_argument(
-		"-y", dest="output_arrays", required = False,
+	output_params.add_argument(
+		"--output-arrays",
+		metavar="",
+		required=False,
 		help="Specify filename for the details of you final arrays with hypothetical intermediate arrays in the same format as your input array_file. If there are multiple best trees, one file will be created per tree numbered in the order they are described in the stdout output."
 		)
-	parser.add_argument(
-		"-c", "--colour-file",
-		required=False, 
-		help="Specify file with custom colour list (Optional). \
-		Colours must be hex codes. One colour per line with no header \
-		line in file. e.g. #fd5925."
+	output_params.add_argument(
+		"--print-tree",
+		action='store_true',  
+		help="Print a graphical representation of the tree using ascii characters."
 		)
-	parser.add_argument(
-		"-m", dest="colour_scheme_outfile", required = False, 
-		help="Specify output file to store json format dictionary of the colour schemes used for spacers in this run."
+
+	run_params = parser.add_argument_group('Running parameters', 
+		"Control run behaviour.")
+	run_params.add_argument(
+		"-x", "--fix-order",
+		action='store_true',  
+		help="Only build one tree using the provided order of arrays. Good for recreating previously found trees."
 		)
-	parser.add_argument(
-		"-s", dest="colour_scheme_infile", required = False, 
-		help="Specify input file containing json format dictionary of the colour scheme to be used for spacers in this run. Any spacers not in the input file will be coloured according to the normal process."
+	run_params.add_argument(
+		"-r", "--replicates",
+		metavar="",
+		type=int,
+		default=100,
+		help="Specify number of replicates of tree building to perform. The more replicates, the greater the chance that a better tree will be found. Default: 100"
 		)
-	parser.add_argument(
-		"--seed", type=int, required = False, default = 2,
+	run_params.add_argument(
+		"--aquisition",
+		metavar="",
+		type=int,
+		default=1,
+		help="Specify the parsimony cost of a spacer acquisition event. Default: 1"
+		)
+	run_params.add_argument(
+		"--indel",
+		metavar="",
+		type=int,
+		default=10,
+		help="Specify the parsimony cost of an indel event involving one or more spacers. Default: 10"
+		)
+	run_params.add_argument(
+		"--rep-indel",
+		metavar="",
+		type=int,
+		default=50,
+		help="Specify the parsimony cost of an indel event involving one or more spacers that is independently acquired in multiple arrays. Default: 50"
+		)
+	run_params.add_argument(
+		"--duplication",
+		metavar="",
+		type=int,
+		default=1,
+		help="Specify the parsimony cost of a duplication event involving one or more spacers. Default: 1"
+		)
+	run_params.add_argument(
+		"--trailer-loss",
+		metavar="",
+		type=int,
+		default=1,
+		help="Specify the parsimony cost of the loss of a spacer from the trailer end of the array. Default: 1"
+		)
+	run_params.add_argument(
+		"--no-ident",
+		metavar="",
+		type=int,
+		default=100,
+		help="Specify the parsimony cost of a tree in which an array is predicted to have descended from another array with which it shares no spacers. Default: 100"
+		)
+	
+	run_params.add_argument(
+		"-t", "--num-threads",
+		metavar="",
+		type=int,
+		default=1,
+		help="Specify number of threads to use for building trees. Using multiple threads will speed up the search for trees when performing many replicates with the -r option. Default: 1"
+		)
+	run_params.add_argument(
+		"--seed",
+		metavar="",
+		type=int,
+		required=False,
+		default=2,
 		help="The order of outline and fill colours assigned to spacers is semi-random. Change it by providing a number here to change which colours are assigned to each spacer."
 		)
-	parser.add_argument(
-		"--dpi", type=int, required = False, default = 600,
+
+	cs_files = parser.add_argument_group('Colour scheme files', 
+		"Set inputs and outputs for optional colour scheme files.")
+	cs_files.add_argument(
+		"--colour-file",
+		metavar="",
+		required=False, 
+		help="Specify file with custom colour list (Optional). \
+			Colours must be hex codes. One colour per line with no header \
+			line in file. e.g. #fd5925."
+		)
+	cs_files.add_argument(
+		"----colour-scheme-outfile",
+		metavar="",
+		required=False, 
+		help="Specify output file to store json format dictionary of the colour schemes used for spacers in this run."
+		)
+	cs_files.add_argument(
+		"--colour-scheme-infile",
+		metavar="",
+		required=False, 
+		help="Specify input file containing json format dictionary of the colour scheme to be used for spacers in this run. Any spacers not in the input file will be coloured according to the normal process."
+		)
+	
+	plot_params = parser.add_argument_group('Plotting parameters', 
+		"Control elements of the produced plot.")
+	plot_params.add_argument(
+		"-e",
+		dest="emphasize_diffs",
+		action='store_true',  
+		help="When plotting a representation of the tree with cartooned arrays, emphasize locations where arrays differ from their hypothetical ancestor."
+		)
+	plot_params.add_argument(
+		"-b",
+		dest="branch_lengths",
+		action='store_true', 
+		help="When plotting a representation of the tree Include branch lengths at midpoint on branches. N.B. This does not control inclusion of branch lengths in newick format tree output, which are always included."
+		)
+	plot_params.add_argument(
+		"--no-align-cartoons",
+		action='store_true',
+		default=False,
+		help="When plotting a representation of the tree with cartooned arrays, this option controls whether those cartoons are drawn next to the corresponding node in the tree. By default cartoons will be aligned at the trailer end."
+		)
+	plot_params.add_argument(
+		"--no-align-labels",
+		action='store_true',
+		default=False,
+		help="Should node labels be placed at the corresponding internal node or leaf. By default they are all aligned. N.B. For this setting to work, cartoons must also placed at nodes using the -g option."
+		)
+	plot_params.add_argument(
+		"--dpi",
+		type=int,
+		required=False,
+		metavar='',
+		default=600,
 		help="The desired resolution of the output image."
 		)
-	parser.add_argument(
-		"--no-fade-anc", action='store_true', 
+	plot_params.add_argument(
+		"--no-fade-anc",
+		action='store_true', 
 		help="Do not de-emphasize ancestral array cartoons using transparency. This option helps to make it clear which are the inferred ancestral arrays and which are the arrays being analyzed. However, this option reduces colour contrast between spacers."
 		)
-	parser.add_argument(
-		"--plot-width", type=float, default=3, metavar="",
+	plot_params.add_argument(
+		"--plot-width",
+		type=float,
+		default=3,
+		metavar="",
 		help="Width of plot in inches. Default = 3"
 		)
-	parser.add_argument(
-		"--plot-height", type=float, default=3, metavar="",
+	plot_params.add_argument(
+		"--plot-height",
+		type=float,
+		default=3,
+		metavar="",
 		help="Height of plot in inches. Default = 3"
 		)
-	parser.add_argument(
-		"--font-override-labels", type=float, metavar="",
+	plot_params.add_argument(
+		"--font-override-labels",
+		type=float,
+		metavar="",
 		help="If you want to force a label font size to be used rather than \
-		using scaling to determine font size, provide it here"
+			using scaling to determine font size, provide it here"
 		)
-	parser.add_argument(
-		"--font-override-annotations", type=float, metavar="",
+	plot_params.add_argument(
+		"--font-override-annotations",
+		type=float,
+		metavar="",
 		help="If you want to force a specific font size (pts) to be used for \
-		annotations such as branch length labels, rather than using scaling \
-		to determine font size, provide it here"
+			annotations such as branch length labels, rather than using \
+			scaling to determine font size, provide it here"
 		)
+
 	parser.add_argument(
-		"arrays_to_join", nargs="*",  
+		"arrays_to_join",
+		nargs="*",  
 		help="Specify the IDs of the arrays you want to join. \
-		If none provided, joins all arrays in the provided array \
-		representatives file. **If given, must come at the end of your \
-		command after all other arguments.**"
+			If none provided, joins all arrays in the provided array \
+			representatives file. **If given, must come at the end of your \
+			command after all other arguments.**"
 		)
 
 	return parser
@@ -1035,10 +1114,10 @@ def main(args):
 					print('\n\n')
 				print(good_tree.as_string("newick"))
 				print('\n\n')
-				if args.output_tree:
+				if args.out_file:
 					# Reset events in root array
 					best_arrays[n] = reset_anc_mods(good_tree, best_arrays[n])
-					filename = "{}_{}.png".format(args.output_tree[:-4], n+1)
+					filename = "{}_{}.png".format(args.out_file[:-4], n+1)
 					sys.stderr.write(
 						"Saving image of tree with array diagrams to "
 						"{}\n".format(filename))
@@ -1069,14 +1148,14 @@ def main(args):
 				print(best_tree.as_ascii_plot(show_internal_node_labels=True))
 				print("\n\n")
 			print(best_tree.as_string("newick"))
-			if args.output_tree:
+			if args.out_file:
 				# Reset events in root array
 				best_arrays = reset_anc_mods(best_tree, best_arrays)
 				sys.stderr.write(
 					"Saving image of tree with array diagrams to "
-					"{}\n".format(args.output_tree))
+					"{}\n".format(args.out_file))
 				plotting.plot_tree(tree=best_tree,
-					array_dict=best_arrays, filename=args.output_tree,
+					array_dict=best_arrays, filename=args.out_file,
 					spacer_cols_dict=spacer_cols_dict,
 					branch_lengths=args.branch_lengths,
 					emphasize_diffs=args.emphasize_diffs, dpi=args.dpi,
