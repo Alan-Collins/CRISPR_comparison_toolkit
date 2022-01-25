@@ -149,7 +149,8 @@ def resolve_polytomies(tree):
 
 
 def compare_to_trees(tree, comparator):
-	if isinstance(comparator, list):
+	if isinstance(comparator, list) or isinstance(
+		comparator, dendropy.datamodel.treecollectionmodel.TreeList):
 		rf_list = [
 			dendropy.calculate.treecompare.weighted_robinson_foulds_distance(
 				good_tree, tree) for good_tree in comparator]
