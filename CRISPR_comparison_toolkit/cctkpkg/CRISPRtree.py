@@ -693,7 +693,7 @@ def build_parser(parser):
 		help="Specify number of replicates of tree building to perform. The more replicates, the greater the chance that a better tree will be found. Default: 100"
 		)
 	run_params.add_argument(
-		"--aquisition",
+		"--acquisition",
 		metavar="",
 		type=int,
 		default=1,
