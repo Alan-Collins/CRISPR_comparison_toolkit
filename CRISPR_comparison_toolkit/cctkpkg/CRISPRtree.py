@@ -622,8 +622,8 @@ def build_tree_multi(arrays, tree_namespace, all_arrays, node_ids, event_costs):
 						for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
 							node_array.distance += node_array.events[k] * v
 						node.edge_length = node_array.distance
-
-			tree.reroot_at_node(tree.seed_node, update_bipartitions=False) # Need to reroot at the seed so that RF distance works
+			# Need to reroot at the seed so that RF distance works
+			tree.reroot_at_node(tree.seed_node, update_bipartitions=False)
 			return array_dict, tree, initial_arrays
 
 
@@ -895,11 +895,10 @@ def main(args):
 	# Check if any arrays share no spacers with any others. If so, exit with error message.
 	array_parsimony.check_for_no_ident(arrays)
 		
+	random.seed(args.seed)
 	if len(labels) < 9:
-		array_choices = [list(i) for i in permutations(arrays, len(arrays))]
+		array_choices = [copy.deepcopy(list(i)) for i in permutations(arrays, len(arrays))]
 		random.shuffle(array_choices)
-
-
 
 		if len(array_choices) > args.replicates:
 			sys.stderr.write("\nThere are {} possible trees to check. If you "
@@ -918,8 +917,8 @@ def main(args):
 				"the number of possible trees. All possible trees will be "
 				"checked.\n")
 	else:
-		array_choices = [
-		random.sample(arrays, len(arrays)) for i in range(args.replicates)]
+		array_choices = [copy.deepcopy(
+		random.sample(arrays, len(arrays)) for i in range(args.replicates))]
 
 	taxon_namespace = dendropy.TaxonNamespace(labels + node_ids)
 
