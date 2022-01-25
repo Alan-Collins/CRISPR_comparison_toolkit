@@ -456,10 +456,6 @@ def main(args):
 			args.colour_scheme_outfile,
 			spacer_colours)
 
-	largest_array_size = max(
-		[len(x) for x in [array_dict[y] for y in arrays_of_interest]])
-
-
 	plotting.plot_diffplot(arrays_of_interest_dict, array_order, imp_spacers,
 		spacer_colours, text_size=args.font_size,
 		plot_width=args.plot_width, plot_height=args.plot_height,

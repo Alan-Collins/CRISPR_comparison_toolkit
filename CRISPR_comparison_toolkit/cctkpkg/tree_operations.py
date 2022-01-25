@@ -1,6 +1,7 @@
 from string import ascii_lowercase
 from math import ceil, log
 from itertools import product
+import dendropy
 
 
 def create_internal_node_ids(n_leaves, prefix="", chars="letters"):
@@ -145,3 +146,20 @@ def resolve_polytomies(tree):
 				node.child_nodes() + parent_children)
 	
 	return tree
+
+
+def compare_to_trees(tree, comparator):
+	if isinstance(comparator, list):
+		rf_list = [
+			dendropy.calculate.treecompare.weighted_robinson_foulds_distance(
+				good_tree, tree) for good_tree in comparator]
+		identical_list = [i == 0. for i in rf_list]
+		return rf_list
+	
+	else:
+		rf = dendropy.calculate.treecompare.weighted_robinson_foulds_distance(
+				comparator, tree)
+		ident = True if rf != 0. else False
+		return ident
+
+

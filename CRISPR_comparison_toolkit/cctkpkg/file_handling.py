@@ -91,6 +91,7 @@ def read_colour_scheme(infile):
 		spacer_colours = json.load(fin)
 	return spacer_colours
 
+
 def write_colour_scheme(outfile, colours):
 	with open(outfile, 'w', encoding='utf-8') as fout:
 		json.dump(colours,
@@ -105,4 +106,11 @@ def read_colour_file(colour_file):
 		i.strip().replace('"', '').replace("'", "") for i in fin.readlines()]
 	return cf_list
 
+
+def write_array_file(array_dict, outfile):
+	with open(outfile, 'w') as fout:
+		fout.write('\n'.join(
+			["{}\t{}".format(
+				k, " ".join(v.spacers)
+				) for k,v in array_dict.items()])+"\n")
 
