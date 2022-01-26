@@ -30,19 +30,25 @@ from . import (
 	plotting)
 
 
-def infer_ancestor(array1, array2, all_arrays, node_ids, node_count, existing_ancestor):
+def infer_ancestor(array1, array2, all_arrays, node_ids, node_count,
+	existing_ancestor):
 	"""
-	Based on the modules found in two aligned arrays, construct a hypothethetical ancestral state of the two arrays
+	Based on the modules found in two aligned arrays, construct a 
+	hypothethetical ancestral state of the two arrays
 	Args:
 		array1 (Array class instance): The first array to be compared.
 		array2 (Array class instance): The second array to be compared.
-		all_arrays (list): The list of all arrays so that indels can be resolved to favour keeping spacers found in other arrays.
+		all_arrays (list): The list of all arrays so that indels can be
+		  resolved to favour keeping spacers found in other arrays.
 		node_ids (list): A list of names to be used to name internal nodes.
-		node_count (int): The index of the name to use in the node_ids list to name this internal node.
-		existing_ancestor(Array class instance): The existing ancestor array if there is one
+		node_count (int): The index of the name to use in the node_ids list to
+		  name this internal node.
+		existing_ancestor(Array class instance): The existing ancestor array if
+		  there is one
 	
 	Returns:
-		(str or list) A hypothesis of the ancestral state of the provided sequences.
+		(str or list) A hypothesis of the ancestral state of the provided
+		  sequences.
 	"""
 	
 	ancestor = array_parsimony.Array(node_ids[node_count], extant=False)
@@ -55,33 +61,44 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count, existing_an
 		mod1 = array1.module_lookup[idx]
 		mod2 = array2.module_lookup[idx]
 		if mod1.type == "acquisition" or mod2.type == "acquisition": 
-			# If either has acquired spacers not in the other then those weren't in the ancestor.
-			idx = max([mod1.indices[-1], mod2.indices[-1]]) + 1 # Skip the rest of this module.
+			# If either has acquired spacers not in the other then
+			# those weren't in the ancestor.
+			# Skip the rest of this module.
+			idx = max([mod1.indices[-1], mod2.indices[-1]]) + 1 
 			continue
 		else:
 			if mod1.type == "shared":
-				# If spacers are shared in these they are assumed to have been in the ancestor.
+				# If spacers are shared in these they are assumed to
+				# have been in the ancestor.
 				ancestor.modules.append(mod1)
 				idx = mod1.indices[-1] + 1
 				continue
 			elif mod1.type == "duplication":
-				# If one has duplicated spacers but the other doesn't then he ancestral state likely didn't have them
-				idx = max([mod1.indices[-1], mod2.indices[-1]]) + 1 # Skip the rest of this module.
+				# If one has duplicated spacers but the other doesn't
+				# then he ancestral state likely didn't have them
+				# Skip the rest of this module.
+				idx = max([mod1.indices[-1], mod2.indices[-1]]) + 1 
 				continue
 			elif mod1.type == "trailer_loss":
 				# If one lost a trailer end spacer then the ancestor had it.
-				if not '-' in mod1.spacers: # Figure out which module has actual spacers.
+				# Figure out which module has actual spacers.
+				if not '-' in mod1.spacers: 
 					ancestor.modules.append(mod1)
 				else:
 					ancestor.modules.append(mod2)
 				idx += 1
 				continue
 			elif mod1.type == "indel_gap" or mod1.type == "indel_mm":
-				# If one array has just spacers and the other just gaps in the indel then pick the spacers as ancestral.
-				if all([i == '-' for i in mod1.spacers]) or all([i == '-' for i in mod2.spacers]):
-					# Figure out which one is all gaps and store the other one if it isn't singletons.
+				# If one array has just spacers and the other just gaps
+				# in the indel then pick the spacers as ancestral.
+				if all(
+					[i == '-' for i in mod1.spacers]) or all(
+					[i == '-' for i in mod2.spacers]):
+					# Figure out which one is all gaps and store the
+					# other one if it isn't singletons.
 					if all([i == '-' for i in mod1.spacers]):
-						# Check first if it's a duplication. If so, remove from ancestor.
+						# Check first if it's a duplication. If so,
+						# remove from ancestor.
 						count_list = []
 						for sp in mod2.spacers:
 							if sp != '-':
@@ -90,13 +107,17 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count, existing_an
 									if sp == spacer:
 										count += 1
 								count_list.append(count)
-						if all([i>2 for i in count_list]): # If all of the spacers are present twice then duplication has occured in this region.
-							idx = mod1.indices[-1] + 1 # Skip this module
+						if all([i>2 for i in count_list]):
+							# If all of the spacers are present twice
+							# then duplication has occured in this
+							# region.
+							idx = mod1.indices[-1] + 1 # Skip module
 							continue
 						else:
 							ancestor.modules.append(mod2)
 					else:
-						# Check first if it's a duplication. If so, remove from ancestor.
+						# Check first if it's a duplication.
+						# If so, remove from ancestor.
 						count_list = []
 						for sp in mod1.spacers:
 							if sp != '-':
@@ -105,61 +126,88 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count, existing_an
 									if sp == spacer:
 										count += 1
 								count_list.append(count)
-						if all([i>2 for i in count_list]): # If all of the spacers are present twice then duplication has occured in this region.
-							idx = mod1.indices[-1] + 1 # Skip this module
+						if all([i>2 for i in count_list]):
+							# If all of the spacers are present twice
+							# then duplication has occured in this
+							# region.
+							idx = mod1.indices[-1] + 1 # Skip module
 							continue
 						else:
 							ancestor.modules.append(mod1)
 						
 					idx = mod1.indices[-1] + 1
 				else:
-					# If both modules contain spacers then this may be two deletions from a larger ancestor or a recombination event.
-					# If there is an existing ancestor to consider, use it to resolve this event
+					# If both modules contain spacers then this may be
+					# two deletions from a larger ancestor or a
+					# recombination event.
+					# If there is an existing ancestor to consider, use
+					# it to resolve this event
 					if existing_ancestor:
-						# First check if both modules exist in the existing ancestral array. If they do then keep the portion of the ancestor that they align with.
-						if all([s in existing_ancestor.spacers for s in mod1.spacers if s != '-']) and all([s in existing_ancestor.spacers for s in mod2.spacers if s != '-']):
-							existing_ancestor_indices = sorted([existing_ancestor.spacers.index(s) for s in mod1.spacers + mod2.spacers if s != '-'])
+						# First check if both modules exist in the
+						# existing ancestral array. If they do then
+						# keep the portion of the ancestor that they
+						# align with.
+						if (all(
+							[s in existing_ancestor.spacers for s in mod1.spacers if s != '-']) 
+							and all(
+							[s in existing_ancestor.spacers for s in mod2.spacers if s != '-'])):
+							existing_ancestor_indices = sorted(
+								[existing_ancestor.spacers.index(s) for s in mod1.spacers + mod2.spacers if s != '-'])
 							new_module = array_parsimony.SpacerModule()
-							new_module.spacers = existing_ancestor.spacers[existing_ancestor_indices[0]:existing_ancestor_indices[-1]+1]
+							new_module.spacers = existing_ancestor.spacers[
+								existing_ancestor_indices[0]:existing_ancestor_indices[-1]+1]
 							ancestor.modules.append(new_module)
 							idx = mod1.indices[-1] + 1 
 							continue
 
-						#Otherwise check if either module exist in the existing ancestral array. If one does then keep that one.
-						elif all([s in existing_ancestor.spacers for s in mod1.spacers if s != '-']):
+						# Otherwise check if either module exist in the
+						# existing ancestral array. If one does then
+						# keep that one.
+						elif all(
+							[s in existing_ancestor.spacers for s in mod1.spacers if s != '-']):
 							new_module = array_parsimony.SpacerModule()
-							new_module.spacers = [s for s in mod1.spacers if s != '-']
+							new_module.spacers = [
+								s for s in mod1.spacers if s != '-']
 							ancestor.modules.append(new_module)
 							idx = mod1.indices[-1] + 1
 							continue
 
-						elif all([s in existing_ancestor.spacers for s in mod2.spacers if s != '-']):
+						elif all(
+							[s in existing_ancestor.spacers for s in mod2.spacers if s != '-']):
 							new_module = array_parsimony.SpacerModule()
-							new_module.spacers = [s for s in mod2.spacers if s != '-']
+							new_module.spacers = [
+								s for s in mod2.spacers if s != '-']
 							ancestor.modules.append(new_module)
 							idx = mod2.indices[-1] + 1
 							continue
 
-						else: # If either has any spacers in the ancestor pick the one with the most
+						else: 
+							# If either has any spacers in the
+							# ancestor pick the one with the most
 							if any([s in existing_ancestor.spacers for s in mod1.spacers+mod2.spacers if s != '-']):
 								n1 = len([s in existing_ancestor.spacers for s in mod1.spacers if s != '-'])
 								n2 = len([s in existing_ancestor.spacers for s in mod2.spacers if s != '-'])
 								if n1 > n2:
 									new_module = array_parsimony.SpacerModule()
-									new_module.spacers = [s for s in mod1.spacers if s != '-']
+									new_module.spacers = [
+										s for s in mod1.spacers if s != '-']
 									ancestor.modules.append(new_module)
 									idx = mod1.indices[-1] + 1
 									continue
 								else:
 									new_module = array_parsimony.SpacerModule()
-									new_module.spacers = [s for s in mod2.spacers if s != '-']
+									new_module.spacers = [
+										s for s in mod2.spacers if s != '-']
 									ancestor.modules.append(new_module)
 									idx = mod2.indices[-1] + 1
 									continue
 
-					# Next check if all these spacers exits in another array
+					# Next check if all these spacers exits in another
+					# array
 					spacers_to_check = mod1.spacers + mod2.spacers
-					found_array = False # If we find all the spacers in an array keep it to determine order
+					# If we find all the spacers in an array keep it to
+					# determine order
+					found_array = False 
 					for array in all_arrays:
 						count = 0
 						for spacer in spacers_to_check:
@@ -168,22 +216,32 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count, existing_an
 						if count == len(spacers_to_check):
 							found_array = array
 							continue
-					if found_array: # All the spacers were found in 1 array. That looks like 2 deletions from larger array.
+					if found_array: 
+						# All the spacers were found in 1 array. That
+						# looks like 2 deletions from larger array.
 						# Were the spacers consecutive in another array
-						if " ".join(mod1.spacers + mod2.spacers) in " ".join(found_array):
+						if " ".join(
+							mod1.spacers + mod2.spacers) in " ".join(
+								found_array):
 							new_mod = array_parsimony.SpacerModule()
 							new_mod.spacers = mod1.spacers + mod2.spacers
 							ancestor.modules.append(new_mod)
 							idx = mod1.indices[-1] + 1
-						elif " ".join(mod2.spacers + mod1.spacers) in " ".join(found_array):
+						elif " ".join(
+							mod2.spacers + mod1.spacers) in " ".join(
+								found_array):
 							new_mod = array_parsimony.SpacerModule()
 							new_mod.spacers = mod2.spacers + mod1.spacers
 							ancestor.modules.append(new_mod)
 							idx = mod1.indices[-1] + 1
 						else:
-							# Something else has happened. For now don't put these spacers in the ancestral array. May revisit.
+							# Something else has happened. For now don't
+							#put these spacers in the ancestral array.
+							# May revisit.
 							idx = mod1.indices[-1] + 1
-					else: # Not all the spacers were found in a single array. Is either set found in another array?
+					else: 
+						# Not all the spacers were found in a single
+						# array. Is either set found in another array?
 						spacers1_found = False
 						spacers2_found = False
 						for array in all_arrays:
@@ -203,7 +261,8 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count, existing_an
 								spacers2_found = True
 								continue
 						if spacers1_found and spacers2_found: 
-							# Both are also in another array. Each has parsimony cost. Pick one.
+							# Both are also in another array. Each has
+							# parsimony cost. Pick one.
 							ancestor.modules.append(mod1)
 							idx = mod1.indices[-1] + 1
 						elif spacers1_found:
@@ -222,27 +281,39 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count, existing_an
 
 	ancestor.spacers = [i.spacers for i in ancestor.modules]
 	if isinstance(ancestor.spacers[0], list):
-		ancestor.spacers = [spacer for sublist in ancestor.spacers for spacer in sublist]
+		ancestor.spacers = [
+			spacer for sublist in ancestor.spacers for spacer in sublist]
 
 	return ancestor
 
 
-def resolve_pairwise_parsimony(array1, array2, all_arrays, array_dict, node_ids, node_count, tree, event_costs):
+def resolve_pairwise_parsimony(array1, array2, all_arrays, array_dict,
+	node_ids, node_count, tree, event_costs):
 	"""
-	Given two arrays, make a hypothetical ancestral state and calculate parsimony distance of each input array to that ancestor. 
-	Can only build an ancestor state if there are shared spacers so throws an error if none are found.
+	Given two arrays, make a hypothetical ancestral state and calculate
+	parsimony distance of each input array to that ancestor. 
+	Can only build an ancestor state if there are shared spacers so
+	throws an error if none are found.
 	Args:
 		array1 (Array class instance): The first array to be compared.
 		array2 (Array class instance): The second array to be compared.
-		all_arrays (list): The list of all arrays so that indels can be resolved to favour keeping spacers found in other arrays.
-		array_dict (dict): Dict of Array class instances with information about the nodes of your tree.
-		node_ids (list): A list of names to be used to name internal nodes.
-		node_count (int): The index of the name to use in the node_ids list to name this internal node.
-		tree (Deondropy Tree class instance): The tree in which the arrays are located.
-		event_costs (dict): Dict to look up event types and their parsimony costs.
+		all_arrays (list): The list of all arrays so that indels can be
+		  resolved to favour keeping spacers found in other arrays.
+		array_dict (dict): Dict of Array class instances with
+		  information about the nodes of your tree.
+		node_ids (list): A list of names to be used to name internal
+		  nodes.
+		node_count (int): The index of the name to use in the node_ids
+		  list to name this internal node.
+		tree (Deondropy Tree class instance): The tree in which the
+		  arrays are located.
+		event_costs (dict): Dict to look up event types and their
+		  parsimony costs.
 
 	Returns:
-		(tuple of Array class instances) The input Array class instances with module and distance info added, the ancestral array Array class instance. Tuple order is (array1, array2, ancestor)
+		(tuple of Array class instances) The input Array class instances
+		  with module and distance info added, the ancestral array Array
+		    class instance. Tuple order is (array1, array2, ancestor)
 
 	Raises:
 		No ID: Raises an exception if the two arrays share no spacers.
@@ -255,35 +326,43 @@ def resolve_pairwise_parsimony(array1, array2, all_arrays, array_dict, node_ids,
 		if len(tree) > 1:
 			if tree.find_node_with_taxon_label(array1.id):
 				try:
-					existing_ancestor = array_dict[tree.find_node_with_taxon_label(array1.id).parent_node.taxon.label]
+					existing_ancestor = array_dict[
+					tree.find_node_with_taxon_label(
+						array1.id).parent_node.taxon.label]
 				except: #root is parent
 					existing_ancestor = False
 			elif tree.find_node_with_taxon_label(array2.id):
 				try:
-					existing_ancestor = array_dict[tree.find_node_with_taxon_label(array2.id).parent_node.taxon.label]
+					existing_ancestor = array_dict[
+					tree.find_node_with_taxon_label(
+						array2.id).parent_node.taxon.label]
 				except: #root is parent
 					existing_ancestor = False
 			else:
 				existing_ancestor = False
 		else:
 			existing_ancestor = False
-
-
-		array1.reset() # Make sure the distance and events haven't carried over from a previous usage
+		# Make sure the distance and events haven't carried over from a
+		# previous usage
+		array1.reset()
 		array2.reset()
 		
-		ancestor = infer_ancestor(array1, array2, all_arrays, node_ids, node_count, existing_ancestor)
+		ancestor = infer_ancestor(
+			array1, array2, all_arrays, node_ids, node_count,
+			existing_ancestor)
 
-		array1 = array_parsimony.count_parsimony_events(array1, ancestor, array_dict, tree, True)
-		array2 = array_parsimony.count_parsimony_events(array2, ancestor, array_dict, tree, True)
+		array1 = array_parsimony.count_parsimony_events(
+			array1, ancestor, array_dict, tree, True)
+		array2 = array_parsimony.count_parsimony_events(
+			array2, ancestor, array_dict, tree, True)
 
-		for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
+		for k,v in event_costs.items():
+			# Get weighted distance based on each event's cost.
 			array1.distance += array1.events[k] * v
 			array2.distance += array2.events[k] * v
 
 		return array1, array2, ancestor
 	
-
 	else:
 		return "No_ID"
 
@@ -334,7 +413,9 @@ def find_closest_array(array, array_dict, tree, event_costs):
 		return best_match
 
 
-def replace_existing_array(existing_array, new_array, current_parent, tree, all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed, event_costs, tree_namespace):
+def replace_existing_array(existing_array, new_array, current_parent, tree,
+	all_arrays, node_ids, node_count, array_dict, tree_child_dict, seed,
+	event_costs, tree_namespace):
 	"""
 	Given a array already in the tree and an array to be added, finds an ancestral state for the two arrays and replaces the existing array with the following tree structure:
 			   /- existing array
@@ -405,7 +486,8 @@ def replace_existing_array(existing_array, new_array, current_parent, tree, all_
 		return tree, array_dict, tree_child_dict
 
 
-def build_tree_single(arrays, tree_namespace, score, all_arrays, node_ids, event_costs):
+def build_tree_single(arrays, tree_namespace, score, all_arrays, node_ids,
+	event_costs):
 	"""
 	Search treespace for most parsimonious tree using single process.
 	Args:
@@ -532,7 +614,8 @@ def build_tree_single(arrays, tree_namespace, score, all_arrays, node_ids, event
 		return (array_dict, tree, initial_arrays)
 
 
-def build_tree_multi(arrays, tree_namespace, all_arrays, node_ids, event_costs):
+def build_tree_multi(arrays, tree_namespace, all_arrays, node_ids,
+	event_costs):
 	"""
 	Search treespace for most parsimonious tree using multiple processes.
 	Args:
@@ -625,7 +708,6 @@ def build_tree_multi(arrays, tree_namespace, all_arrays, node_ids, event_costs):
 			# Need to reroot at the seed so that RF distance works
 			tree.reroot_at_node(tree.seed_node, update_bipartitions=False)
 			return array_dict, tree, initial_arrays
-
 
 def reset_anc_mods(tree, array_dict):
 	"""Ensures modules identified in ancestor during comparison with
@@ -787,6 +869,14 @@ def build_parser(parser):
 		dest="branch_lengths",
 		action='store_true', 
 		help="When plotting a representation of the tree Include branch lengths at midpoint on branches. N.B. This does not control inclusion of branch lengths in newick format tree output, which are always included."
+		)
+	plot_params.add_argument(
+		"--brlen-scale",
+		type=float,
+		required=False,
+		metavar='',
+		default=1,
+		help="Factor to scale branch length."
 		)
 	plot_params.add_argument(
 		"--no-align-cartoons",
@@ -1111,9 +1201,8 @@ def main(args):
 				if args.print_tree:
 					print(good_tree.as_ascii_plot(
 						show_internal_node_labels=True))
-					print('\n\n')
+					print('\n')
 				print(good_tree.as_string("newick"))
-				print('\n\n')
 				if args.out_file:
 					# Reset events in root array
 					best_arrays[n] = reset_anc_mods(good_tree, best_arrays[n])
@@ -1126,6 +1215,7 @@ def main(args):
 						spacer_cols_dict=spacer_cols_dict,
 						branch_lengths=args.branch_lengths,
 						emphasize_diffs=args.emphasize_diffs, dpi=args.dpi,
+						brlen_scale=args.brlen_scale,
 						no_align_cartoons=args.no_align_cartoons,
 						no_align_labels=args.no_align_labels,
 						no_fade_ancestral=args.no_fade_anc,
@@ -1142,11 +1232,11 @@ def main(args):
 			order = [i.id for i in best_addition_order]
 			sys.stderr.write(
 				"\nThe addition order to make the best tree was: "
-				"{}\n\n".format(" ".join(order)))
+				"{}\n".format(" ".join(order)))
 			tree_operations.resolve_polytomies(best_tree)
 			if args.print_tree:
 				print(best_tree.as_ascii_plot(show_internal_node_labels=True))
-				print("\n\n")
+				print("\n")
 			print(best_tree.as_string("newick"))
 			if args.out_file:
 				# Reset events in root array
@@ -1159,6 +1249,7 @@ def main(args):
 					spacer_cols_dict=spacer_cols_dict,
 					branch_lengths=args.branch_lengths,
 					emphasize_diffs=args.emphasize_diffs, dpi=args.dpi,
+					brlen_scale=args.brlen_scale,
 					no_align_cartoons=args.no_align_cartoons,
 					no_align_labels=args.no_align_labels,
 					no_fade_ancestral=args.no_fade_anc,
