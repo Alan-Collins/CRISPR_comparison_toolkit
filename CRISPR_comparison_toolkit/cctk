@@ -30,7 +30,7 @@ Analyze the differences between CRISPR arrays:
 
 Other:
   evolve       perform in silico evolution of CRISPR arrays
-  spacerblast  BLAST spacers against something, process output & check for PAMs
+  spacerblast  BLAST spacers against a BLASTdb, process output & check for PAMs
 
 """
 
