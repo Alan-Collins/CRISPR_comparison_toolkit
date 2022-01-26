@@ -514,13 +514,14 @@ def draw_diffplot_lines(ax, y, array_order, array_dict, spacer_colours,
 
 def plot_tree(tree, array_dict, filename, spacer_cols_dict, 
 	branch_lengths=False, emphasize_diffs=False, dpi=600, line_scale=1,
-	brlen_scale=0.5, branch_spacing=2, font_scale=1, fig_h=1, fig_w=1,
+	brlen_scale=1, branch_spacing=2, font_scale=1, fig_h=1, fig_w=1,
 	no_align_cartoons=False, no_align_labels=False, no_fade_ancestral=False,
 	label_text_size=False, annot_text_size=False):
 
-	outline = 0.3 #line_widths = 3 # Thickness of lines
+	outline = 0.3 # Thickness of lines
 	spacing = 0.5
 	spacer_size = 2
+	brlen_scale*=0.5
 
 	if not label_text_size:
 		label_text_size = 10 * font_scale
