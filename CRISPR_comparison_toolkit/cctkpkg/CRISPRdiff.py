@@ -267,6 +267,7 @@ def build_parser(parser):
 		"--iterations",
 		required=False,
 		default=10,
+		metavar=' ',
 		type=int,
 		help="Number of attempts to find the best order of arrays for \
 		plotting. Higher number can improve the array order. Default = 10"
@@ -406,10 +407,11 @@ def main(args):
 			arrays_of_interest_dict[array] = array_dict[array]
 
 	if args.preordered:
-		array_order = arrays_of_interest
+		# Reverse order so order of list plots top to bottom
+		array_order = arrays_of_interest[::-1]
 	elif args.approxordered:
 		array_order, _ = jiggle_list_to_local_max(
-			arrays_of_interest_dict, arrays_of_interest)
+			arrays_of_interest_dict, arrays_of_interest[::-1])
 	else:
 		if len(arrays_of_interest) < 9:
 			array_order = decide_array_order_global_best(
