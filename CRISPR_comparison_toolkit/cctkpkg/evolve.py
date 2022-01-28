@@ -13,7 +13,7 @@ import dendropy
 from . import (array_parsimony,
 	tree_operations,
 	colour_schemes,
-	file_handling
+	file_handling,
 	plotting)
 
 
