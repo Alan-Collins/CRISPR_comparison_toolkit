@@ -9,11 +9,10 @@ import argparse
 # cctk imports
 from cctkpkg import CRISPRtree
 from cctkpkg import CRISPRdiff
-from cctkpkg import evolve_array
-from cctkpkg import minced2arrays
-from cctkpkg import blast2arrays
-from cctkpkg import CRISPRspacers2network
-from cctkpkg import process_CRISPR_blast
+from cctkpkg import evolve
+from cctkpkg import minced
+from cctkpkg import blast
+from cctkpkg import spacerblast
 
 description = """
 Call any command followed by -h or --help to show help for that command
@@ -26,7 +25,6 @@ Analyze the differences between CRISPR arrays:
   CRISPRdiff   produce a CRISPRdiff plot comparing CRISPR arrays
   CRISPRtree   perform a maximum parsimony analysis on CRISPR arrays
   constrain    predict array relationships constrained by a tree ## TO ADD ##
-  network      produce a network representation of spacer sharing among arrays
 
 Other:
   evolve       perform in silico evolution of CRISPR arrays
