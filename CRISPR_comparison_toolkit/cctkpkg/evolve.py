@@ -13,6 +13,7 @@ import dendropy
 from . import (array_parsimony,
 	tree_operations,
 	colour_schemes,
+	file_handling
 	plotting)
 
 
@@ -425,12 +426,15 @@ def main(args):
 
 	# Save active arrays
 
-	with open(outdir+f"evolved_arrays_{run_name}.txt", 'w') as fout:
-		for leaf in new_tree.leaf_node_iter():
-			array_id = leaf.taxon.label
-			fout.write("{}\tspacers:\t{}\n".format(
-				array_id, " ".join(
-					[str(i) for i in final_array_dict[array_id].spacers])))
+	active_array_dict = {}
+	for leaf in new_tree.leaf_node_iter():
+		array_id = leaf.taxon.label
+		active_array_dict[array_id] = final_array_dict[array_id].spacers
+
+	file_handling.write_array_file(
+		active_array_dict,
+		outdir+f"evolved_arrays_{run_name}.txt")
+
 
 	with open(
 		outdir+f"color_scheme_{run_name}.json", 'w', encoding='utf-8') as fout:
