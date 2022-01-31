@@ -125,6 +125,8 @@ def main():
 		CRISPRtree.main(args)
 	elif args.command == "spacerblast":
 		spacerblast.main(args)
+	elif args.command == "network":
+		network.main(args)
 
 if __name__ == '__main__':
 	main()

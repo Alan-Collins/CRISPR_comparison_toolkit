@@ -467,21 +467,34 @@ def read_array_types_file(filename):
 
 
 def write_network_file(network, filename):
-	outcontents = ["\t".join([
-			"Array_A",
-			"Array_B",
-			"Shared_spacers",
-			"Jaccard_similarity",
-			"Array_A_type",
-			"Array_B_type"])]
-	for edge in network:
-		outcontents.append("\t".join([str(i) for i in [
-			edge.a,
-			edge.b,
-			edge.nshared,
-			edge.jaccard,
-			edge.a_type,
-			edge.b_type]]))
+	if network[0].a_type != '':
+		outcontents = ["\t".join([
+				"Array_A",
+				"Array_B",
+				"Shared_spacers",
+				"Jaccard_similarity",
+				"Array_A_type",
+				"Array_B_type"])]
+		for edge in network:
+			outcontents.append("\t".join([str(i) for i in [
+				edge.a,
+				edge.b,
+				edge.nshared,
+				edge.jaccard,
+				edge.a_type,
+				edge.b_type]]))
+	else:
+		outcontents = ["\t".join([
+				"Array_A",
+				"Array_B",
+				"Shared_spacers",
+				"Jaccard_similarity"])]
+		for edge in network:
+			outcontents.append("\t".join([str(i) for i in [
+				edge.a,
+				edge.b,
+				edge.nshared,
+				edge.jaccard]]))
 
 	with open(filename, 'w') as fout:
 		fout.write("\n".join(outcontents)+"\n")
