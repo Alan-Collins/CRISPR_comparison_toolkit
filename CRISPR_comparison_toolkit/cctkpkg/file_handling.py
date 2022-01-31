@@ -2,7 +2,7 @@ import os
 import sys
 import json
 import re
-from collections import Counter
+from collections import Counter, defaultdict
 
 # cctkpkg imports
 from . import sequence_operations 
@@ -273,7 +273,7 @@ def write_spacer_fasta(spacer_dict, outfile):
 			fout.write(f">{sp_id}\n{seq}\n")
 
 
-def  write_array_id_seq_file(spacer_id_dict, array_id_dict, outdir):
+def write_array_id_seq_file(spacer_id_dict, array_id_dict, outdir):
 
 	# seq file
 	with open(outdir + "Array_seqs.txt", 'w') as fout:
@@ -410,6 +410,21 @@ def write_cr_sum_tabs(all_assemblies, outfile):
 		fout.write(outcontents)
 		
 
+def write_array_reps_file(all_assemblies, outdir):
+	array_reps_dict = defaultdict(list)
+	for assembly in all_assemblies:
+		acc = assembly.accession
+		for array in assembly.arrays.values():
+			array_reps_dict[array.id].append(acc)
+
+	outcontents = []
+	for arr, accs in array_reps_dict.items():
+		outcontents.append("{}\t{}".format(arr, " ".join(accs)))
+
+	with open(outdir+"Array_representatives.txt", 'w') as fout:
+		fout.write("\n".join(outcontents))
+
+
 def write_CRISPR_files(
 	all_assemblies,
 	spacer_id_dict,
@@ -417,10 +432,14 @@ def write_CRISPR_files(
 	outdir):
 	""" Write output files from CRISPR identification scripts
 	"""
-	spacer_fasta_file = outdir + "CRISPR_spacers.fna"
-	write_spacer_fasta(spacer_id_dict, spacer_fasta_file)
+	# Spacers in fasta format
+	write_spacer_fasta(spacer_id_dict, outdir+"CRISPR_spacers.fna")
 	
+	# Array IDs and spacers
 	write_array_id_seq_file(spacer_id_dict, array_id_dict, outdir)
+
+	# Array representatives
+	write_array_reps_file(all_assemblies, outdir)
 
 	# CSV summary table
 	write_cr_sum_tabs(all_assemblies, outdir+"CRISPR_summary_table.csv")
@@ -435,3 +454,34 @@ def read_assembly_list_file(filename):
 			assemblies.append(line.strip())
 
 	return assemblies
+
+
+def read_array_types_file(filename):
+	array_types = {}
+	with open(filename, 'r') as fin:
+		for line in fin:
+			bits = line.split()
+			array_types[bits[0]] = bits[1]
+
+	return array_types
+
+
+def write_network_file(network, filename):
+	outcontents = ["\t".join([
+			"Array_A",
+			"Array_B",
+			"Shared_spacers",
+			"Jaccard_similarity",
+			"Array_A_type",
+			"Array_B_type"])]
+	for edge in network:
+		outcontents.append("\t".join([str(i) for i in [
+			edge.a,
+			edge.b,
+			edge.nshared,
+			edge.jaccard,
+			edge.a_type,
+			edge.b_type]]))
+
+	with open(filename, 'w') as fout:
+		fout.write("\n".join(outcontents)+"\n")

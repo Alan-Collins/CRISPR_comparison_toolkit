@@ -270,11 +270,11 @@ def blastn_to_arrays(args):
     good_hits = []
 
     for line in blast_lines:
-        # Discard any blast hits where match is < 90% of query
-        if line.length < 0.9 * line.qlen:
+        # Discard any blast hits where match is < some percent of query
+        if line.length < args.match_length * line.qlen:
             continue
-        # Or <80% ID
-        if line.pident < 80:
+        # Or < some percent ID
+        if line.pident < args.percent_id:
             continue
         if line.length != line.qlen:
             if line.sstart < line.send:
@@ -330,13 +330,16 @@ def blastn_to_arrays(args):
 
 def identify_same_array_hits(blast_entries, args):
     """
-    Given a list of blast results, identify which of them are from a contiguous spacer array by checking:
+    Given a list of blast results, identify which of them are from a
+    contiguous spacer array by checking:
     Are they close enough?
     Are they on the same strand?
     Are they in the same genome, contig?
-    If it finds 3 or more repeats close together on the same strand of the same contig, groups them into an array.
+    If it finds 3 or more repeats close together on the same strand of
+    the same contig, groups them into an array.
     Args:
-        blast_entries (list):   List of blast entry classes sorted by contig, then start, then location.
+        blast_entries (list):   List of blast entry classes sorted by
+          contig, then start, then location.
         args (argparse class):  The arguments provided to argparse.
     
     Returns:
@@ -349,7 +352,9 @@ def identify_same_array_hits(blast_entries, args):
     last_strand = False # store orientation of last repeat
     for entry in blast_entries:
         if last_loc:
-            if last_loc > entry.sstart - args.rep_interval and last_strand == entry.strand and last_contig == entry.sseqid:
+            if ((last_loc > entry.sstart - args.rep_interval)
+                and (last_strand == entry.strand)
+                and (last_contig == entry.sseqid)):
                 this_array.append(entry)
                 last_loc = entry.sstart
                 if entry == blast_entries[-1]:
@@ -481,7 +486,7 @@ def build_parser(parser):
         required=False,
         default='P',
         help="DEFAULT: P. {E, P} Regex type to be used in step taht calls grep \
-        See CCTK documentation for details."
+            See CCTK documentation for details."
         )
     other_options.add_argument(
         "-t", "--threads",
@@ -500,7 +505,25 @@ def build_parser(parser):
         default=80,
         type=int,
         help="DEFAULT: 80. Set the expected interval between the start \
-        position of your repeats."
+            position of your repeats."
+        )
+    other_options.add_argument(
+        "-l", "--match-length",
+        metavar=" ",
+        required=False,
+        default=0.9,
+        type=float,
+        help="DEFAULT: 0.9. proportion of repeat in blast hit to consider \
+            match a candidate repeat"
+        )
+    other_options.add_argument(
+        "-c", "--percent-id",
+        metavar=" ",
+        required=False,
+        default=80,
+        type=float,
+        help="DEFAULT: 80. Percent ID of blast hit to consider match \
+        a candidate repeat"
         )
 
     blast_options = parser.add_argument_group("BLASTn settings")
@@ -619,7 +642,21 @@ def main(args):
         all_assemblies,
         non_red_spacer_id_dict,
         non_red_array_id_dict,
-        args.outdir)
+        outdir)
+
+    # Make list of FoundArray instances representing all unique arrays
+    array_dict = {}
+    for assembly in all_assemblies:
+        for array in assembly.arrays.values():
+            if array.id not in array_dict:
+                array_dict[array.id] = array
+    array_list = [a for a in array_dict.values()]
+
+    # Build network of array spacer sharing
+    network = sequence_operations.build_network(array_list)
+
+    # Write network file
+    file_handling.write_network_file(network, outdir+"Array_network.txt")
 
 
 if __name__ == '__main__':

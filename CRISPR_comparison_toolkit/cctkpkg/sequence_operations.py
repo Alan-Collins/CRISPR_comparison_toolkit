@@ -1,5 +1,16 @@
 import numpy as np
 from collections import defaultdict
+from itertools import combinations
+
+class NetworkEdge():
+	def __init__(self, a, b):
+		self.a = a.id
+		self.b = b.id
+		self.nshared = len(set(a.spacers).intersection(set(b.spacers)))
+		self.jaccard = len(set(a.spacers).intersection(
+			set(b.spacers)))/len(set(a.spacers).union(set(b.spacers)))
+		self.a_type = a.repeat_id
+		self.b_type = b.repeat_id
 
 def rev_comp(string):
 	"""Reverse complement a string of nucleotide sequence
@@ -350,3 +361,12 @@ def add_ids(
 				non_red_spacer_id_dict[spacer] for spacer in array.spacers]
 			array.id = non_red_array_id_dict[" ".join(array.spacers)]
 
+
+def build_network(array_list):
+	network = []
+	for a,b in combinations(array_list, 2):
+		nshared = len(set(a.spacers).intersection(set(b.spacers)))
+		if nshared > 0:
+			network.append(NetworkEdge(a,b))
+
+	return network
