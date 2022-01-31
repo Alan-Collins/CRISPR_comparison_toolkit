@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = "0.2.6"
+__version__ = "0.3.0"
 __author__ = "Alan Collins"
 
 import sys
@@ -25,7 +25,7 @@ Find CRISPR arrays in assemblies:
 Analyze the differences between CRISPR arrays:
   CRISPRdiff   produce a CRISPRdiff plot comparing CRISPR arrays
   CRISPRtree   perform a maximum parsimony analysis on CRISPR arrays
-  constrain    predict array relationships constrained by a tree ## TO ADD ##
+  constrain    predict array relationships constrained by a tree
   network      produce a network representation of spacer sharing among arrays
 
 Other:
