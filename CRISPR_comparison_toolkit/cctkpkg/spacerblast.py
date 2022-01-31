@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
 
-# AUTHOR		:  ALAN COLLINS
-# VERSION		:  v1
-# DATE			:  2021-8-3
-# DESCRIPTION	:  Process BLAST output of spacers against a blastdb. For results that have cut off due to mismatches, extend the hit to the full length and report mismatches. Report up- and down-stream bases for PAM analysis.
 
 import sys
 import argparse
