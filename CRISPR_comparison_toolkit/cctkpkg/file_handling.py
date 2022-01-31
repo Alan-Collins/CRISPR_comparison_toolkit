@@ -2,7 +2,7 @@ import os
 import sys
 import json
 import re
-from collections import Counter
+from collections import Counter, defaultdict
 
 # cctkpkg imports
 from . import sequence_operations 
@@ -273,7 +273,7 @@ def write_spacer_fasta(spacer_dict, outfile):
 			fout.write(f">{sp_id}\n{seq}\n")
 
 
-def  write_array_id_seq_file(spacer_id_dict, array_id_dict, outdir):
+def write_array_id_seq_file(spacer_id_dict, array_id_dict, outdir):
 
 	# seq file
 	with open(outdir + "Array_seqs.txt", 'w') as fout:
@@ -410,6 +410,21 @@ def write_cr_sum_tabs(all_assemblies, outfile):
 		fout.write(outcontents)
 		
 
+def write_array_reps_file(all_assemblies, outdir):
+	array_reps_dict = defaultdict(list)
+	for assembly in all_assemblies:
+		acc = assembly.accession
+		for array in assembly.arrays.values():
+			array_reps_dict[array.id].append(acc)
+
+	outcontents = []
+	for arr, accs in array_reps_dict.items():
+		outcontents.append("{}\t{}".format(arr, " ".join(accs)))
+
+	with open(outdir+"Array_representatives.txt", 'w') as fout:
+		fout.write("\n".join(outcontents))
+
+
 def write_CRISPR_files(
 	all_assemblies,
 	spacer_id_dict,
@@ -417,10 +432,14 @@ def write_CRISPR_files(
 	outdir):
 	""" Write output files from CRISPR identification scripts
 	"""
-	spacer_fasta_file = outdir + "CRISPR_spacers.fna"
-	write_spacer_fasta(spacer_id_dict, spacer_fasta_file)
+	# Spacers in fasta format
+	write_spacer_fasta(spacer_id_dict, outdir+"CRISPR_spacers.fna")
 	
+	# Array IDs and spacers
 	write_array_id_seq_file(spacer_id_dict, array_id_dict, outdir)
+
+	# Array representatives
+	write_array_reps_file(all_assemblies, outdir)
 
 	# CSV summary table
 	write_cr_sum_tabs(all_assemblies, outdir+"CRISPR_summary_table.csv")
