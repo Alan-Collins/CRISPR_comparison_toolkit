@@ -1,10 +1,10 @@
 package:
-  name: cctk_dev
+  name: cctk
   version: "0.3.0"
 
 source:
   # path: ../
-  git_rev: "dev"
+  git_rev: "main"
   git_url: "https://github.com/Alan-Collins/CRISPR_comparison_toolkit.git"
   git_depth: 1
 
