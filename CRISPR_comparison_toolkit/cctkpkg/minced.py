@@ -149,7 +149,6 @@ def build_parser(parser):
 
 
 def main(args):
-	print(args)
 	indir = args.indir
 	outdir = args.outdir
 
