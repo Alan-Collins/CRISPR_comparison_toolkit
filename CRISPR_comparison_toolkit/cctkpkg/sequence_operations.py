@@ -370,3 +370,15 @@ def build_network(array_list):
 			network.append(NetworkEdge(a,b))
 
 	return network
+
+
+def percent_id(a, b):
+	l = len(a)
+	matches = 0
+	for x,y in zip(a,b):
+		if x==y:
+			matches+=1
+
+	pident = 100*matches/l
+
+	return pident

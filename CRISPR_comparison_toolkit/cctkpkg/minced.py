@@ -93,20 +93,6 @@ def process_minced_out(CRISPR_types_dict, outdir):
 	non_red_array_id_dict,
 	processed_out)
 
-	# Make list of FoundArray instances representing all unique arrays
-	array_dict = {}
-	for assembly in all_assemblies:
-		for array in assembly.arrays.values():
-			if array.id not in array_dict:
-				array_dict[array.id] = array
-	array_list = [a for a in array_dict.values()]
-
-	# Build network of array spacer sharing
-	network = sequence_operations.build_network(array_list)
-
-	# Write network file
-	file_handling.write_network_file(network, processed_out+"Array_network.txt")
-
 
 def build_parser(parser):
 	
