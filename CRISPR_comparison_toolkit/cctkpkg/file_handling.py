@@ -454,3 +454,34 @@ def read_assembly_list_file(filename):
 			assemblies.append(line.strip())
 
 	return assemblies
+
+
+def read_array_types_file(filename):
+	array_types = {}
+	with open(filename, 'r') as fin:
+		for line in fin:
+			bits = line.split()
+			array_types[bits[0]] = bits[1]
+
+	return array_types
+
+
+def write_network_file(network, filename):
+	outcontents = ["\t".join([
+			"Array_A",
+			"Array_B",
+			"Shared_spacers",
+			"Jaccard_similarity",
+			"Array_A_type",
+			"Array_B_type"])]
+	for edge in network:
+		outcontents.append("\t".join([str(i) for i in [
+			edge.a,
+			edge.b,
+			edge.nshared,
+			edge.jaccard,
+			edge.a_type,
+			edge.b_type]]))
+
+	with open(filename, 'w') as fout:
+		fout.write("\n".join(outcontents)+"\n")
