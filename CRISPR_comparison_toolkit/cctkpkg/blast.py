@@ -154,7 +154,6 @@ def build_arrays_MP(array_entry, args):
             array.genome = which_substring_in_string(
                 args.assemblies,
                 array_entry[0].sseqid)
-            print(array.genome)
         else:
             array.genome = sseqid
         n_reps = len(array_entry)
@@ -165,8 +164,8 @@ def build_arrays_MP(array_entry, args):
         array.repeat_id = array_entry[0].qseqid
         array.contig = array_entry[0].sseqid
         if array_entry[0].strand == 'plus':
-            array.start = array_entry[-1].send
-            array.stop = array_entry[0].sstart
+            array.start = array_entry[0].sstart
+            array.stop = array_entry[-1].send
             for i, entry in enumerate(array_entry):
                 if i+1 != n_reps:
                     sp_fstring += '%s %s %s\n'
@@ -184,8 +183,9 @@ def build_arrays_MP(array_entry, args):
                     entry.strand
                     )
         else:
-            array.start = array_entry[0].send
-            array.stop = array_entry[-1].sstart
+            array.reverse = True
+            array.start = array_entry[-1].sstart
+            array.stop = array_entry[0].send
             for i, entry in enumerate(reversed(array_entry)):
                 if i+1 != n_reps:
                     sp_fstring += '%s %s %s\n'
@@ -220,6 +220,32 @@ def build_arrays_MP(array_entry, args):
         print(e)
         sys.exit()
 
+
+def extend_hit(hit):
+    if hit.sstart < hit.send:
+        # if the blast hit is on the positive strand
+        if hit.qstart != 1:
+            # if the 5' end of repeat is missing
+            # adjust sstart by the number of bases missing from
+            # repeat 5' end
+            hit.sstart = hit.sstart - (hit.qstart - 1)
+        if hit.qlen != hit.qend:
+            # if the 3' end of the repeat is missing
+            # adjust send by the number of bases missing from
+            # repeat 3' end
+            hit.send = hit.send + (hit.qlen - hit.qend)
+    elif hit.sstart > hit.send:
+        # if the blast hit is on the negative strand
+        if hit.qstart != 1:
+            # if the 5' end of repeat is missing
+            # adjust sstart by the number of bases missing from
+            # repeat 5' end
+            hit.sstart = hit.sstart + (hit.qstart - 1)
+        if hit.qlen != hit.qend:
+            # if the 3' end of the repeat is missing
+            # adjust send by the number of bases missing from
+            # repeat 3' end
+            hit.send = hit.send - (hit.qlen - hit.qend)
 
 def blastn_to_arrays(args):
     """
@@ -265,46 +291,86 @@ def blastn_to_arrays(args):
         sys.exit()
     blast_lines = [
         BlastResult(i) for i in blast_run.stdout.split('\n') if len(i) > 0]
+
+    queries_dict = file_handling.fasta_to_dict(args.repeats_file)
+    # If blast result is < query length, extend it to check if it is
+    # a good match and update pid by comparing to repeat sequence
+
+    hits_to_update = []
+    fstring = ''
+    batch_locations = ''
+    extended_hits = []
+    n_args = 0
+
+    for n, line in enumerate(blast_lines):
+        if line.length == line.qlen:
+            continue
+        
+        extend_hit(line)
+
+        if ((int(line.sstart) < 0)
+            or (int(line.send) < 0)
+            or (int(line.sstart) > int(line.slen))
+            or (int(line.send) > int(line.slen))
+        ):
+            # If extending the hit would leave the contig then discard
+            line.pident = 0
+            continue
+
+        hits_to_update.append(n)
+        n_args+=3
+        if n_args > args.batch_size:
+            x = len(extended_hits)
+            extended_hits += run_blastcmd(
+                args.blast_db_path,
+                fstring,
+                batch_locations
+                )
+            fstring = ''
+            batch_locations = ''
+            n_args = 3
+
+        fstring += '%s %s %s\n'
+        if line.sstart < line.send:
+            batch_locations += '{} {}-{} {} '.format(
+                line.sseqid,
+                line.sstart,
+                line.send,
+                line.strand
+                )
+        else:
+            batch_locations += '{} {}-{} {} '.format(
+                line.sseqid,
+                line.send,
+                line.sstart,
+                line.strand
+                )
     
+    extended_hits += run_blastcmd(
+        args.blast_db_path,
+        fstring,
+        batch_locations
+        )
+
+    for n, new_seq in zip(hits_to_update, extended_hits):
+        hit = blast_lines[n]
+        hit.length = hit.qlen
+        hit.pident = sequence_operations.percent_id(
+            new_seq,
+            queries_dict[hit.qseqid]
+            )
+
 
     good_hits = []
 
     for line in blast_lines:
-        # Discard any blast hits where match is < some percent of query
-        if line.length < args.match_length * line.qlen:
-            continue
-        # Or < some percent ID
+        # Discard any blast hits where pident is < some percent
         if line.pident < args.percent_id:
             continue
-        if line.length != line.qlen:
-            if line.sstart < line.send:
-                # if the blast hit is on the positive strand
-                if line.qstart != 1:
-                    # if the 5' end of repeat is missing
-                    # adjust sstart by the number of bases missing from
-                    # repeat 5' end
-                    line.sstart = line.sstart - (line.qstart - 1)
-                if line.qlen != line.qend:
-                    # if the 3' end of the repeat is missing
-                    # adjust send by the number of bases missing from
-                    # repeat 3' end
-                    line.send = line.send + (line.qlen - line.length)
-            elif line.sstart > line.send:
-                # if the blast hit is on the negative strand
-                if line.qstart != 1:
-                    # if the 5' end of repeat is missing
-                    # adjust sstart by the number of bases missing from
-                    # repeat 5' end
-                    line.sstart = line.sstart + (line.qstart - 1)
-                if line.qlen != line.qend:
-                    # if the 3' end of the repeat is missing
-                    # adjust send by the number of bases missing from
-                    # repeat 3' end
-                    line.send = line.send - (line.qlen - line.length)
         
         # # Adjust start and end for reverse orientation matches
-        if line.sstart > line.send:
-            line.sstart, line.send = line.send, line.sstart
+        # if line.sstart > line.send:
+        #     line.sstart, line.send = line.send, line.sstart
         good_hits.append(line)
     # check_blast_overlap(good_hits)
     good_hits_sorted = sorted(
@@ -352,6 +418,10 @@ def identify_same_array_hits(blast_entries, args):
     last_strand = False # store orientation of last repeat
     for entry in blast_entries:
         if last_loc:
+            if last_loc == entry.sstart:
+                # If two parts of a repeat matched separately and the 
+                # matches were extended, don't process both.
+                continue
             if ((last_loc > entry.sstart - args.rep_interval)
                 and (last_strand == entry.strand)
                 and (last_contig == entry.sseqid)):
@@ -508,15 +578,6 @@ def build_parser(parser):
             position of your repeats."
         )
     other_options.add_argument(
-        "-l", "--match-length",
-        metavar=" ",
-        required=False,
-        default=0.9,
-        type=float,
-        help="DEFAULT: 0.9. proportion of repeat in blast hit to consider \
-            match a candidate repeat"
-        )
-    other_options.add_argument(
         "-c", "--percent-id",
         metavar=" ",
         required=False,
@@ -541,6 +602,15 @@ def build_parser(parser):
         default='10000',
         help="DEFAULT: 10000. Set the max_target_seqs option for blastn \
         (see CCTK documentation for details)"
+        )
+    blast_options.add_argument(
+        "-b", "--batch-size",
+        metavar=" ",
+        required=False,
+        default=1000,
+        type=int,
+        help="DEFAULT: 1000. batch size for blastdbcmd. Higher values run \
+        quicker. Reduce if you get and error about argument list length"
         )
     blast_options.add_argument(
         "-x", "--blast-options",
@@ -644,19 +714,6 @@ def main(args):
         non_red_array_id_dict,
         outdir)
 
-    # Make list of FoundArray instances representing all unique arrays
-    array_dict = {}
-    for assembly in all_assemblies:
-        for array in assembly.arrays.values():
-            if array.id not in array_dict:
-                array_dict[array.id] = array
-    array_list = [a for a in array_dict.values()]
-
-    # Build network of array spacer sharing
-    network = sequence_operations.build_network(array_list)
-
-    # Write network file
-    file_handling.write_network_file(network, outdir+"Array_network.txt")
 
 
 if __name__ == '__main__':
