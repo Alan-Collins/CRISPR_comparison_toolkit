@@ -5,6 +5,7 @@ import sys
 import argparse
 import subprocess
 import re
+from collections import defaultdict
 
 class BlastResult():
 	"""
@@ -103,7 +104,6 @@ def run_blastcmd(db, fstring, batch_locations):
 		sys.exit()
 	else:
 		return [i for i in x.stdout.split('\n') if '>' not in i and len(i) > 0]
-
 
 
 def run_blastn(args):
@@ -303,18 +303,21 @@ def build_parser(parser):
 	out_options = parser.add_argument_group("Output control arguments")
 	out_options.add_argument(
 		"-o", "--out",
+		metavar=' ',
 		dest="outfile",
 		required = False,
 		help="path to output file. If none provided, outputs to stdout."
 		)
 	out_options.add_argument(
-		"-q", "--no_pam_out",
+		"-q", "--no-pam-out",
+		metavar=' ',
 		dest="no_pam_outfile",
 		required = False,
 		help="path to output file for protospacers with no PAM if desired."
 		)
 	out_options.add_argument(
 		"-n", "--flanking",
+		metavar=' ',
 		dest="flanking_n",
 		required = False,
 		default=0,
@@ -327,6 +330,7 @@ def build_parser(parser):
 		)
 	out_options.add_argument(
 		"-u", "--upstream",
+		metavar=' ',
 		dest="upstream_n",
 		required = False,
 		default=0,
@@ -338,6 +342,7 @@ def build_parser(parser):
 		)
 	out_options.add_argument(
 		"-w", "--downstream",
+		metavar=' ',
 		dest="downstream_n", 
 		required = False,
 		default=0,
@@ -348,8 +353,8 @@ def build_parser(parser):
 		the target sequence than the number specified here will be discarded."
 		)
 	out_options.add_argument(
-		"-R", "--regex_pam",
-		dest="regex_pam",
+		"-R", "--regex-pam",
+		metavar=' ',
 		required = False,
 		help='A regex describing the PAM sequence you would like to look for. \
 		E.g. if your PAM is C or T then two Gs, you could describe that as \
@@ -357,7 +362,7 @@ def build_parser(parser):
 		)
 	out_options.add_argument(
 		"-P", "--pam",
-		dest="pam",
+		metavar=' ',
 		required = False,
 		help="A pattern describing the PAM sequence you would like to look \
 		for. Ns can be used to indicate positions with no sequence \
@@ -365,15 +370,16 @@ def build_parser(parser):
 		followed by CC you could provide NNNCC or nnncc here."
 		)
 	out_options.add_argument(
-		"-l", "--pam_location",
-		dest="pam_location",
+		"-l", "--pam-location",
+		metavar=' ',
 		required = False,
 		choices=['up', 'down'],
-		help="['up', 'down'] Where is your PAM relative to your protospacer? \
+		help="{'up', 'down'} Where is your PAM relative to your protospacer? \
 		'up' indicates 5' and down indicates 3'."
 		)
 	out_options.add_argument(
-		"-p", "--percent_id",
+		"-p", "--percent-id",
+		metavar=' ',
 		dest="pid",
 		required = False,
 		default=0,
@@ -383,7 +389,8 @@ def build_parser(parser):
 		all protospacers that are returned by BLAST."
 		)
 	out_options.add_argument(
-		"-b", "--batch_size",
+		"-b", "--batch-size",
+		metavar=' ',
 		dest="blastdbcmd_batch_size",
 		required = False,
 		default=1000,
@@ -397,8 +404,8 @@ def build_parser(parser):
 		and try again. In my experience, 500 often works."
 		)
 	out_options.add_argument(
-		"-r", "--mask_regions",
-		dest="mask_regions",
+		"-r", "--mask-regions",
+		metavar=' ',
 		required = False,
 		help="If you would like to mask regions in your blastdb to exclude \
 		hits in those regions, provide a .bed format file with those regions \
@@ -414,7 +421,7 @@ def build_parser(parser):
 		"Arguments to control the blastn command used by this script.")
 	blast_options.add_argument(
 		"-e", "--evalue",
-		dest="evalue",
+		metavar=' ',
 		required = False,
 		default='10',
 		help="DEFAULT: 10. set the evalue cutoff below which blastn will keep \
@@ -423,8 +430,8 @@ def build_parser(parser):
 		databases in combination with the -m option."
 		)
 	blast_options.add_argument(
-		"-m", "--max_target_seqs",
-		dest="max_target_seqs",
+		"-m", "--max-target-seqs",
+		metavar=' ',
 		required = False,
 		default='10000',
 		help="DEFAULT: 10000. Set the max_target_seqs option for blastn when \
@@ -444,6 +451,7 @@ def build_parser(parser):
 	blast_options.add_argument(
 		"-t", "--threads",
 		dest="num_threads", 
+		metavar=' ',
 		required = False,
 		default=1,
 		type=int,
@@ -451,8 +459,9 @@ def build_parser(parser):
 		step of this script."
 		)
 	blast_options.add_argument(
-		"-x", "--other_options",
+		"-x", "--other-options",
 		dest="other_blast_options",
+		metavar=' ',
 		required = False,
 		default='',
 		help="DEFAULT: none. If you want to include any other options to \
@@ -485,16 +494,18 @@ def main(args):
 	else:
 		flanking_n = (args.upstream_n, args.downstream_n)
 
-	mask_dict = {}
+	mask_dict = defaultdict(list)
 	if args.mask_regions:
 		with open(args.mask_regions, 'r') as fin:
 			for line in fin.readlines():
+				if "#" in line:
+					continue
 				bits = line.split()
-				if len(bits) != 3:
+				if len(bits) < 3:
 					print("Error: Number of columns in your mask_regions bed \
-						file must be 3:\nFasta_header\tstart\tstop")
+						file must be at least 3:\nFasta_header\tstart\tstop")
 					sys.exit()
-				mask_dict[bits[0]] = [int(_) for _ in bits[1:]]
+				mask_dict[bits[0]].append([int(i) for i in bits[1:3]])
 
 
 	blast_output = run_blastn(args)
@@ -565,10 +576,12 @@ def main(args):
 
 		if p.pid >= args.pid:
 			if p.target in mask_dict.keys():
-				start, stop = mask_dict[p.target]
-				if start > stop:
-					start, stop = stop, start
-				mask_region = [_ for _ in range(start, stop)]
+				mask_region = []
+				for region in mask_dict[p.target]:
+					start, stop = region
+					if start > stop:
+						start, stop = stop, start
+					mask_region += [i for i in range(start, stop)]
 				if p.start in mask_region or p.stop in mask_region:
 					p_count += 1
 					continue
