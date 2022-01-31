@@ -111,6 +111,7 @@ class AssemblyCRISPRs():
 						array.spacers = [
 						sequence_operations.rev_comp(
 							spacer) for spacer in reversed(array.spacers)]	
+						array.start, array.stop = array.stop, array.start
 
 					# If there are lots of mismatches between the
 					# repeat and its best match. It's probably wrong.
@@ -446,6 +447,25 @@ def write_CRISPR_files(
 	# TXT summary table
 	write_cr_sum_tabs(all_assemblies, outdir+"CRISPR_summary_table.txt")
 
+	# Network
+
+	# Make list of FoundArray instances representing all unique arrays
+	array_dict = {}
+	for assembly in all_assemblies:
+		for array in assembly.arrays.values():
+			if array.id not in array_dict:
+				array_dict[array.id] = array
+	array_list = [a for a in array_dict.values()]
+
+	# Build network of array spacer sharing
+	network = sequence_operations.build_network(array_list)
+
+	# Write network file
+	write_network_file(network, outdir+"Array_network.txt")
+
+	# Write bed file of array locations
+	write_array_loc_bed(all_assemblies, outdir)
+
 
 def read_assembly_list_file(filename):
 	assemblies = []
@@ -467,6 +487,9 @@ def read_array_types_file(filename):
 
 
 def write_network_file(network, filename):
+	if len(network) == 0:
+		return
+	# If no types provided, don't include those columns in the outfile
 	if network[0].a_type != '':
 		outcontents = ["\t".join([
 				"Array_A",
@@ -498,3 +521,34 @@ def write_network_file(network, filename):
 
 	with open(filename, 'w') as fout:
 		fout.write("\n".join(outcontents)+"\n")
+
+
+def write_array_loc_bed(all_assemblies, outdir):
+	bed_contents = ["#"+"\t".join([
+		"contig",
+		"contigStart",
+		"contigEnd",
+		"name",
+		"score",
+		"strand"])]
+	for assembly in all_assemblies:
+		for array in assembly.arrays.values():
+			if array.reverse:
+				bed_contents.append("\t".join([
+					array.contig,
+					str(int(array.stop)-1), # 0 base
+					str(array.start),
+					str(array.id),
+					"0",
+					"-"]))
+			else:
+				bed_contents.append("\t".join([
+					array.contig,
+					str(int(array.start)-1), # 0 base
+					str(array.stop),
+					str(array.id),
+					"0",
+					"+"]))
+
+	with open(outdir+"Array_locations.bed", 'w') as fout:
+		fout.write("\n".join(bed_contents))
