@@ -1,4 +1,5 @@
 import numpy as np
+from collections import defaultdict
 
 def rev_comp(string):
 	"""Reverse complement a string of nucleotide sequence
@@ -256,3 +257,96 @@ def find_indices(lst, element):
 		except ValueError:
 			return result
 		result.append(offset)
+
+
+def get_repeat_info(CRISPR_types_dict, repeat):
+	"""Find best repeat match and assign CRISPR type accordingly.
+
+	Figure out which of the repeats the user provides in the repeats 
+	fasta file is the most similar to the repeat found by minced
+
+	Args:
+	  CRISPR_types_dict (dict):
+		Fasta dict of the repeats fasta file 
+		as returned by fasta_to_dict
+	  repeat (str):
+		The repeat identified by minced for which you want to find 
+		a match
+
+	Returns:
+	  tuple: 
+		best_match (str):
+		  The fasta header of the user-provided repeat that is most 
+		  similar to that found by minced
+		best_score (int):
+		  The hamming distance between the best match repeat and the 
+		  minced-identified repeat
+		reverse (bool):
+		  Is the best match repeat the reverse complement of 
+		  the identified repeat?
+	"""
+	best_score = 1000
+	best_match = ''
+	reverse = False
+	for k,v in CRISPR_types_dict.items():
+		score = min(hamming(repeat, v))
+		if score < best_score:
+			best_score = score
+			best_match = k
+			reverse = False
+
+		score = min(hamming(
+			rev_comp(repeat), v))
+		if score < best_score:
+			best_score = score
+			best_match = k
+			reverse = True
+
+
+	return best_match, best_score, reverse
+
+
+def non_redundant_CR(all_assemblies):
+	""" Identify non-redundant spacers and arrays in AssemblyCRISPRs instances
+	"""
+	all_spacers_dict = defaultdict(list)
+	all_arrays_dict = defaultdict(list)
+	for strain in all_assemblies:
+		for k,v in strain.arrays.items():
+			CR_type = v.repeat_id
+			all_arrays_dict[CR_type].append(" ".join(v.spacers))
+			for s in v.spacers:
+				all_spacers_dict[CR_type].append(s)
+
+	non_red_spacer_dict = {k: set(v) for k,v in all_spacers_dict.items()}
+	non_red_spacer_id_dict = {}
+	for k, v in non_red_spacer_dict.items():
+		for seq,i in zip(v, range(1,len(v)+1)):
+			non_red_spacer_id_dict[seq] = k+"_"+str(i) 
+
+	non_red_array_dict = {k: set(v) for k,v in all_arrays_dict.items()}
+	all_array_list = [a for ar_ls in non_red_array_dict.values() for a in ar_ls]
+	non_red_array_id_dict = {k:v for k,v in zip(
+		all_array_list, range(1,len(all_array_list)+1)
+		)}
+
+	return (non_red_spacer_dict,
+		non_red_spacer_id_dict,
+		non_red_array_dict,
+		non_red_array_id_dict)
+
+
+def add_ids(
+	all_assemblies,
+	non_red_spacer_id_dict,
+	non_red_array_id_dict):
+	""" Lookup array and spacer IDs and add them to AssemblyCRISPRs 
+	"""
+	for assembly in all_assemblies:
+		if assembly.array_count == 0:
+			continue
+		for array in assembly.arrays.values():
+			array.spacer_ids = [
+				non_red_spacer_id_dict[spacer] for spacer in array.spacers]
+			array.id = non_red_array_id_dict[" ".join(array.spacers)]
+
