@@ -1,6 +1,26 @@
 import numpy as np
 from collections import defaultdict
 from itertools import combinations
+import subprocess
+
+SEQUENCE_DICT = { # IUPAC DNA alphabet
+	"A": "A",
+	"T": "T",
+	"C": "C",
+	"G": "G",
+	"N": "[ATCG]",
+	"W": "[AT]",
+	"S": "[CG]",
+	"M": "[AC]",
+	"K": "[TG]",
+	"R": "[AG]",
+	"Y": "[TC]",
+	"B": "[CTG]",
+	"D": "[ATG]",
+	"H": "[ACT]",
+	"V": "[ACG]"
+}
+
 
 class NetworkEdge():
 	def __init__(self, a, b):
@@ -11,6 +31,7 @@ class NetworkEdge():
 			set(b.spacers)))/len(set(a.spacers).union(set(b.spacers)))
 		self.a_type = a.repeat_id
 		self.b_type = b.repeat_id
+
 
 def rev_comp(string):
 	"""Reverse complement a string of nucleotide sequence
@@ -382,3 +403,116 @@ def percent_id(a, b):
 	pident = 100*matches/l
 
 	return pident
+
+
+def run_blastcmd(db, fstring, batch_locations):
+    """
+    function to call blastdbcmd in a shell and process the output. Uses
+    a batch query of the format provided in the blastdbcmd docs. e.g.
+    printf "%s %s %s %s\\n%s %s %s\\n" 13626247 40-80 plus 30 14772189 \
+    1-10 minus | blastdbcmd -db GPIPE/9606/current/all_contig \
+    -entry_batch -
+    
+    Args:
+        db (str): path to the blast db you want to query.
+        fstring (str):  The string to give to printf
+        batch_locations (str):  the seqid, locations, and strand of all
+          the spacers to be retrieved
+    
+    Returns:
+        (list) List of the sequences of regions returned by blastdbcmd
+          in response to the query locations submitted
+    
+    Raises:
+        ERROR running blastdbcmd: Raises an exception when blastdbcmd
+          returns something to stderr, prints the error as well as the
+          information provided to blastdbcmd and aborts the process.
+    """
+    x = subprocess.run(
+        'printf "{}" {}| blastdbcmd -db {} -entry_batch -\
+            '.format(fstring, batch_locations, db), 
+        shell=True,
+        universal_newlines=True,
+        capture_output=True
+        ) 
+    if x.stderr:
+        print("ERROR running blastdbcmd on {} :\n{}".format(
+            db, batch_locations, x.stderr))
+        sys.exit()
+    else:
+        return [i for i in x.stdout.split('\n') if '>' not in i and len(i) > 0]
+
+
+def determine_regex_length(pattern):
+	minlen = 0
+
+	i = 0
+	while i < len(pattern):
+		c = pattern[i]
+		if c.isalpha():
+			# If character is a base then 1 position required
+			minlen+=1
+			i+=1
+			continue
+		
+		if c == "[":
+			# Find end of set to determine size
+			while c != "]":
+				i+=1
+				if i > len(pattern)-1:
+					print("Error: Unmatched [ if your regex")
+				c = pattern[i]
+
+		if c == "\\":
+			# Following character should be [A-Za-z] or this is an
+			# inappropriate escape character
+			i+=1
+			c = pattern[i]
+			if not c.isalpha():
+				print("Escape character used to include the following "
+					"illegal character in your regex: {}".format(c))
+				sys.exit()
+
+		if i == len(pattern)-1:
+			# If this is the end then no quantifier exists
+			minlen+=1
+			break
+		i+=1
+		c = pattern[i]
+		if c not in [".", "+", "?", "{"]:
+			# If not quantifier then set has length 1. continue
+			minlen+=1
+			continue
+
+		if c in [".", "?"]:
+			i+=1
+			continue
+		if c == "+":
+			minlen+=1
+			i+=1
+			continue
+		# Else quantifier is range or exact count.
+		# minimum length of it is first number
+		i+=1
+		c = pattern[i]
+		quant_len = ''
+		while c.isdigit():
+			quant_len+=c
+			i+=1
+			c= pattern[i]
+		# Ends once , or } reached
+		minlen+=int(quant_len)
+
+		# continue until } if not reached
+		while c != "}":
+			i+=1
+			c = pattern[i]
+
+		if i == len(pattern)-1:
+			# If we're at the end then stop
+			break
+		
+		i+=1
+		c = pattern[i]
+
+	return minlen
