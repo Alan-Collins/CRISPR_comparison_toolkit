@@ -154,6 +154,50 @@ class FoundArray():
 		self.id = 0
 
 
+class BlastResult():
+    """
+    A class to store column contents from a blast result in an easily 
+    retrieved form.
+
+    Attributes:
+        qseqid (str): query (e.g., unknown gene) sequence id
+        sseqid (str): subject (e.g., reference genome) sequence id
+        pident (float): percentage of identical matches
+        length (int): alignment length (sequence overlap)
+        mismatch (int): number of mismatches
+        gapopen (int): number of gap openings
+        qstart (int): start of alignment in query
+        qend (int): end of alignment in query
+        sstart (int): start of alignment in subject
+        send (int): end of alignment in subject
+        evalue (str): expect value
+        bitscore (float): bit score
+        qlen (int): length of query sequence
+        slen (int): length of subject sequence
+        sseq (str): sequence of subject
+        strand (str): Whether the blast hit was on the top (plus) or
+          bottom (minus) strand of the DNA
+    """
+    def __init__(self, blast_line):
+        bits = blast_line.split('\t')
+        self.qseqid = bits[0]
+        self.sseqid = bits[1]
+        self.pident = float(bits[2])
+        self.length = int(bits[3])
+        self.mismatch = int(bits[4])
+        self.gapopen = bits[5]
+        self.qstart = int(bits[6])
+        self.qend = int(bits[7])
+        self.sstart = int(bits[8])
+        self.send = int(bits[9])
+        self.evalue = bits[10]
+        self.bitscore = bits[11]
+        self.qlen = int(bits[12])
+        self.slen = int(bits[13])
+        self.sseq = bits[14] if len(bits) == 15 else ''
+        self.strand = 'plus' if self.sstart < self.send else 'minus'
+
+
 def read_array_file(file):
 	"""Read array spacers file into dict.
 	
