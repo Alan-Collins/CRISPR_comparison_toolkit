@@ -11,88 +11,6 @@ from collections import defaultdict
 from . import sequence_operations, file_handling
 
 
-
-class BlastResult():
-    """
-    A class to store column contents from a blast result in an easily 
-    retrieved form.
-
-    Attributes:
-        qseqid (str): query (e.g., unknown gene) sequence id
-        sseqid (str): subject (e.g., reference genome) sequence id
-        pident (float): percentage of identical matches
-        length (int): alignment length (sequence overlap)
-        mismatch (int): number of mismatches
-        gapopen (int): number of gap openings
-        qstart (int): start of alignment in query
-        qend (int): end of alignment in query
-        sstart (int): start of alignment in subject
-        send (int): end of alignment in subject
-        evalue (str): expect value
-        bitscore (float): bit score
-        qlen (int): length of query sequence
-        slen (int): length of subject sequence
-        strand (str): Whether the blast hit was on the top (plus) or
-          bottom (minus) strand of the DNA
-    """
-    def __init__(self, blast_line):
-        bits = blast_line.split('\t')
-        self.qseqid = bits[0]
-        self.sseqid = bits[1]
-        self.pident = float(bits[2])
-        self.length = int(bits[3])
-        self.mismatch = int(bits[4])
-        self.gapopen = bits[5]
-        self.qstart = int(bits[6])
-        self.qend = int(bits[7])
-        self.sstart = int(bits[8])
-        self.send = int(bits[9])
-        self.evalue = bits[10]
-        self.bitscore = bits[11]
-        self.qlen = int(bits[12])
-        self.slen = int(bits[13])
-        self.sseq = bits[14]
-        self.strand = 'plus' if self.sstart < self.send else 'minus'
-
-
-def run_blastcmd(db, fstring, batch_locations):
-    """
-    function to call blastdbcmd in a shell and process the output. Uses
-    a batch query of the format provided in the blastdbcmd docs. e.g.
-    printf "%s %s %s %s\\n%s %s %s\\n" 13626247 40-80 plus 30 14772189 \
-    1-10 minus | blastdbcmd -db GPIPE/9606/current/all_contig \
-    -entry_batch -
-    
-    Args:
-        db (str): path to the blast db you want to query.
-        fstring (str):  The string to give to printf
-        batch_locations (str):  the seqid, locations, and strand of all
-          the spacers to be retrieved
-    
-    Returns:
-        (list) List of the sequences of regions returned by blastdbcmd
-          in response to the query locations submitted
-    
-    Raises:
-        ERROR running blastdbcmd: Raises an exception when blastdbcmd
-          returns something to stderr, prints the error as well as the
-          information provided to blastdbcmd and aborts the process.
-    """
-    x = subprocess.run(
-        'printf "{}" {}| blastdbcmd -db {} -entry_batch -\
-            '.format(fstring, batch_locations, db), 
-        shell=True,
-        universal_newlines=True,
-        capture_output=True
-        ) 
-    if x.stderr:
-        print("ERROR running blastdbcmd on {} :\n{}".format(
-            db, batch_locations, x.stderr))
-        sys.exit()
-    else:
-        return [i for i in x.stdout.split('\n') if '>' not in i and len(i) > 0]
-
-
 def pool_MP_spacer_finder(array_entries, args, threads, chunksize):
     """
     Manages the multiprocess worker pool and returns to arrays found by
@@ -202,12 +120,12 @@ def build_arrays_MP(array_entry, args):
                     entry.send,
                     entry.strand
                     )
-        array.spacers = run_blastcmd(
+        array.spacers = sequence_operations.run_blastcmd(
             args.blast_db_path,
             sp_fstring,
             sp_batch_locations
             )
-        array.repeats = run_blastcmd(
+        array.repeats = sequence_operations.run_blastcmd(
             args.blast_db_path,
             rep_fstring,
             rep_batch_locations
@@ -246,6 +164,7 @@ def extend_hit(hit):
             # adjust send by the number of bases missing from
             # repeat 3' end
             hit.send = hit.send - (hit.qlen - hit.qend)
+
 
 def blastn_to_arrays(args):
     """
@@ -290,7 +209,8 @@ def blastn_to_arrays(args):
             args.blast_db_path, blast_run.stderr))
         sys.exit()
     blast_lines = [
-        BlastResult(i) for i in blast_run.stdout.split('\n') if len(i) > 0]
+        file_handling.BlastResult(
+            i) for i in blast_run.stdout.split('\n') if len(i) > 0]
 
     queries_dict = file_handling.fasta_to_dict(args.repeats_file)
     # If blast result is < query length, extend it to check if it is
@@ -321,7 +241,7 @@ def blastn_to_arrays(args):
         n_args+=3
         if n_args > args.batch_size:
             x = len(extended_hits)
-            extended_hits += run_blastcmd(
+            extended_hits += sequence_operations.run_blastcmd(
                 args.blast_db_path,
                 fstring,
                 batch_locations
@@ -346,7 +266,7 @@ def blastn_to_arrays(args):
                 line.strand
                 )
     
-    extended_hits += run_blastcmd(
+    extended_hits += sequence_operations.run_blastcmd(
         args.blast_db_path,
         fstring,
         batch_locations
@@ -491,7 +411,8 @@ def check_repeat_similarity(repeats_file):
         )
 
     blast_lines = [
-    BlastResult(i) for i in blast_run.stdout.split('\n') if len(i) > 0]
+        file_handling.BlastResult(
+        i) for i in blast_run.stdout.split('\n') if len(i) > 0]
     similar_pairs = []
     for line in blast_lines:
         if (
