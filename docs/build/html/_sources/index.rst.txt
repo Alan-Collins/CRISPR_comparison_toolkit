@@ -28,7 +28,7 @@ Contents
 .. toctree::
    :caption: Contents:
    :glob:
-   :maxdepth: 3
+   :maxdepth: 2
 
    usage
    content/*
