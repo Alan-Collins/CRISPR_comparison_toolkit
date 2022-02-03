@@ -278,7 +278,6 @@ def find_pam(pattern, sequence, is_regex):
 
 		new_pattern = "".join([
 			sequence_operations.SEQUENCE_DICT[i] for i in pattern.upper()])
-		print(new_pattern)
 		pat=re.compile(pattern, re.IGNORECASE)
 
 	return bool(pat.match(sequence))
@@ -647,7 +646,7 @@ def main(args):
 				if args.pam:
 					if not find_pam(args.pam, seq, False):
 						no_pam_outcontents.append(
-							"\t".join([str(_) for _ in [
+							"\t".join([str(i) for i in [
 								p.spacer,
 								p.target,
 								p.start,
@@ -663,7 +662,7 @@ def main(args):
 				else:
 					if not find_pam(args.regex_pam, seq, True):
 						no_pam_outcontents.append(
-							"\t".join([str(_) for _ in [
+							"\t".join([str(i) for i in [
 								p.spacer,
 								p.target,
 								p.start,
@@ -677,7 +676,7 @@ def main(args):
 						p_count += 1
 						continue
 			outcontents.append(
-				"\t".join([str(_) for _ in [
+				"\t".join([str(i) for i in [
 					p.spacer,
 					p.target,
 					p.start,
