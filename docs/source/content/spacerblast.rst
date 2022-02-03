@@ -4,7 +4,7 @@ spacerblast
 Before you run
 --------------
 
-``cctk spacerblast`` requires you to provide the sequences you wish to search in the form of a blast database. This can be acheived simply using the ``makeblastdb`` command. However, before making your blastdb, please confirm that your sequences meet the following requirements:
+``cctk spacerblast`` requires you to provide the sequences you wish to search in the form of a blast database. This can be acheived simply using the ``makeblastdb`` command from NCBI BLAST+ which is included in the conda installation of CCTK. However, before making your blastdb, please confirm that your sequences meet the following requirements:
 
 1. No pipe symbols ("|") in any of your fasta headers.
 2. None of the fasta headers in the sequences are the same. 
