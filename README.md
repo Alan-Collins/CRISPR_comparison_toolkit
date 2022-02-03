@@ -9,11 +9,15 @@ Tools to identify and compare CRISPR arrays.
 
 **Currently under construction.** 
 
-N.B. All included tools work as intended, but are being actively improved. Command line options, defaults, and project organization will change over the coming weeks. 
+N.B. All included tools work as intended, but are being actively improved. Command line options, defaults, and project organization will change over the coming weeks.
 
 ## What is it?
 
 CCTK is a collection of tools written in Python3 that are focused on the comparison of CRISPR arrays that share spacers with one another. CCTK includes two main tools. CRISPRdiff and CRISPRtree which can be used to visualize and analyze the relationships between arrays. In addition, CCTK includes several scripts to identify CRISPR arrays in illumina sequencing reads or assemblies and a script to generate a network representation of array relationships.
+
+## Documentation and tutorials
+
+Documentation is currently being written and can be found at [Read the docs](https://crispr-comparison-toolkit.readthedocs.io/en/latest/)
 
 ## Installation
 
