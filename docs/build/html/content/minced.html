@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>minced &mdash; cctk 0.3.1 documentation</title>
+  <title>minced &mdash; cctk 0.3.2 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -261,7 +261,7 @@ Assembly1       True    <span class="m">3</span>       TAGCTGATCAGCAGGCCGACAGTCA
 <li><p>Finally, you may wish to manually curate the output of <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code>.</p>
 <blockquote>
 <div><p>For example, you may find that arrays in your output files seem like they are not actually CRISPR arrays. You may also find that an array has the same one or two bases on the end of every spacer (see <a class="reference internal" href="#minced-limitations"><span class="std std-ref">Limitations and considerations</span></a> for an explanation of how this may occur).</p>
-<p><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> does not include functionality for fine control over outputs or how arrays are identified. Instead you must laboriously modify the minced output files. However, while <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> won’t help you with this process, it does retain all the minced output files in the MINCED_OUT/ directory in your specified output directory. Furthermore it will allow you to process the modified minced output files without rerunning minced by omitting the <code class="docutils literal notranslate"><span class="pre">-m</span></code> option in your command as in the example below.</p>
+<p><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> does not include functionality for fine control over outputs or how arrays are identified. Instead you must laboriously modify the minced output files. However, while <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> won’t help you with this process, it does retain all the minced output files in the MINCED_OUT/ directory in your specified output directory. Furthermore it will allow you to process the modified minced output files without rerunning minced by omitting the <code class="docutils literal notranslate"><span class="pre">-m</span></code> flag in your command as in the example below.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cctk minced -o &lt;output directory containing MINCED_OUT/&gt; -p
 </pre></div>
 </div>

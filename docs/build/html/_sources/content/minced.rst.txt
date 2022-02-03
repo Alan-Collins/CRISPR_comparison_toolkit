@@ -256,7 +256,7 @@ The usage of ``cctk minced`` described in the :ref:`minced-basic` is sufficient 
 
 	For example, you may find that arrays in your output files seem like they are not actually CRISPR arrays. You may also find that an array has the same one or two bases on the end of every spacer (see :ref:`minced-limitations` for an explanation of how this may occur).
 
-	``cctk minced`` does not include functionality for fine control over outputs or how arrays are identified. Instead you must laboriously modify the minced output files. However, while ``cctk minced`` won't help you with this process, it does retain all the minced output files in the MINCED_OUT/ directory in your specified output directory. Furthermore it will allow you to process the modified minced output files without rerunning minced by omitting the ``-m`` option in your command as in the example below.
+	``cctk minced`` does not include functionality for fine control over outputs or how arrays are identified. Instead you must laboriously modify the minced output files. However, while ``cctk minced`` won't help you with this process, it does retain all the minced output files in the MINCED_OUT/ directory in your specified output directory. Furthermore it will allow you to process the modified minced output files without rerunning minced by omitting the ``-m`` flag in your command as in the example below.
 
 	.. code-block:: shell
 
