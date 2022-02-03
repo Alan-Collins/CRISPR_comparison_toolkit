@@ -40,6 +40,7 @@ class Protospacer():
 		up="",
 		down="",
 		protoseq="",
+		aligned="",
 		pid=0.,
 		mismatch=0,
 		strand="",
@@ -52,6 +53,7 @@ class Protospacer():
 		self.up = up
 		self.down = down
 		self.protoseq = protoseq
+		self.aligned = aligned
 		self.pid = pid
 		self.mismatch = mismatch
 		self.strand = strand
@@ -229,26 +231,24 @@ def fill_remaining_info(proto, spacer, blastdbcmd_output):
 
 	proto.up, proto.protoseq, proto.down = blastdbcmd_output 
 	proto.mismatch, _, _ = sequence_operations.hamming(spacer, proto.protoseq)
+	proto.aligned = "".join(
+		[p if s==p else '.' for s,p in zip(spacer, proto.protoseq)])
 	proto.pid = 100-(100*proto.mismatch/proto.length)
 
 	return proto
 
 
-def find_pam(pattern, sequence, is_regex):
-	"""Search the provided sequence for the provided pattern.
-	  Use regex if specified.
+def compile_pam(pattern, is_regex):
+	"""Reformat non-regex pam into regex if needed and compile.
 	Args:
 		pattern (str): The pattern describing your PAM.
-		sequence (str): The sequence flanking your protospacer in which
-		  you expect the PAM to be located.
 		is_regex (bool): Is your pattern a regex pattern?
 	
 	Returns:
-		(Bool) Was a PAM found?.
+		(re.compile) Compiled pattern.
 	
 	Raises:
 		ValueError: Your regex could not be parsed.
-		ValueError: Your pattern and sequence are different lengths.
 		ValueError: Your non-regex pattern can only contain the
 		  following characters: [list of characters].
 	"""
@@ -260,15 +260,6 @@ def find_pam(pattern, sequence, is_regex):
 				"the following problem: {}".format(e))
 	
 	else:
-		if len(pattern) != len(sequence):
-			raise ValueError("Your pattern and sequence are different lengths."
-				" Make sure your pattern is the same number of bases as are "
-				"retrieved from the flanking region of your protospacer. "
-				"You provided a pattern of "
-				" {} bp and a flanking sequence of {} bp".format(
-					len(pattern), len(sequence)))
-			
-
 		if any([
 			i.upper() not in sequence_operations.SEQUENCE_DICT for i in pattern]):
 			raise ValueError("Your non-regex pattern can only contain the "
@@ -276,11 +267,12 @@ def find_pam(pattern, sequence, is_regex):
 					i for i in sequence_operations.SEQUENCE_DICT.keys()
 					])))
 
-		new_pattern = "".join([
+		pattern = "".join([
 			sequence_operations.SEQUENCE_DICT[i] for i in pattern.upper()])
-		pat=re.compile(pattern, re.IGNORECASE)
 
-	return bool(pat.match(sequence))
+	pat = re.compile(pattern, re.IGNORECASE)
+
+	return pat
 
 
 def check_pam_length(args):
@@ -322,6 +314,24 @@ def set_flanking_n(args, min_pam_len):
 			flanking_n = (flanking_n[0], min_pam_len)
 
 	return flanking_n
+
+
+def adjust_pam(pam, min_pam_len, pam_location, flanking_n):
+	if pam_location == 'up':
+		if min_pam_len == flanking_n[0]:
+			return pam
+
+		new_pattern = "[ATCG]+" + pam.pattern
+		pam = re.compile(new_pattern, re.IGNORECASE)
+		return pam
+
+	else:
+		if min_pam_len == flanking_n[1]:
+			return pam
+
+		new_pattern = pam.pattern + "[ATCG]+"
+		pam = re.compile(new_pattern, re.IGNORECASE)
+		return pam
 
 
 def build_parser(parser):
@@ -519,6 +529,7 @@ def main(args):
 	spacer_dict = file_handling.fasta_to_dict(args.spacer_file)
 
 	min_pam_len = 0
+	pam = None
 	if any([args.pam_location, args.pam, args.regex_pam]):
 		if all([args.pam, args.regex_pam]):
 			print("Please provide either a PAM pattern using -P/--pam or a \
@@ -534,11 +545,22 @@ def main(args):
 
 		min_pam_len = check_pam_length(args)
 
+		if args.pam:
+			pattern = args.pam
+			is_regex = False
+
+		else:
+			pattern = args.regex_pam
+			is_regex = True
+
+		pam = compile_pam(pattern, is_regex)
+
+	# Adjust flanking_n in case it is too few bases for PAM
 	flanking_n = set_flanking_n(args, min_pam_len)
 
-
-
-
+	if pam:
+		# Adjust PAM with extra "[ATCG]+" if it is too short
+		pam = adjust_pam(pam, min_pam_len, args.pam_location, flanking_n)
 
 	mask_dict = defaultdict(list)
 	if args.mask_regions:
@@ -557,7 +579,8 @@ def main(args):
 	blast_output = run_blastn(args)
 
 	outcontents = ["Spacer_ID\tTarget_contig\tProtospacer_start\t\
-	Protospacer_end\tPercent_identity\tmismatches\tprotospacer_sequence"]
+	Protospacer_end\tPercent_identity\tmismatches\tprotospacer_sequence\t\
+	mismatch_locations"]
 	if flanking_n[0] != 0:
 		outcontents[0] += "\tupstream_bases"
 	if flanking_n[1] != 0:
@@ -598,7 +621,6 @@ def main(args):
 
 	# Want to work through the flanking sequences in increments that
 	# depend upon which flanking sequences were retrieved
-	
 	increment = 1 + int(bool(flanking_n[0])) + int(bool(flanking_n[1]))
 	for i in range(0,len(all_protospacer_infos),increment):
 		p = protos[p_count]
@@ -643,8 +665,8 @@ def main(args):
 						seq = p.up
 				else:
 					seq = p.down
-				if args.pam:
-					if not find_pam(args.pam, seq, False):
+				if args.pam or args.regex_pam:
+					if not bool(pam.fullmatch(seq)):
 						no_pam_outcontents.append(
 							"\t".join([str(i) for i in [
 								p.spacer,
@@ -654,22 +676,7 @@ def main(args):
 								p.pid,
 								p.mismatch,
 								p.protoseq,
-								p.up,
-								p.down,
-								p.strand]]))
-						p_count += 1
-						continue
-				else:
-					if not find_pam(args.regex_pam, seq, True):
-						no_pam_outcontents.append(
-							"\t".join([str(i) for i in [
-								p.spacer,
-								p.target,
-								p.start,
-								p.stop,
-								p.pid,
-								p.mismatch,
-								p.protoseq,
+								p.aligned,
 								p.up,
 								p.down,
 								p.strand]]))
@@ -684,6 +691,7 @@ def main(args):
 					p.pid,
 					p.mismatch,
 					p.protoseq,
+					p.aligned,
 					p.up,
 					p.down,
 					p.strand]]))
