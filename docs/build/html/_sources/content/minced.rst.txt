@@ -20,11 +20,8 @@ Basic Usage
 **N.B.** Basic usage may include ``-l`` and ``-r`` options as well depending on your situation. See the :ref:`minced-advanced` section for details. 
 
 
-Output files and Advanced Usage
--------------------------------
-
-Outputs
-^^^^^^^
+Output files
+------------
 
 Both ``cctk minced`` and ``cctk blast`` produce the same output files. However, ``cctk minced`` also produces output files made my minced that are retained for the user's reference.
 
@@ -33,7 +30,7 @@ Both ``cctk minced`` and ``cctk blast`` produce the same output files. However, 
 .. _crispr-spacers:
 
 CRISPR_spacers.fna
-""""""""""""""""""
+^^^^^^^^^^^^^^^^^^
 
 **Summary**
 
@@ -61,7 +58,7 @@ Fasta nucleotide sequence
 .. _array-ids:
 
 Array_IDs.txt
-"""""""""""""
+^^^^^^^^^^^^^
 
 **Summary**
 
@@ -84,7 +81,7 @@ Column 2: Space-delimited list of IDs (fasta headers) of spacers in this array
 .. _array-seqs:
 
 Array_seqs.txt
-""""""""""""""
+^^^^^^^^^^^^^^
 
 **Summary**
 
@@ -107,7 +104,7 @@ Column 2: Space-delimited list of sequence of spacers in this array
 .. _array-locations:
 
 Array_locations.bed
-"""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^
 
 **Summary**
 
@@ -135,7 +132,7 @@ N.B. when viewing this file in a text editor, the headings and column contents w
 .. _array-network:
 
 Array_network.txt
-"""""""""""""""""
+^^^^^^^^^^^^^^^^^
 
 **Summary**
 
@@ -173,7 +170,7 @@ First line is header information
 .. _crispr-sum-csv:
 
 CRISPR_summary_table.csv
-""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Summary**
 
@@ -205,7 +202,7 @@ In columns 4-9, arrays are numbered according to the order in which they were fo
 .. _crispr-sum-txt:
 
 CRISPR_summary_table.txt
-""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Summary**
 
@@ -225,7 +222,7 @@ Tab-delimited table with "|" (pipe)-delimited lists of arrays in columns 4-9 wit
 .. _minced-advanced:
 
 Advanced Usage
-^^^^^^^^^^^^^^
+--------------
 
 The usage of ``cctk minced`` described in the :ref:`minced-basic` is sufficient to identify CRISPR arrays in assemblies. The two most likely situations in which you will need more complex usage of ``cctk minced`` are:
 
