@@ -6,31 +6,35 @@ Usage
 Installation
 ------------
 
-To use CCTK, first install it. The easiest istallation method is using ``conda``.
+To use CCTK, first install it. The easiest installation method is using ``conda``. CCTK is currently available on my personal Anaconda channel. In the future I intend to host it through Bioconda.
 
-**Conda - Recommended**
+Conda - Recommended
+^^^^^^^^^^^^^^^^^^^
 
-.. code-block:: console
+
+.. code-block:: shell
 
    $ conda create -n cctk -c alan-collins cctk
    $ conda activate cctk
    (cctk) $ 
 
-Conda has the benefit of handling the installation of the correct version of all depencies and adds the cctk (and dependency) executables to your PATH, which makes usage simpler.
+Conda has the benefit of handling the installation of the correct version of all depencies and adds the ``cctk`` (and dependency) executables to your PATH, which makes usage simpler.
 
-**Git clone**
+Git
+^^^
 
-You can also install dependencies seperately and download cctk from github.
+You can also install dependencies seperately and download CCTK from github.
 
 To download CCTK using ``git``:
 
-.. code-block:: console
+.. code-block:: shell
 
   $ git clone https://github.com/Alan-Collins/CRISPR_comparison_toolkit.git
 
-You can find the cctk executable at CRISPR_comparison_toolkit/cctk
+You can find the ``cctk`` executable at CRISPR_comparison_toolkit/cctk
 
-**Dependencies**
+Dependencies
+^^^^^^^^^^^^
 
 * `python3 <https://www.python.org/downloads/>`_ (Tested with Python >= 3.8)
    * `Matplotlib <https://matplotlib.org/3.1.1/users/installing.html>`_
@@ -41,8 +45,8 @@ You can find the cctk executable at CRISPR_comparison_toolkit/cctk
 * `BLAST+ <https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/>`_ (tested with BLAST 2.9.0)
 
 
-Basic Usage
------------
+Usage Help
+----------
 
 During all examples, we will use CCTK as if it were installed using conda and is in our PATH.
 
@@ -78,3 +82,9 @@ All tools available in CCTK can be accessed through the ``cctk`` executable. Eac
 Usage of each command can be found by calling that command with ``-h`` or ``--help``. e.g. ``cctk blast -h``
 
 Details of the specific usage for each tool in CCTK can be found in the :ref:`Tools` section.
+
+
+Example Workflow
+----------------
+
+An example workflow of using all of the tools in CCTK will be added here soon...

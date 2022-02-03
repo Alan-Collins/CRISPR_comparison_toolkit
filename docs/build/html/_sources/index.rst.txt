@@ -28,11 +28,10 @@ Contents
 .. toctree::
    :caption: Contents:
    :glob:
+   :maxdepth: 3
 
    usage
    content/*
-
-
 
 
 Indices and tables

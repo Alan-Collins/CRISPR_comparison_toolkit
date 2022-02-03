@@ -1,118 +1,372 @@
-
 <!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
-
-    <title>minced &#8212; cctk 0.2.6 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/doctools.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>minced &mdash; cctk 0.3.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="network" href="network.html" />
-    <link rel="prev" title="evolve" href="evolve.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+    <link rel="prev" title="evolve" href="evolve.html" /> 
+</head>
 
-  </head><body>
-  
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
-            
-  <section id="minced">
-<h1>minced<a class="headerlink" href="#minced" title="Permalink to this headline">¶</a></h1>
-</section>
-
-
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="../index.html">cctk</a></h1>
-
-
-
-
-
-
-
-
-<h3>Navigation</h3>
-<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> cctk
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="CCTK.html">CCTK</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CRISPRdiff.html">CRISPRdiff</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CRISPRtree.html">CRISPRtree</a></li>
 <li class="toctree-l1"><a class="reference internal" href="blast.html">blast</a></li>
 <li class="toctree-l1"><a class="reference internal" href="constrain.html">constrain</a></li>
 <li class="toctree-l1"><a class="reference internal" href="evolve.html">evolve</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">minced</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">minced</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#output-files-and-advanced-usage">Output files and Advanced Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#outputs">Outputs</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#crispr-spacers-fna">CRISPR_spacers.fna</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#array-ids-txt">Array_IDs.txt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#array-seqs-txt">Array_seqs.txt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#array-locations-bed">Array_locations.bed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#array-network-txt">Array_network.txt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#crispr-summary-table-csv">CRISPR_summary_table.csv</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#crispr-summary-table-txt">CRISPR_summary_table.txt</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#advanced-usage">Advanced Usage</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#limitations-and-considerations">Limitations and considerations</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="network.html">network</a></li>
 <li class="toctree-l1"><a class="reference internal" href="spacerblast.html">spacerblast</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
 </ul>
-
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="evolve.html" title="previous chapter">evolve</a></li>
-      <li>Next: <a href="network.html" title="next chapter">network</a></li>
-  </ul></li>
-</ul>
-</div>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</div>
-<script>$('#searchbox').show(0);</script>
-
-
-
-
-
-
-
 
         </div>
       </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &copy;2022, Alan Collins.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.2.0</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/content/minced.rst.txt"
-          rel="nofollow">Page source</a>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">cctk</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>minced</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/content/minced.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="minced">
+<h1>minced<a class="headerlink" href="#minced" title="Permalink to this headline"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h2>
+<p>CCTK minced identifies CRISPR arrays in assemblies using the tool <a class="reference external" href="https://github.com/ctSkennerton/minced">minced</a>. The output produced by minced is then processes into several output files containing information about identified CRISPR arrays and spacers.</p>
+</section>
+<section id="basic-usage">
+<span id="minced-basic"></span><h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> will identify CRISPRs in all assemblies contained in a directory and process the output using the following minimal command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cctk minced -i &lt;directory of assemblies&gt; -o &lt;output directory&gt; -m -p
+</pre></div>
+</div>
+<p><strong>N.B.</strong> Basic usage may include <code class="docutils literal notranslate"><span class="pre">-l</span></code> and <code class="docutils literal notranslate"><span class="pre">-r</span></code> options as well depending on your situation. See the <a class="reference internal" href="#minced-advanced"><span class="std std-ref">Advanced Usage</span></a> section for details.</p>
+</section>
+<section id="output-files-and-advanced-usage">
+<h2>Output files and Advanced Usage<a class="headerlink" href="#output-files-and-advanced-usage" title="Permalink to this headline"></a></h2>
+<section id="outputs">
+<h3>Outputs<a class="headerlink" href="#outputs" title="Permalink to this headline"></a></h3>
+<p>Both <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> and <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">blast</span></code> produce the same output files. However, <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> also produces output files made my minced that are retained for the user’s reference.</p>
+<p><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> creates two directories in the user-specified output directory (if they did not already exist): MINCED_OUT/ and PROCESSED/. MINCED_OUT/ contains all of the output files produced by minced. PROCESSED/ contains files summarizing various features of the CRISPR arrays identified by minced in more useful formats than the raw minced output. In addition to creating output files, a summary of the run is written to stderr stating the number of unique spacers that were identified and the number of distinct arrays in which they were identified.</p>
+<section id="crispr-spacers-fna">
+<span id="crispr-spacers"></span><h4>CRISPR_spacers.fna<a class="headerlink" href="#crispr-spacers-fna" title="Permalink to this headline"></a></h4>
+<p><strong>Summary</strong></p>
+<p>Sequences of all of the unique spacers that were identified in the provided assemblies. Fasta headers are constructed from the best matching repeat ID and an integer that counts the number of spacers found associated with that repeat. See <a class="reference internal" href="#minced-advanced"><span class="std std-ref">Advanced Usage</span></a> for details about how the repeat ID to assign to each spacer is chosen and how orientation of the spacer sequence is chosen by <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code>. <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">blast</span></code> gets the repeat ID portion of the spacer fasta header from the fasta header of the repeat used to identify the CRISPR array by BLAST.</p>
+<p><strong>Format</strong></p>
+<p>Fasta nucleotide sequence</p>
+<p><strong>Example</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>&gt;1F_1
+GGTACGTGGTTTCGACCAACAGCACTGCCCAA
+&gt;1F_2
+AGGCTGCCAAGTCGGTGCGCGAGGCCGGCTTT
+&gt;1F_3
+TGCAGCGATTGCACCTTGGCCTGCTGCCGATC
+&gt;1E_1
+CATCTGGCCGGGGCTCGGGTCTGGTTCTACGA
+&gt;1E_2
+GATGGCAACCGGCGTTTGTCCGCGCTGAACTG
+</pre></div>
+</div>
+</section>
+<section id="array-ids-txt">
+<span id="array-ids"></span><h4>Array_IDs.txt<a class="headerlink" href="#array-ids-txt" title="Permalink to this headline"></a></h4>
+<p><strong>Summary</strong></p>
+<p>CRISPR arrays are defined as distinct by <code class="docutils literal notranslate"><span class="pre">cctk</span></code> if they contain a single different spacer to any other arrays. Each distinct array is assigned a numerical ID based on the order in which they are found in input assemblies. This file contains the IDs of the spacers in each array.</p>
+<p><strong>Format</strong></p>
+<p>2 columns, tab-delimited.</p>
+<p>Column 1: ID of array
+Column 2: Space-delimited list of IDs (fasta headers) of spacers in this array</p>
+<p><strong>Example</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="m">1</span>       1F_42 1F_18 1F_153 1F_53 1F_82 1F_148
+<span class="m">2</span>       1E_90 1E_56 1E_166 1E_26 1E_141 1E_13 1E_77
+</pre></div>
+</div>
+</section>
+<section id="array-seqs-txt">
+<span id="array-seqs"></span><h4>Array_seqs.txt<a class="headerlink" href="#array-seqs-txt" title="Permalink to this headline"></a></h4>
+<p><strong>Summary</strong></p>
+<p>This file contains the sequence of the spacers in each array.</p>
+<p><strong>Format</strong></p>
+<p>2 columns, tab-delimited.</p>
+<p>Column 1: ID of array
+Column 2: Space-delimited list of sequence of spacers in this array</p>
+<p><strong>Example</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="m">1</span>       GGTACGTGGTTTCGACCAACAGCACTGCCCAA AGGCTGCCAAGTCGGTGCGCGAGGCCGGCTTT
+<span class="m">2</span>       CATCTGGCCGGGGCTCGGGTCTGGTTCTACGA GATGGCAACCGGCGTTTGTCCGCGCTGAACTG
+</pre></div>
+</div>
+</section>
+<section id="array-locations-bed">
+<span id="array-locations"></span><h4>Array_locations.bed<a class="headerlink" href="#array-locations-bed" title="Permalink to this headline"></a></h4>
+<p><strong>Summary</strong></p>
+<p>Contig names and contig locations in which CRISPR arrays were identified.</p>
+<p><strong>Format</strong></p>
+<p>BED format.</p>
+<p>First line is a “#” character followed by tab-delimited column names.</p>
+<p>Name column contains the ID of the array at the indicated location. This ID corresponds to the IDs in <a class="reference internal" href="#array-ids"><span class="std std-ref">Array_IDs.txt</span></a> and <a class="reference internal" href="#array-seqs"><span class="std std-ref">Array_seqs.txt</span></a></p>
+<p><strong>Example</strong></p>
+<p>N.B. when viewing this file in a text editor, the headings and column contents will usually not line up, visually. If you wish to view this file for manual inspection, it will read into excel with proper column assignments or can be viewed in the terminal using <code class="docutils literal notranslate"><span class="pre">column</span> <span class="pre">-t</span> <span class="pre">Array_locations.bed</span> <span class="pre">|</span> <span class="pre">less</span></code></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1">#contig contigStart     contigEnd       name    score   strand</span>
+Assembly1_contig2       <span class="m">208444</span>  <span class="m">209013</span>  <span class="m">6</span>       <span class="m">0</span>       -
+Assembly1_contig6       <span class="m">19991</span>   <span class="m">20559</span>   <span class="m">7</span>       <span class="m">0</span>       +
+Assembly2_contig1       <span class="m">29424</span>   <span class="m">30050</span>   <span class="m">11</span>      <span class="m">0</span>       -
+</pre></div>
+</div>
+</section>
+<section id="array-network-txt">
+<span id="array-network"></span><h4>Array_network.txt<a class="headerlink" href="#array-network-txt" title="Permalink to this headline"></a></h4>
+<p><strong>Summary</strong></p>
+<p>Network representation of the number and proportion of spacers that arrays have in common with one another. Each pair of arrays that share one or more spacers are respresented by an edge in the network. The similarity between arrays is represented as both the number of spacers in common, and the Jaccard similarity index of the two arrays. The repeat ID associated with each array is also included.</p>
+<p>This file can be easily read into a network visualization software such as cytoscape, as demonstrated in the <a class="reference external" href="tutorial.html">tutorial</a>.</p>
+<p>Jaccard similarity between two arrays is defined as the number of unique spacers in common between the two arrays, divided by the combined number of unique spacers present in the two arrays.</p>
+<p>e.g. for the following 2 arrays (as they would be represented in Array_IDs.txt):
+Array   Spacers
+1       1F_1 1F_2 1F_3
+2       1F_4 1F_2 1F_3</p>
+<p>The array both contain spacers 1F_2 and 1F_3, while each array also contains one spacer that is not present in the other array. Therefore, the 2 shared spacers are 1F_2 and 1F_3, while the list of 4 total unique spacers in the two arrays is 1F_1, 1F_2, 1F_3, and 1F_4. This results in a Jaccard similarity index of 2/4 = 0.5</p>
+<p>Jaccard is an effective similarity measure for comparing CRISPR arrays as it takes into account both the number of spacers in common between two arrays, and the spacers present in each array that are not shared.</p>
+<p><strong>Format</strong></p>
+<p>Tab-delimited.</p>
+<p>First line is header information</p>
+<p><strong>Example</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>Array_A Array_B Shared_spacers  Jaccard_similarity      Array_A_type    Array_B_type
+<span class="m">6</span>       <span class="m">4</span>       <span class="m">9</span>       <span class="m">0</span>.75    1F      1F
+<span class="m">11</span>      <span class="m">1</span>       <span class="m">10</span>      <span class="m">0</span>.5263157894736842      1F      1F
+<span class="m">13</span>      <span class="m">8</span>       <span class="m">1</span>       <span class="m">0</span>.02127659574468085     1F      1F
+<span class="m">2</span>       <span class="m">9</span>       <span class="m">12</span>      <span class="m">0</span>.3333333333333333      1F      1F
+</pre></div>
+</div>
+</section>
+<section id="crispr-summary-table-csv">
+<span id="crispr-sum-csv"></span><h4>CRISPR_summary_table.csv<a class="headerlink" href="#crispr-summary-table-csv" title="Permalink to this headline"></a></h4>
+<p><strong>Summary</strong></p>
+<p>Summary of CRISPR arrays found in each assembly with information about each array. This file is designed to be read into Microsoft Excel or a similar program to view.</p>
+<p><strong>Format</strong></p>
+<p>comma-delimited (csv) table</p>
+<p>Columns:</p>
+<ol class="arabic simple">
+<li><p>Sequence_ID: Name of assembly (extracted from input file name)</p></li>
+<li><p>Has_CRISPR: Boolean whether and CRISPR arrays were found</p></li>
+<li><p>Array_count: Number of CRISPR arrays found. No further columns are populated if no arrays were found.</p></li>
+<li><p>Spacers: List of spacer sequences found in each array</p></li>
+<li><p>Spacer_IDs: List of spacer IDs found in each array</p></li>
+<li><p>Array_IDs: List of array IDs</p></li>
+<li><p>Array_locations: List of array locations (contig name, start, stop)</p></li>
+<li><p>Repeat_sequences: Sequence of the most common repeat in each array</p></li>
+<li><p>Array_CRISPR_types: Most similar repeat type found</p></li>
+</ol>
+<p>In columns 4-9, arrays are numbered according to the order in which they were found in the input assembly file. These numbers correspond between columns in a given row such that the spacer IDs for array 1 correspond to the spacer sequences of array 1 etc.</p>
+<p><strong>Example</strong></p>
+<img alt="../_images/cr_sum_tab.png" src="../_images/cr_sum_tab.png" />
+</section>
+<section id="crispr-summary-table-txt">
+<span id="crispr-sum-txt"></span><h4>CRISPR_summary_table.txt<a class="headerlink" href="#crispr-summary-table-txt" title="Permalink to this headline"></a></h4>
+<p><strong>Summary</strong></p>
+<p>Summary of CRISPR arrays found in each assembly with information about each array. This file is easier to interact with programatically.</p>
+<p><strong>Format</strong></p>
+<p>Tab-delimited table with “|” (pipe)-delimited lists of arrays in columns 4-9 within each array, elements are space-delimited.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>Sequence_ID     Has_CRISPR      Array_count     Spacers Spacer_IDs      Array_IDs       Array_locations Repeat_sequences        Array_CRISPR_types
+Assembly1       True    <span class="m">3</span>       TAGCTGATCAGCAGGCCGACAGTCAGGCCTGC TACCCGAATACGACTTGCGCGAGGAAGACGGT AGCATCGCATCAAATCGTGCAGAACACGATAA TGGTCGAGCAGTTCGGCAAAGGGGCCGTGGTT TTCACCTGGTCGCCGGCCAGGCTGATCACTGC TACAAGGTCATGGCGCTCGGCAACGTGGTGGAA GCTGTGCGTCGCCGTGGTCTGACGGTCGAATC AGCAGATACCCGAACCACTGGAGGTACATGCA TTCATCAGGATGCCGCCAAGGGTCCGCATAAT<span class="p">|</span>AGGTCGAGGTGGGCTCGGCGGCGATGATCGAT GGTACGTGGTTTCGACCAACAGCACTGCCCAA TAAAGGAGATTGCCATGCTGATCAAACTTCCC GTCAGGGTCGTGCATGACTCCGATGTGGTGGC CGTCCAGAACGTCACACGCTCGCCGTCGATGT AACCGGAGCCTTCGGGCCGCGTTGGGATCCAC TTGACTGCTGGGGCCTGACGCTCATCGCGCGG GCGACCCTGGCCAGGGCGGCGTCGCGCTCTGC TTGAGCACAACCGGCTGAGCCAGCTGGTTGTC<span class="p">|</span>CAGCAGCGGCTCCAGGAAGAGGGGCGCTGCCT AAGAGTCGCGGCGACAACTACCAGACGTCCGC GTATGGCTCTCTCCATTGGGGTGGCGATACTC GATCTGGGGCGGCATCATCACAGCAGAATCTA ACAACATCAATCGCCTGATGCTGGGGCACCTG AGCTTCGGCACCCTGATGCGCGCCGTCGAGGG AATGCGGTCCTGCGCATCCGAACTGGTAAGTG GACCCCCGGAGGACCAACCGTGGACAACGACA TCCTTCGGCTCCGCCGGCCGGATCGCTGCAT GTCGCGAAGTTCATAAGCGGGCTTAGGGCGA      1F_156 1F_19 1F_46 1F_123 1F_59 1F_64 1F_34 1F_93 1F_33<span class="p">|</span>1F_99 1F_1 1F_45 1F_83 1F_124 1F_126 1F_30 1F_39 1F_49<span class="p">|</span>1F_134 1F_81 1F_55 1F_84 1F_16 1F_5 1F_51 1F_100 1F_106 1F_145 <span class="m">6</span><span class="p">|</span><span class="m">7</span><span class="p">|</span><span class="m">11</span>    Assembly1_contig2 <span class="m">209013</span>-208445<span class="p">|</span>Assembly1_contig4 <span class="m">19992</span>-20559<span class="p">|</span>Assembly1_contig4 <span class="m">30050</span>-29425 GTTCACTGCCGTATAGGCAGCTAAGAAA<span class="p">|</span>GTTCACTGCCGTGTAGGCAGCTAAGAAA<span class="p">|</span>GTTCACTGCCGTATAGGCAGCTAAGAAA      1F<span class="p">|</span>1F<span class="p">|</span>1F
+</pre></div>
+</div>
+</section>
+</section>
+<section id="advanced-usage">
+<span id="minced-advanced"></span><h3>Advanced Usage<a class="headerlink" href="#advanced-usage" title="Permalink to this headline"></a></h3>
+<p>The usage of <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> described in the <a class="reference internal" href="#minced-basic"><span class="std std-ref">Basic Usage</span></a> is sufficient to identify CRISPR arrays in assemblies. The two most likely situations in which you will need more complex usage of <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> are:</p>
+<ol class="arabic">
+<li><p>You installed minced manually and it is not in your path (not a problem if you install using conda).</p>
+<blockquote>
+<div><p>In that case you will need to provide the path to your minced executable using the <code class="docutils literal notranslate"><span class="pre">-l</span></code> option.</p>
+<p>e.g.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cctk minced -i &lt;directory of assemblies&gt; -o &lt;output directory&gt; -l &lt;path to minced&gt; -m -p
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>You are not analyzing the genomes of <em>E. coli</em> or <em>Pseudomonas aeruginosa</em> isolates.</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> comes with 3 hard-coded CRISPR repeats: I-C, I-E, and I-F. These repeats repeats were selected based on my usage while developing CCTK and may be added to in the future. (Please send characterized CRISPR repeats with known orientation to Alan via email or as an issue on the <a class="reference external" href="https://github.com/Alan-Collins/CRISPR_comparison_toolkit">CCTK github</a> and I will be happy to add them. If you have a citable reference for the repeat and it’s correct orientation all the better!)</p>
+<p><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> uses repeats to add CRISPR type information to spacer fasta headers, but also (and more importantly) to figure out the correct orientation of CRISPR arrays with regards to their leader and trailer ends as minced does not check array orientation itself. This information is essential if you wish to analyze your CRISPR arrays using <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">CRISPRtree</span></code>.</p>
+<p>Relying on the built-in repeat sequences will result in consistent orientation of CRISPR arrays with the same repeat sequence. However, there is a roughly 50% chance your arrays will be output in the reverse orientation.</p>
+<p>If you wish to provide your own repeat sequences in order to properly characterize repeat type and orient your arrays correctly, you can provide any number of repeats in fasta format using the <code class="docutils literal notranslate"><span class="pre">-r</span></code> option. It is important that your repeat sequences be oriented so that the leader end of the array is 5’ of the repeat.</p>
+<p>Repeats are only used during processing steps so you do not need to run minced again if you have already done so (i.e. you do not need <code class="docutils literal notranslate"><span class="pre">-i</span></code> or <code class="docutils literal notranslate"><span class="pre">-m</span></code> inputs). An example command to include user-defined repeats is</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cctk minced -o &lt;output directory&gt; -r &lt;repeats file&gt; -p
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>Finally, you may wish to manually curate the output of <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code>.</p>
+<blockquote>
+<div><p>For example, you may find that arrays in your output files seem like they are not actually CRISPR arrays. You may also find that an array has the same one or two bases on the end of every spacer (see <a class="reference internal" href="#minced-limitations"><span class="std std-ref">Limitations and considerations</span></a> for an explanation of how this may occur).</p>
+<p><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> does not include functionality for fine control over outputs or how arrays are identified. Instead you must laboriously modify the minced output files. However, while <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> won’t help you with this process, it does retain all the minced output files in the MINCED_OUT/ directory in your specified output directory. Furthermore it will allow you to process the modified minced output files without rerunning minced by omitting the <code class="docutils literal notranslate"><span class="pre">-m</span></code> option in your command as in the example below.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cctk minced -o &lt;output directory containing MINCED_OUT/&gt; -p
+</pre></div>
+</div>
+<p>When running only processing steps <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> will read and process all files in the MINCED_OUT/ directory in your specified output directory (Crucially not the input directory specified with <code class="docutils literal notranslate"><span class="pre">-i</span></code>, but instead the output directory specified with <code class="docutils literal notranslate"><span class="pre">-o</span></code>). The only requirement is that the format of the minced output files is not changed. You can delete whole arrays from these files and can modify the sequence of spacers and repeats and <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> should process them without issue.</p>
+<p>Consider the following example minced output file.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>Sequence <span class="s1">&#39;Assembly1_contig1&#39;</span> <span class="o">(</span><span class="m">209122</span> bp<span class="o">)</span>
+
+CRISPR <span class="m">1</span>   Range: <span class="m">208445</span> - <span class="m">208593</span>
+POSITION        REPEAT                          SPACER
+--------        ----------------------------    --------------------------------
+<span class="m">208445</span>          AAAAAAAAAAAAAAAAAAAAAAAAAAAA    TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT        <span class="o">[</span> <span class="m">28</span>, <span class="m">32</span> <span class="o">]</span>
+<span class="m">208505</span>          AAAAAAAAAAAAAAAAAAAAAAAAAAAA    TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT        <span class="o">[</span> <span class="m">28</span>, <span class="m">32</span> <span class="o">]</span>
+<span class="m">208565</span>          AAAAAAAAAAAAAAAAAAAAAAAAAAAA
+
+--------        ----------------------------    --------------------------------
+Repeats: <span class="m">3</span>      Average Length: <span class="m">28</span>              Average Length: <span class="m">32</span>
+
+Time to find repeats: <span class="m">8</span> ms
+
+
+Sequence <span class="s1">&#39;Assembly1_contig2&#39;</span> <span class="o">(</span><span class="m">84619</span> bp<span class="o">)</span>
+
+CRISPR <span class="m">2</span>   Range: <span class="m">19992</span> - <span class="m">20319</span>
+POSITION        REPEAT                          SPACER
+--------        ---------------------------     --------------------------------
+<span class="m">19992</span>           TTCACTGCCGTGTAGGCAGCTAAGAAA     AGGTCGAGGTGGGCTCGGCGGCGATGATCGAT        <span class="o">[</span> <span class="m">27</span>, <span class="m">32</span> <span class="o">]</span>
+<span class="m">20052</span>           TTCACTGCCGTGTAGGCAGCTAAGAAA     GGTACGTGGTTTCGACCAACAGCACTGCCCAAG       <span class="o">[</span> <span class="m">27</span>, <span class="m">33</span> <span class="o">]</span>
+<span class="m">20112</span>           TTCACTGCCGTGTAGGCAGCTAAGAAA     TAAAGGAGATTGCCATGCTGATCAAACTTCCCG       <span class="o">[</span> <span class="m">27</span>, <span class="m">33</span> <span class="o">]</span>
+<span class="m">20172</span>           TTCACTGCCGTGTAGGCAGCTAAGAAA     GTCAGGGTCGTGCATGACTCCGATGTGGTGGCG       <span class="o">[</span> <span class="m">27</span>, <span class="m">33</span> <span class="o">]</span>
+<span class="m">20232</span>           TTCACTGCCGTGTAGGCAGCTAAGAAA     CGTCCAGAACGTCACACGCTCGCCGTCGATGTG       <span class="o">[</span> <span class="m">27</span>, <span class="m">33</span> <span class="o">]</span>
+<span class="m">20292</span>           TTCACTGCCGTGTAGGCAGCTAAGAAA
+--------        ---------------------------     --------------------------------
+Repeats: <span class="m">6</span>      Average Length: <span class="m">27</span>              Average Length: <span class="m">33</span>
+</pre></div>
+</div>
+<p>In this example file the first array is clearly nonsense, while the second array has what looks like a type I-F repeat missing the first G and most of the spacers have a G on one end. It seems like the first array should be removed, while the second array should be modified to correct the mischaracterization of the repeat boundaries.</p>
+<p>In minced output files, the information about a CRISPR array begins on the line starting with the word “CRISPR” and ends on the line starting with the word “Repeats”. In addition, If multiple arrays are identified in the same contig, they will have a single line starting with the word “Sequence” that identifies all of the subsequent arrays as being found in the names contig.</p>
+<p>If you wish to delete an array, remove all lines describing that CRISPR array. If it is the only array found in that contig, remove the line above it starting with “Sequence” as well.</p>
+<p>Modifying repeat and spacer sequences is easier. Just make the desired changes. You do not need to change the length information on the right of each line as <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> does not use that information. Additionally, you do not need to worry about the number of blank lines.</p>
+<p>Making the above changes would result in the following modified file:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>Sequence <span class="s1">&#39;Assembly1_contig2&#39;</span> <span class="o">(</span><span class="m">84619</span> bp<span class="o">)</span>
+
+CRISPR <span class="m">2</span>   Range: <span class="m">19992</span> - <span class="m">20319</span>
+POSITION        REPEAT                          SPACER
+--------        ---------------------------     --------------------------------
+<span class="m">19992</span>           GTTCACTGCCGTGTAGGCAGCTAAGAAA    AGGTCGAGGTGGGCTCGGCGGCGATGATCGAT        <span class="o">[</span> <span class="m">27</span>, <span class="m">32</span> <span class="o">]</span>
+<span class="m">20052</span>           GTTCACTGCCGTGTAGGCAGCTAAGAAA    GGTACGTGGTTTCGACCAACAGCACTGCCCAA        <span class="o">[</span> <span class="m">27</span>, <span class="m">33</span> <span class="o">]</span>
+<span class="m">20112</span>           GTTCACTGCCGTGTAGGCAGCTAAGAAA    TAAAGGAGATTGCCATGCTGATCAAACTTCCC        <span class="o">[</span> <span class="m">27</span>, <span class="m">33</span> <span class="o">]</span>
+<span class="m">20172</span>           GTTCACTGCCGTGTAGGCAGCTAAGAAA    GTCAGGGTCGTGCATGACTCCGATGTGGTGGC        <span class="o">[</span> <span class="m">27</span>, <span class="m">33</span> <span class="o">]</span>
+<span class="m">20232</span>           GTTCACTGCCGTGTAGGCAGCTAAGAAA    CGTCCAGAACGTCACACGCTCGCCGTCGATGT        <span class="o">[</span> <span class="m">27</span>, <span class="m">33</span> <span class="o">]</span>
+<span class="m">20292</span>           GTTCACTGCCGTGTAGGCAGCTAAGAAA
+--------        ---------------------------     --------------------------------
+Repeats: <span class="m">6</span>      Average Length: <span class="m">27</span>              Average Length: <span class="m">33</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+</ol>
+</section>
+</section>
+<section id="limitations-and-considerations">
+<span id="minced-limitations"></span><h2>Limitations and considerations<a class="headerlink" href="#limitations-and-considerations" title="Permalink to this headline"></a></h2>
+<p>Minced uses a sliding window to detect regions containing more than two (roughly) equally spaced (approximately) repeated sequences. The first two repeated sequences that are found (as the window slides 5’ to 3’ along the sequence) are used to define the repeat sequence. Additional windows are then added, the same distance apart until no more repeats are found. See the <a class="reference external" href="https://doi.org/10.1186/1471-2105-8-209">CRT publication</a> for further description. This approach results in a few behaviours that a user should bear in mind:</p>
+<ul class="simple">
+<li><p>Not all regions containing 3 or more (approximate) repeats are CRISPRs. Manual curation is important to confirm that predicted CRISPR arrays are to be believed.</p></li>
+<li><p>By only comparing a few, short sequences (i.e. the contents of the sliding windows), minced tolerates relatively large numbers of differences between repeats while still being confident the sequences are related. This can result in the inclusion of spacers flanked by fairly degenerate repeats.</p></li>
+<li><p>By determining the repeat sequence using the first repeats encountered, minced is vulnerable to mischaracterizing the repeat sequence in the rest of the array if these first repeats are degenerate. CRISPR array trailer repeats often contain mutations not present in more leader-proximal repeats. If minced finds an array encoded on the minus strand (i.e. it finds the trailer end first while scanning the plus strand 5’ to 3’) and the array has differences in it’s trailer-most repeats end-most bases, this can result in minced miscalling the boundaries of the repeat and including one or two repeat bases in all (or most) spacers in the array.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="evolve.html" class="btn btn-neutral float-left" title="evolve" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="network.html" class="btn btn-neutral float-right" title="network" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
-    
+  <hr/>
 
-    
-  </body>
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Alan Collins.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
 </html>
