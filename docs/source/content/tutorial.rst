@@ -5,7 +5,7 @@ Tutorial
 
 
 
-.. _minced-blast-comp
+.. _minced-blast-comp:
 
 ``cctk minced`` vs ``cctk blast`` output comparison
 ---------------------------------------------------
