@@ -11,12 +11,24 @@ To use CCTK, first install it. The easiest installation method is using ``conda`
 Conda - Recommended
 ^^^^^^^^^^^^^^^^^^^
 
+**N.B.** Some dependencies of CCTK are distributed through the bioconda and conda-forge channels. If you do not have those in your conda config you can add them as follows:
+
+  .. code-block:: shell
+
+  conda config --append channels conda-forge
+  conda config --append channels bioconda
+
 
 .. code-block:: shell
 
-   $ conda create -n cctk -c alan-collins cctk
-   $ conda activate cctk
-   (cctk) $ 
+  conda create -n cctk -c alan-collins cctk
+  conda activate cctk
+
+If you do not wish to modify your conda config you will need to specify the above channels in your installation command.
+
+.. code-block:: shell
+
+  conda create -n cctk -c conda-forge -c bioconda -c alan-collins cctk
 
 Conda has the benefit of handling the installation of the correct version of all depencies and adds the ``cctk`` (and dependency) executables to your PATH, which makes usage simpler.
 
