@@ -18,6 +18,7 @@ Conda - Recommended
   conda config --append channels conda-forge
   conda config --append channels bioconda
 
+You can then create a conda environment and install CCTK and all dependencies into it with the following:
 
 .. code-block:: shell
 
