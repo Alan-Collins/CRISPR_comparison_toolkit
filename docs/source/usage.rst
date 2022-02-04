@@ -13,7 +13,7 @@ Conda - Recommended
 
 **N.B.** Some dependencies of CCTK are distributed through the bioconda and conda-forge channels. If you do not have those in your conda config you can add them as follows:
 
-  .. code-block:: shell
+.. code-block:: shell
 
   conda config --append channels conda-forge
   conda config --append channels bioconda

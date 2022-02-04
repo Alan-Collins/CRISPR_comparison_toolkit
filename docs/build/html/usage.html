@@ -93,13 +93,10 @@
 <section id="conda-recommended">
 <h3>Conda - Recommended<a class="headerlink" href="#conda-recommended" title="Permalink to this headline"></a></h3>
 <p><strong>N.B.</strong> Some dependencies of CCTK are distributed through the bioconda and conda-forge channels. If you do not have those in your conda config you can add them as follows:</p>
-<blockquote>
-<div><div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>conda config --append channels conda-forge
+conda config --append channels bioconda
 </pre></div>
 </div>
-<p>conda config –append channels conda-forge
-conda config –append channels bioconda</p>
-</div></blockquote>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>conda create -n cctk -c alan-collins cctk
 conda activate cctk
 </pre></div>
