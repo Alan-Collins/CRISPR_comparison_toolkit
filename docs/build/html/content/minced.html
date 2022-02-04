@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>minced &mdash; cctk 0.3.2 documentation</title>
+  <title>minced &mdash; cctk 0.3.3 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -180,10 +180,12 @@ Assembly2_contig1       <span class="m">29424</span>   <span class="m">30050</sp
 <p>Network representation of the number and proportion of spacers that arrays have in common with one another. Each pair of arrays that share one or more spacers are respresented by an edge in the network. The similarity between arrays is represented as both the number of spacers in common, and the Jaccard similarity index of the two arrays. The repeat ID associated with each array is also included.</p>
 <p>This file can be easily read into a network visualization software such as cytoscape, as demonstrated in the <a class="reference external" href="tutorial.html">tutorial</a>.</p>
 <p>Jaccard similarity between two arrays is defined as the number of unique spacers in common between the two arrays, divided by the combined number of unique spacers present in the two arrays.</p>
-<p>e.g. for the following 2 arrays (as they would be represented in Array_IDs.txt):
-Array   Spacers
-1       1F_1 1F_2 1F_3
-2       1F_4 1F_2 1F_3</p>
+<p>e.g. for the following 2 arrays (as they would be represented in Array_IDs.txt):</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>Array   Spacers
+<span class="m">1</span>       1F_1 1F_2 1F_3
+<span class="m">2</span>       1F_4 1F_2 1F_3
+</pre></div>
+</div>
 <p>The array both contain spacers 1F_2 and 1F_3, while each array also contains one spacer that is not present in the other array. Therefore, the 2 shared spacers are 1F_2 and 1F_3, while the list of 4 total unique spacers in the two arrays is 1F_1, 1F_2, 1F_3, and 1F_4. This results in a Jaccard similarity index of 2/4 = 0.5</p>
 <p>Jaccard is an effective similarity measure for comparing CRISPR arrays as it takes into account both the number of spacers in common between two arrays, and the spacers present in each array that are not shared.</p>
 <p><strong>Format</strong></p>

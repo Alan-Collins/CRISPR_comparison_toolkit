@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>spacerblast &mdash; cctk 0.3.2 documentation</title>
+  <title>spacerblast &mdash; cctk 0.3.3 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -50,7 +50,11 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">spacerblast</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#before-you-run">Before you run</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basic-usage">Basic Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#simple-blast-with-match-extension">Simple BLAST with match extension</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#checking-flanking-sequence-for-pam">Checking flanking sequence for PAM</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#output-files">Output files</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#o-main-output-file-hits-with-pams"><code class="docutils literal notranslate"><span class="pre">-o</span></code> Main output file / hits with PAMs</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#q-hits-without-pams"><code class="docutils literal notranslate"><span class="pre">-q</span></code> Hits without PAMs</a></li>
@@ -95,7 +99,7 @@
 <h1>spacerblast<a class="headerlink" href="#spacerblast" title="Permalink to this headline"></a></h1>
 <section id="before-you-run">
 <h2>Before you run<a class="headerlink" href="#before-you-run" title="Permalink to this headline"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">spacerblast</span></code> requires you to provide the sequences you wish to search in the form of a blast database. This can be acheived simply using the <code class="docutils literal notranslate"><span class="pre">makeblastdb</span></code> command. However, before making your blastdb, please confirm that your sequences meet the following requirements:</p>
+<p><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">spacerblast</span></code> requires you to provide the sequences you wish to search in the form of a blast database. This can be acheived simply using the <code class="docutils literal notranslate"><span class="pre">makeblastdb</span></code> command from NCBI BLAST+ which is included in the conda installation of CCTK. However, before making your blastdb, please confirm that your sequences meet the following requirements:</p>
 <ol class="arabic simple">
 <li><p>No pipe symbols (“|”) in any of your fasta headers.</p></li>
 <li><p>None of the fasta headers in the sequences are the same.</p></li>
@@ -121,6 +125,8 @@ makeblastdb -in all_seqs.fna -out seq_blastdb -dbtype nucl -parse_seqids
 </section>
 <section id="basic-usage">
 <h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline"></a></h2>
+<section id="simple-blast-with-match-extension">
+<h3>Simple BLAST with match extension<a class="headerlink" href="#simple-blast-with-match-extension" title="Permalink to this headline"></a></h3>
 <p>The most basic usage requires only 2 inputs: the blastdb name (i.e. without file extensions) to search and the query sequences.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cctk spacerblast -d &lt;blastdb path&gt; -s &lt;query sequence file&gt;
 </pre></div>
@@ -133,6 +139,9 @@ makeblastdb -in all_seqs.fna -out seq_blastdb -dbtype nucl -parse_seqids
 1F_1    Assembly6_contig1       <span class="m">15636</span>   <span class="m">15667</span>   <span class="m">59</span>.375  <span class="m">13</span>      TGGTGCACGTTTCGACCAACAGCCTAGCGCCC        plus
 </pre></div>
 </div>
+</section>
+<section id="checking-flanking-sequence-for-pam">
+<h3>Checking flanking sequence for PAM<a class="headerlink" href="#checking-flanking-sequence-for-pam" title="Permalink to this headline"></a></h3>
 <p>You can also retrieve just the hits that have an adjacent PAM sequence. For example, to check for the <em>Pseudomonas aeruginosa</em> type I-F PAM, GG, which occurs 5’ (or upstream) of the protospacer:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cctk spacerblast -d &lt;blastdb path&gt; -s &lt;query sequence file&gt; -P GG -l up
 </pre></div>
@@ -150,6 +159,7 @@ Spacer_ID       Target_contig   Protospacer_start       Protospacer_end Percent_
 <li><p>The output includes an additional column “upstream_bases” which contains the 2 bases flanking the protospacer on the 5’ side. If the PAM had been specified as being on the other side (i.e. <code class="docutils literal notranslate"><span class="pre">-l</span> <span class="pre">down</span></code>) then this column would be “downstream_bases”.</p></li>
 <li><p>A warning message was written to stderr stating that our PAM is two bases long while we didn’t ask for any flanking bases to be checked. This message is intended to make clear why a different number of bases are returned if you specifically request fewer bases than the provided PAM requires. <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">spacerblast</span></code> will automatically determine the shortes length of sequence that your PAM could match and will return at least that much sequence.</p></li>
 </ol>
+</section>
 </section>
 <section id="output-files">
 <h2>Output files<a class="headerlink" href="#output-files" title="Permalink to this headline"></a></h2>

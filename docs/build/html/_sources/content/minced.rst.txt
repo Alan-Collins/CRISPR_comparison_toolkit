@@ -143,9 +143,12 @@ This file can be easily read into a network visualization software such as cytos
 Jaccard similarity between two arrays is defined as the number of unique spacers in common between the two arrays, divided by the combined number of unique spacers present in the two arrays. 
 
 e.g. for the following 2 arrays (as they would be represented in Array_IDs.txt):
-Array	Spacers
-1	1F_1 1F_2 1F_3
-2	1F_4 1F_2 1F_3
+
+.. code-block:: shell
+
+	Array	Spacers
+	1	1F_1 1F_2 1F_3
+	2	1F_4 1F_2 1F_3
 
 The array both contain spacers 1F_2 and 1F_3, while each array also contains one spacer that is not present in the other array. Therefore, the 2 shared spacers are 1F_2 and 1F_3, while the list of 4 total unique spacers in the two arrays is 1F_1, 1F_2, 1F_3, and 1F_4. This results in a Jaccard similarity index of 2/4 = 0.5
 

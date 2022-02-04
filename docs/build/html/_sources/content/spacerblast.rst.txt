@@ -4,7 +4,7 @@ spacerblast
 Before you run
 --------------
 
-``cctk spacerblast`` requires you to provide the sequences you wish to search in the form of a blast database. This can be acheived simply using the ``makeblastdb`` command. However, before making your blastdb, please confirm that your sequences meet the following requirements:
+``cctk spacerblast`` requires you to provide the sequences you wish to search in the form of a blast database. This can be acheived simply using the ``makeblastdb`` command from NCBI BLAST+ which is included in the conda installation of CCTK. However, before making your blastdb, please confirm that your sequences meet the following requirements:
 
 1. No pipe symbols ("|") in any of your fasta headers.
 2. None of the fasta headers in the sequences are the same. 
@@ -34,6 +34,9 @@ Introduction
 Basic Usage
 -----------
 
+Simple BLAST with match extension
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 The most basic usage requires only 2 inputs: the blastdb name (i.e. without file extensions) to search and the query sequences.
 
 .. code-block:: shell
@@ -51,6 +54,8 @@ Not specifying an output file results in the output being directed to the stdout
 	1F_1	Assembly5_contig2	91689	91720	78.125	7	GGTACGTGGTTTCGACAAGCAACGTGGCCCAG	plus
 	1F_1	Assembly6_contig1	15636	15667	59.375	13	TGGTGCACGTTTCGACCAACAGCCTAGCGCCC	plus
 
+Checking flanking sequence for PAM
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can also retrieve just the hits that have an adjacent PAM sequence. For example, to check for the *Pseudomonas aeruginosa* type I-F PAM, GG, which occurs 5' (or upstream) of the protospacer:
 
