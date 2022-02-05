@@ -43,8 +43,8 @@
 <li class="toctree-l1"><a class="reference internal" href="CRISPRdiff.html">CRISPRdiff</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CRISPRtree.html">CRISPRtree</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">blast</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#before-you-run">Before you run</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#before-you-run">Before you run</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#output-files">Output files</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#crispr-spacers-fna">CRISPR_spacers.fna</a></li>
@@ -100,27 +100,6 @@
              
   <section id="blast">
 <h1>blast<a class="headerlink" href="#blast" title="Permalink to this headline"></a></h1>
-<section id="before-you-run">
-<span id="blast-before-you-run"></span><h2>Before you run<a class="headerlink" href="#before-you-run" title="Permalink to this headline"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">blast</span></code> requires you to provide the sequences you wish to search in the form of a blast database. This can be acheived simply using the <code class="docutils literal notranslate"><span class="pre">makeblastdb</span></code> from NCBI BLAST+ command which is included in the conda installation of CCTK. However, before making your blastdb, please confirm that your sequences meet the following requirements:</p>
-<ol class="arabic simple">
-<li><p>No pipe symbols (“|”) in any of your fasta headers.</p></li>
-<li><p>None of the fasta headers in the sequences are the same.</p></li>
-<li><p>If your sequences are broken up into multiple contigs, ensure that each fasta header contains an identifier that can be used to associate the sequences.</p></li>
-</ol>
-<p>If you need to modify your fasta headers to add an identifier then a simple option is to add the filename to every header it contains (assuming your filenames are informative). <strong>N.B.</strong> It is a good idea to make a copy of your files before modifying them in case something goes wrong!</p>
-<p>This modification can be acheived with something like the following bash loop (run in the directory with your sequence files):</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> file <span class="k">in</span> *<span class="p">;</span> <span class="k">do</span> <span class="nv">id</span><span class="o">=</span><span class="si">${</span><span class="nv">file</span><span class="p">%.*</span><span class="si">}</span><span class="p">;</span> sed -i <span class="s2">&quot;s/&gt;/&gt;</span><span class="si">${</span><span class="nv">id</span><span class="si">}</span><span class="s2">_/&quot;</span> <span class="nv">$file</span><span class="p">;</span> <span class="k">done</span>
-</pre></div>
-</div>
-<p>This will add the filename (minus extension) to the beginning of each fasta header in each file.</p>
-<p>Making a blastdb from a directory containing your sequences to search can be acheived in two steps (if you are only searching a single sequence file skip the first step). Assuming your sequences are in a directory called sequences/:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cat sequences/* &gt; all_seqs.fna
-makeblastdb -in all_seqs.fna -out seq_blastdb -dbtype nucl -parse_seqids
-</pre></div>
-</div>
-<p><strong>N.B.</strong> It is essential to include the <code class="docutils literal notranslate"><span class="pre">-parse_seqids</span></code> option when creating the blastdb. You can be check if your blastdb was made using <code class="docutils literal notranslate"><span class="pre">-parse_seqids</span></code> by looking for files ending in .nog and .nos. If those files exist associated with your blastdb then it was made correctly.</p>
-</section>
 <section id="introduction">
 <span id="blast-intro"></span><h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">blast</span></code> identifies CRISPR arrays in sequences using BLASTN to search for one or more repeat sequences. It processes the results of that BLAST search through the following steps to construct arrays:</p>
@@ -148,6 +127,27 @@ makeblastdb -in all_seqs.fna -out seq_blastdb -dbtype nucl -parse_seqids
 <li><p>Once the set of repeats in each array is determined, the sequence in between these repeats (CRISPR spacers) is retrieved in batches using <code class="docutils literal notranslate"><span class="pre">blastdbcmd</span></code></p></li>
 </ol>
 <p>An important feature of this process is that <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">blast</span></code> has no access to the filenames or other information that connects contigs together. Therefore, in order to relate different arrays found in the same assembly, <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">blast</span></code> requires information about which information in sequence headers relates contigs together. This is described below in the <a class="reference internal" href="#blast-basic"><span class="std std-ref">Basic Usage</span></a> section.</p>
+</section>
+<section id="before-you-run">
+<span id="blast-before-you-run"></span><h2>Before you run<a class="headerlink" href="#before-you-run" title="Permalink to this headline"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">blast</span></code> requires you to provide the sequences you wish to search in the form of a blast database. This can be acheived simply using the <code class="docutils literal notranslate"><span class="pre">makeblastdb</span></code> from NCBI BLAST+ command which is included in the conda installation of CCTK. However, before making your blastdb, please confirm that your sequences meet the following requirements:</p>
+<ol class="arabic simple">
+<li><p>No pipe symbols (“|”) in any of your fasta headers.</p></li>
+<li><p>None of the fasta headers in the sequences are the same.</p></li>
+<li><p>If your sequences are broken up into multiple contigs, ensure that each fasta header contains an identifier that can be used to associate the sequences.</p></li>
+</ol>
+<p>If you need to modify your fasta headers to add an identifier then a simple option is to add the filename to every header it contains (assuming your filenames are informative). <strong>N.B.</strong> It is a good idea to make a copy of your files before modifying them in case something goes wrong!</p>
+<p>This modification can be acheived with something like the following bash loop (run in the directory with your sequence files):</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> file <span class="k">in</span> *<span class="p">;</span> <span class="k">do</span> <span class="nv">id</span><span class="o">=</span><span class="si">${</span><span class="nv">file</span><span class="p">%.*</span><span class="si">}</span><span class="p">;</span> sed -i <span class="s2">&quot;s/&gt;/&gt;</span><span class="si">${</span><span class="nv">id</span><span class="si">}</span><span class="s2">_/&quot;</span> <span class="nv">$file</span><span class="p">;</span> <span class="k">done</span>
+</pre></div>
+</div>
+<p>This will add the filename (minus extension) to the beginning of each fasta header in each file.</p>
+<p>Making a blastdb from a directory containing your sequences to search can be acheived in two steps (if you are only searching a single sequence file skip the first step). Assuming your sequences are in a directory called sequences/:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cat sequences/* &gt; all_seqs.fna
+makeblastdb -in all_seqs.fna -out seq_blastdb -dbtype nucl -parse_seqids
+</pre></div>
+</div>
+<p><strong>N.B.</strong> It is essential to include the <code class="docutils literal notranslate"><span class="pre">-parse_seqids</span></code> option when creating the blastdb. You can be check if your blastdb was made using <code class="docutils literal notranslate"><span class="pre">-parse_seqids</span></code> by looking for files ending in .nog and .nos. If those files exist associated with your blastdb then it was made correctly.</p>
 </section>
 <section id="basic-usage">
 <span id="blast-basic"></span><h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline"></a></h2>

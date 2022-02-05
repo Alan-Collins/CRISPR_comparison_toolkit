@@ -48,8 +48,8 @@
 <li class="toctree-l1"><a class="reference internal" href="minced.html">minced</a></li>
 <li class="toctree-l1"><a class="reference internal" href="network.html">network</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">spacerblast</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#before-you-run">Before you run</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#before-you-run">Before you run</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#basic-usage">Basic Usage</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#simple-blast-with-match-extension">Simple BLAST with match extension</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#checking-flanking-sequence-for-pam">Checking flanking sequence for PAM</a></li>
@@ -97,6 +97,18 @@
              
   <section id="spacerblast">
 <h1>spacerblast<a class="headerlink" href="#spacerblast" title="Permalink to this headline"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">spacerblast</span></code> is essentially a wrapper script for <code class="docutils literal notranslate"><span class="pre">blastn</span></code> that performs additional functions that are useful when searching for the targets of CRISPR spacers. The additional functions performed by <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">spacerblast</span></code> are:</p>
+<ol class="arabic simple">
+<li><p>Extends sequence matches to cover the entire length of the query sequence. For short query sequences, a small number of mismatches can result in the BLAST algorithm not extending the match through the mismatches even if additional sequence identity would be found. Users can specify a percent identity requirement that takes into account the full sequence length.</p></li>
+<li><p>Retrieves flanking sequence either side (or both sides) of the match location in the subject sequence.</p></li>
+<li><p>Identifies the presence of user-defined sequence motifs in sequence flanking the match and sorts blast hits based on the presence or absence of the motif.</p></li>
+</ol>
+<ol class="arabic simple" start="3">
+<li><p>Masks user-specified regions in the subject sequence and ignores blast hits in those regions.</p></li>
+</ol>
+</section>
 <section id="before-you-run">
 <h2>Before you run<a class="headerlink" href="#before-you-run" title="Permalink to this headline"></a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">spacerblast</span></code> requires you to provide the sequences you wish to search in the form of a blast database. This can be acheived simply using the <code class="docutils literal notranslate"><span class="pre">makeblastdb</span></code> command from NCBI BLAST+ which is included in the conda installation of CCTK. However, before making your blastdb, please confirm that your sequences meet the following requirements:</p>
@@ -110,18 +122,6 @@ makeblastdb -in all_seqs.fna -out seq_blastdb -dbtype nucl -parse_seqids
 </pre></div>
 </div>
 <p><strong>N.B.</strong> It is essential to include the <code class="docutils literal notranslate"><span class="pre">-parse_seqids</span></code> option when creating the blastdb. You can be check if your blastdb was made using <code class="docutils literal notranslate"><span class="pre">-parse_seqids</span></code> by looking for files ending in .nog and .nos. If those files exist associated with your blastdb then it was.</p>
-</section>
-<section id="introduction">
-<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">spacerblast</span></code> is essentially a wrapper script for <code class="docutils literal notranslate"><span class="pre">blastn</span></code> that performs additional functions that are useful when searching for the targets of CRISPR spacers. The additional functions performed by <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">spacerblast</span></code> are:</p>
-<ol class="arabic simple">
-<li><p>Extends sequence matches to cover the entire length of the query sequence. For short query sequences, a small number of mismatches can result in the BLAST algorithm not extending the match through the mismatches even if additional sequence identity would be found. Users can specify a percent identity requirement that takes into account the full sequence length.</p></li>
-<li><p>Retrieves flanking sequence either side (or both sides) of the match location in the subject sequence.</p></li>
-<li><p>Identifies the presence of user-defined sequence motifs in sequence flanking the match and sorts blast hits based on the presence or absence of the motif.</p></li>
-</ol>
-<ol class="arabic simple" start="3">
-<li><p>Masks user-specified regions in the subject sequence and ignores blast hits in those regions.</p></li>
-</ol>
 </section>
 <section id="basic-usage">
 <h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline"></a></h2>

@@ -1,36 +1,6 @@
 blast
 =====
 
-.. _blast-before-you-run:
-
-Before you run
---------------
-
-``cctk blast`` requires you to provide the sequences you wish to search in the form of a blast database. This can be acheived simply using the ``makeblastdb`` from NCBI BLAST+ command which is included in the conda installation of CCTK. However, before making your blastdb, please confirm that your sequences meet the following requirements:
-
-#. No pipe symbols ("|") in any of your fasta headers.
-#. None of the fasta headers in the sequences are the same.
-#. If your sequences are broken up into multiple contigs, ensure that each fasta header contains an identifier that can be used to associate the sequences.
-
-If you need to modify your fasta headers to add an identifier then a simple option is to add the filename to every header it contains (assuming your filenames are informative). **N.B.** It is a good idea to make a copy of your files before modifying them in case something goes wrong! 
-
-This modification can be acheived with something like the following bash loop (run in the directory with your sequence files):
-
-.. code-block:: shell
-	
-	for file in *; do id=${file%.*}; sed -i "s/>/>${id}_/" $file; done
-
-This will add the filename (minus extension) to the beginning of each fasta header in each file.
-
-Making a blastdb from a directory containing your sequences to search can be acheived in two steps (if you are only searching a single sequence file skip the first step). Assuming your sequences are in a directory called sequences/:
-
-.. code-block:: shell
-
-	cat sequences/* > all_seqs.fna
-	makeblastdb -in all_seqs.fna -out seq_blastdb -dbtype nucl -parse_seqids
-
-**N.B.** It is essential to include the ``-parse_seqids`` option when creating the blastdb. You can be check if your blastdb was made using ``-parse_seqids`` by looking for files ending in .nog and .nos. If those files exist associated with your blastdb then it was made correctly.
-
 .. _blast-intro:
 
 Introduction
@@ -61,6 +31,36 @@ Introduction
 #. Once the set of repeats in each array is determined, the sequence in between these repeats (CRISPR spacers) is retrieved in batches using ``blastdbcmd``
 
 An important feature of this process is that ``cctk blast`` has no access to the filenames or other information that connects contigs together. Therefore, in order to relate different arrays found in the same assembly, ``cctk blast`` requires information about which information in sequence headers relates contigs together. This is described below in the :ref:`blast-basic` section.
+
+.. _blast-before-you-run:
+
+Before you run
+--------------
+
+``cctk blast`` requires you to provide the sequences you wish to search in the form of a blast database. This can be acheived simply using the ``makeblastdb`` from NCBI BLAST+ command which is included in the conda installation of CCTK. However, before making your blastdb, please confirm that your sequences meet the following requirements:
+
+#. No pipe symbols ("|") in any of your fasta headers.
+#. None of the fasta headers in the sequences are the same.
+#. If your sequences are broken up into multiple contigs, ensure that each fasta header contains an identifier that can be used to associate the sequences.
+
+If you need to modify your fasta headers to add an identifier then a simple option is to add the filename to every header it contains (assuming your filenames are informative). **N.B.** It is a good idea to make a copy of your files before modifying them in case something goes wrong! 
+
+This modification can be acheived with something like the following bash loop (run in the directory with your sequence files):
+
+.. code-block:: shell
+	
+	for file in *; do id=${file%.*}; sed -i "s/>/>${id}_/" $file; done
+
+This will add the filename (minus extension) to the beginning of each fasta header in each file.
+
+Making a blastdb from a directory containing your sequences to search can be acheived in two steps (if you are only searching a single sequence file skip the first step). Assuming your sequences are in a directory called sequences/:
+
+.. code-block:: shell
+
+	cat sequences/* > all_seqs.fna
+	makeblastdb -in all_seqs.fna -out seq_blastdb -dbtype nucl -parse_seqids
+
+**N.B.** It is essential to include the ``-parse_seqids`` option when creating the blastdb. You can be check if your blastdb was made using ``-parse_seqids`` by looking for files ending in .nog and .nos. If those files exist associated with your blastdb then it was made correctly.
 
 .. _blast-basic:
 
