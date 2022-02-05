@@ -1,6 +1,19 @@
 spacerblast
 ===========
 
+Introduction
+------------
+
+``cctk spacerblast`` is essentially a wrapper script for ``blastn`` that performs additional functions that are useful when searching for the targets of CRISPR spacers. The additional functions performed by ``cctk spacerblast`` are:
+
+1. Extends sequence matches to cover the entire length of the query sequence. For short query sequences, a small number of mismatches can result in the BLAST algorithm not extending the match through the mismatches even if additional sequence identity would be found. Users can specify a percent identity requirement that takes into account the full sequence length.
+
+2. Retrieves flanking sequence either side (or both sides) of the match location in the subject sequence.
+
+3. Identifies the presence of user-defined sequence motifs in sequence flanking the match and sorts blast hits based on the presence or absence of the motif.
+
+3. Masks user-specified regions in the subject sequence and ignores blast hits in those regions.
+
 Before you run
 --------------
 
@@ -17,19 +30,6 @@ Making a blastdb from a directory containing your sequences to search can be ach
 	makeblastdb -in all_seqs.fna -out seq_blastdb -dbtype nucl -parse_seqids
 
 **N.B.** It is essential to include the ``-parse_seqids`` option when creating the blastdb. You can be check if your blastdb was made using ``-parse_seqids`` by looking for files ending in .nog and .nos. If those files exist associated with your blastdb then it was.
-
-Introduction
-------------
-
-``cctk spacerblast`` is essentially a wrapper script for ``blastn`` that performs additional functions that are useful when searching for the targets of CRISPR spacers. The additional functions performed by ``cctk spacerblast`` are:
-
-1. Extends sequence matches to cover the entire length of the query sequence. For short query sequences, a small number of mismatches can result in the BLAST algorithm not extending the match through the mismatches even if additional sequence identity would be found. Users can specify a percent identity requirement that takes into account the full sequence length.
-
-2. Retrieves flanking sequence either side (or both sides) of the match location in the subject sequence.
-
-3. Identifies the presence of user-defined sequence motifs in sequence flanking the match and sorts blast hits based on the presence or absence of the motif.
-
-3. Masks user-specified regions in the subject sequence and ignores blast hits in those regions.
 
 Basic Usage
 -----------
