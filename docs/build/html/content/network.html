@@ -103,11 +103,10 @@
 <li><p>A unique identifier for the array. This can be any string of characters including numbers, letters, and symbols.</p></li>
 <li><p>A space-delimited list of identifiers for the spacers in this array. Spacer identifiers can also be any string of characters including numbers, letters, and symbols. The only requirement is that the identifier used for a spacer is the same between arrays in which it is contained.</p></li>
 </ol>
-<p><strong>N.B.</strong> While <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> and <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">blast</span></code> output <a class="reference internal" href="minced.html#array-ids"><span class="std std-ref">Array_IDs.txt</span></a> in the format
-.. code-block:: shell</p>
-<blockquote>
-<div><p>&lt;Array ID&gt;\t&lt;spacer&gt; &lt;spacer&gt;…</p>
-</div></blockquote>
+<p><strong>N.B.</strong> While <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> and <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">blast</span></code> output <a class="reference internal" href="minced.html#array-ids"><span class="std std-ref">Array_IDs.txt</span></a> in the format</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>&lt;Array ID&gt;<span class="se">\\</span>t&lt;spacer&gt; &lt;spacer&gt;...
+</pre></div>
+</div>
 <p>with a tab betewen the two columns, this file can be successfully read with any whitespace delimiters. Array ID must come before the first whitespace character and the spacers must be separated by whitespace, but tabs and spaces will work equally well in all locations. You can use all tabs or all spaces when generating this file if it is easier.</p>
 </section>
 <section id="basic-usage">

@@ -22,6 +22,7 @@ CCTK is built around the :ref:`array-ids` file (or :ref:`array-seqs` if you pref
 #. A space-delimited list of identifiers for the spacers in this array. Spacer identifiers can also be any string of characters including numbers, letters, and symbols. The only requirement is that the identifier used for a spacer is the same between arrays in which it is contained.
 
 **N.B.** While ``cctk minced`` and ``cctk blast`` output :ref:`array-ids` in the format 
+
 .. code-block:: shell
 
 	<Array ID>\\t<spacer> <spacer>...
