@@ -46,7 +46,17 @@
 <li class="toctree-l1"><a class="reference internal" href="constrain.html">constrain</a></li>
 <li class="toctree-l1"><a class="reference internal" href="evolve.html">evolve</a></li>
 <li class="toctree-l1"><a class="reference internal" href="minced.html">minced</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">network</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">network</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#before-you-run">Before you run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basic-usage">Basic usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#advanced-usage">Advanced Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#array-types-file">Array types file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#complete-command">Complete command</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="spacerblast.html">spacerblast</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
 </ul>
@@ -77,6 +87,92 @@
              
   <section id="network">
 <h1>network<a class="headerlink" href="#network" title="Permalink to this headline"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">network</span></code> performs pairwise comparisons of CRISPR arrays and represents their spacer-sharing relationships in as a network. This functionality is included in both <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> and <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">blast</span></code> which output <a class="reference internal" href="minced.html#array-network"><span class="std std-ref">Array_network.txt</span></a>. This network creation functionality is provided separately in <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">network</span></code> to allow the creation of networks in, for example, the following situations:</p>
+<ol class="arabic simple">
+<li><p>When analyzing CRISPR arrays that were not identified by CCTK tools.</p></li>
+<li><p>To generate a network of a the relationships between a subset of arrays.</p></li>
+<li><p>To generate a network of arrays that have been modified after their identification by <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> or <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">blast</span></code> (e.g. following manual curation).</p></li>
+</ol>
+</section>
+<section id="before-you-run">
+<h2>Before you run<a class="headerlink" href="#before-you-run" title="Permalink to this headline"></a></h2>
+<p>CCTK is built around the <a class="reference internal" href="minced.html#array-ids"><span class="std std-ref">Array_IDs.txt</span></a> file (or <a class="reference internal" href="minced.html#array-seqs"><span class="std std-ref">Array_seqs.txt</span></a> if you prefer) and that file is the only required input for <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">network</span></code>. If you identified CRISPR arrays using a non-CCTK tool then you will need to format your arrays into the format of the <a class="reference internal" href="minced.html#array-ids"><span class="std std-ref">Array_IDs.txt</span></a> file. That format is composed of two tab-delimited columns containing the following information:</p>
+<ol class="arabic simple">
+<li><p>A unique identifier for the array. This can be any string of characters including numbers, letters, and symbols.</p></li>
+<li><p>A space-delimited list of identifiers for the spacers in this array. Spacer identifiers can also be any string of characters including numbers, letters, and symbols. The only requirement is that the identifier used for a spacer is the same between arrays in which it is contained.</p></li>
+</ol>
+<p><strong>N.B.</strong> While <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> and <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">blast</span></code> output <a class="reference internal" href="minced.html#array-ids"><span class="std std-ref">Array_IDs.txt</span></a> in the format
+.. code-block:: shell</p>
+<blockquote>
+<div><p>&lt;Array ID&gt;\t&lt;spacer&gt; &lt;spacer&gt;…</p>
+</div></blockquote>
+<p>with a tab betewen the two columns, this file can be successfully read with any whitespace delimiters. Array ID must come before the first whitespace character and the spacers must be separated by whitespace, but tabs and spaces will work equally well in all locations. You can use all tabs or all spaces when generating this file if it is easier.</p>
+</section>
+<section id="basic-usage">
+<span id="network-basic"></span><h2>Basic usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline"></a></h2>
+<p>The minimal command for <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">network</span></code> requirs only an <a class="reference internal" href="minced.html#array-ids"><span class="std std-ref">Array_IDs.txt</span></a> or <a class="reference internal" href="minced.html#array-seqs"><span class="std std-ref">Array_seqs.txt</span></a> file as input. <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">network</span></code> will write a file called <a class="reference internal" href="minced.html#array-network"><span class="std std-ref">Array_network.txt</span></a> to the directory specified using <code class="docutils literal notranslate"><span class="pre">-o</span></code> which is your currently directory (<code class="docutils literal notranslate"><span class="pre">./</span></code>) by default.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cctk network -i &lt;Array file&gt;
+</pre></div>
+</div>
+<p>This produces a version of the <a class="reference internal" href="minced.html#array-network"><span class="std std-ref">Array_network.txt</span></a> file produced by <code class="docutils literal notranslate"><span class="pre">ctk</span> <span class="pre">minced</span></code> and <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">blast</span></code> that contains only the first 4 columns.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>Array_A Array_B Shared_spacers  Jaccard_similarity
+<span class="m">1</span>       <span class="m">2</span>       <span class="m">2</span>       <span class="m">0</span>.2
+<span class="m">1</span>       <span class="m">3</span>       <span class="m">5</span>       <span class="m">0</span>.5
+<span class="m">1</span>       <span class="m">4</span>       <span class="m">8</span>       <span class="m">0</span>.8
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="#network-advanced"><span class="std std-ref">Advanced Usage</span></a> for information about producing a file including the remaining columns.</p>
+</section>
+<section id="advanced-usage">
+<span id="network-advanced"></span><h2>Advanced Usage<a class="headerlink" href="#advanced-usage" title="Permalink to this headline"></a></h2>
+<p>With the command described in the <a class="reference internal" href="#network-basic"><span class="std std-ref">Basic usage</span></a>, the output file will contain only the first 4 columns contained in the <a class="reference internal" href="minced.html#array-network"><span class="std std-ref">Array_network.txt</span></a> files produced by <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> and <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">blast</span></code>. This is because <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">network</span></code> does not attempt to infer CRISPR type information from your array file. If you want columns describing the CRISPR type of arrays in the network, you need to provide that information as a separate file using <code class="docutils literal notranslate"><span class="pre">-t</span></code>.</p>
+<section id="array-types-file">
+<span id="network-array-types"></span><h3>Array types file<a class="headerlink" href="#array-types-file" title="Permalink to this headline"></a></h3>
+<p>The array types file contains two columns. The first is the Array ID used in <a class="reference internal" href="minced.html#array-ids"><span class="std std-ref">Array_IDs.txt</span></a> or <a class="reference internal" href="minced.html#array-seqs"><span class="std std-ref">Array_seqs.txt</span></a>, the second is the CRISPR type that you would like written to your <a class="reference internal" href="minced.html#array-network"><span class="std std-ref">Array_network.txt</span></a> file and can be any string of characters you wish (it does not need to correspond to any other information and could, in fact, be any kind of annotation as long as it contains no whitespace characters).</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="m">1</span>       1F
+<span class="m">2</span>       Type_I_Subtype_F
+<span class="m">3</span>       I-E
+<span class="m">4</span>       Other_annotation
+</pre></div>
+</div>
+<p>If you are simply making a network from a subset of arrays in an existing <a class="reference internal" href="minced.html#array-ids"><span class="std std-ref">Array_IDs.txt</span></a> file then you can quickly and easily produce the array types file using <code class="docutils literal notranslate"><span class="pre">grep</span></code> and <code class="docutils literal notranslate"><span class="pre">sed</span></code>:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ cat Array_IDs.txt
+
+<span class="m">1</span>       1F_42 1F_18 1F_153 1F_53 1F_82
+<span class="m">2</span>       1F_90 1F_56 1F_166 1F_26
+<span class="m">3</span>       1F_56 1F_166 1F_26 1F_141
+<span class="m">4</span>       1F_156 1F_19 1F_26 1F_141
+...
+
+$ sed <span class="s1">&#39;s/_.*//&#39;</span> Array_IDs.txt <span class="p">|</span> grep -Ew <span class="s2">&quot;^1|^2|^3|^4|...&quot;</span> &gt; Array_types.txt
+
+$ cat Array_types.txt
+
+<span class="m">1</span>       1F
+<span class="m">2</span>       1F
+<span class="m">3</span>       1F
+<span class="m">4</span>       1F
+...
+</pre></div>
+</div>
+</section>
+<section id="complete-command">
+<h3>Complete command<a class="headerlink" href="#complete-command" title="Permalink to this headline"></a></h3>
+<p>We can then use the <a class="reference internal" href="#network-array-types"><span class="std std-ref">Array types file</span></a> to annotate edges in the output network with information about the connected arrays with the following command (also including output directory specification for completeness):</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cctk network -i &lt;Array file&gt; -t &lt;array types file&gt; -o &lt;output dir&gt;
+</pre></div>
+</div>
+<p>If we used the example file described in the :ref`network-array-types` section, then this would result in the following output file:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>Array_A Array_B Shared_spacers  Jaccard_similarity      Array_A_type    Array_B_type
+<span class="m">1</span>       <span class="m">2</span>       <span class="m">2</span>       <span class="m">0</span>.2     1F      Type_I_Subtype_F
+<span class="m">1</span>       <span class="m">3</span>       <span class="m">5</span>       <span class="m">0</span>.5     1F      I-E
+<span class="m">1</span>       <span class="m">4</span>       <span class="m">8</span>       <span class="m">0</span>.8     1F      Other_annotation
+</pre></div>
+</div>
+</section>
+</section>
 </section>
 
 
