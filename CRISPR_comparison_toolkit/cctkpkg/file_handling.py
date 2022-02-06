@@ -308,7 +308,7 @@ def write_array_file(array_dict, outfile):
 	with open(outfile, 'w') as fout:
 		fout.write('\n'.join(
 			["{}\t{}".format(
-				k, " ".join(v.spacers)
+				k, " ".join([str(s) for s in v.spacers])
 				) for k,v in array_dict.items()])+"\n")
 
 

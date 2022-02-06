@@ -429,7 +429,7 @@ def main(args):
 	active_array_dict = {}
 	for leaf in new_tree.leaf_node_iter():
 		array_id = leaf.taxon.label
-		active_array_dict[array_id] = final_array_dict[array_id].spacers
+		active_array_dict[array_id] = final_array_dict[array_id]
 
 	file_handling.write_array_file(
 		active_array_dict,
