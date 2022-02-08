@@ -363,7 +363,7 @@ def plot_rep_indel_text(ax, nspacers, x, y, spacer_size, spacer_count,
 	if annot_text_size:
 		font_size = annot_text_size
 	else:
-		font_size = 1.5*font_scale
+		font_size = 6*font_scale
 
 	if len(partners) > 2:
 		vpad = 1.3
@@ -382,7 +382,7 @@ def plot_rep_indel_text(ax, nspacers, x, y, spacer_size, spacer_count,
 			" ".join(diff_type.partner)))
 	else:
 		if len(partners) == 2:
-			vpad = 1.3
+			vpad = 1.4
 			message = "\n".join(partners)
 		else:
 			vpad = 1
