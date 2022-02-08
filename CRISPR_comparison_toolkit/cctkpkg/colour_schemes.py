@@ -3,6 +3,8 @@ from itertools import combinations, permutations
 from random import sample, randrange, seed, randint
 from math import sqrt, ceil
 
+from . import file_handling
+
 Cols_tol = [
 	"#332288",
 	"#117733",
@@ -175,3 +177,38 @@ def fill_col_scheme_gaps(col_scheme, spacers, seed):
 			col_scheme[s] = rand_col
 
 	return col_scheme
+
+
+def process_colour_args(args, non_singleton_spacers):
+	if args.colour_scheme_infile:
+		spacer_cols_dict = file_handling.read_colour_scheme(
+			args.colour_scheme_infile)
+		# If necessary add colours to colour scheme for missing spacers
+		if any([s not in spacer_cols_dict for s in non_singleton_spacers]):
+			spacer_cols_dict = fill_col_scheme_gaps(
+				spacer_cols_dict, non_singleton_spacers, args.seed)
+
+	else:
+		# Else, figure out colour scheme to use
+		if args.colour_file:
+			cf_list = file_handling.read_colour_file(args.colour_file)
+			colours = choose_col_scheme(
+				len(non_singleton_spacers),
+				args.seed,
+				cf_list)
+		else:
+			colours = choose_col_scheme(
+				len(non_singleton_spacers),
+				args.seed)
+
+		# build a dictionary with colours assigned to each spacer.
+		spacer_cols_dict = {}
+		for i, spacer in enumerate(sorted(non_singleton_spacers)):
+			spacer_cols_dict[spacer] = colours[i]
+
+
+	if args.colour_scheme_outfile:
+		file.handling.write_colour_scheme(
+			args.colour_scheme_outfile, spacer_cols_dict)
+
+	return spacer_cols_dict
