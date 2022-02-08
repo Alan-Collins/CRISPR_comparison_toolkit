@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CRISPRdiff &mdash; cctk 0.3.3 documentation</title>
+  <title>CRISPRdiff &mdash; cctk 0.3.4 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -40,7 +40,22 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">CRISPRdiff</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">CRISPRdiff</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#before-you-run">Before you run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#output-files">Output files</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#crisprdiff-plot">CRISPRdiff plot</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#advanced-usage">Advanced Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#specifying-array-order-in-plot">Specifying array order in plot</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#limitations-and-considerations">Limitations and considerations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#worked-example">Worked example</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="CRISPRtree.html">CRISPRtree</a></li>
 <li class="toctree-l1"><a class="reference internal" href="blast.html">blast</a></li>
 <li class="toctree-l1"><a class="reference internal" href="constrain.html">constrain</a></li>
@@ -77,6 +92,59 @@
              
   <section id="crisprdiff">
 <h1>CRISPRdiff<a class="headerlink" href="#crisprdiff" title="Permalink to this headline"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">CRISPRdiff</span></code> is a visualization tool to explore the relationships between CRISPR arrays. It draws arrays as a sequence of rectangles where spacers that are unique to a single array are represented by small, black rectangles, while spacers present in multiple arrays are represented by larger rectangles with a fill and outline colour combination that is unique to that spacer. Spacers that are present in two arrays drawn next to each other are connected by a line to highlight this relationship. The colour of the line connecting spacers present in two arrays is the same as the fill colour of the spacers.</p>
+<p>This representation is intended to highlight where and what the similarities are between a group of arrays, and is therefore best suited to sets of related arrays.</p>
+</section>
+<section id="before-you-run">
+<span id="diff-before-you-run"></span><h2>Before you run<a class="headerlink" href="#before-you-run" title="Permalink to this headline"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">CRISPRdiff</span></code> requirs only an <a class="reference internal" href="minced.html#array-ids"><span class="std std-ref">Array_IDs.txt</span></a> or <a class="reference internal" href="minced.html#array-seqs"><span class="std std-ref">Array_seqs.txt</span></a> file as input. By default, all arrays present in the input file will be drawn. However, if not all of the arrays are related to one another the resulting plot will be harder to interpret (busy plot, harder to assign visually distinct colours to spacers). It is therefore recommended that you run <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">CRISPRdiff</span></code> only on smaller batches of your arrays that share spacers.</p>
+<p>If you identified CRISPR arrays using <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> or <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">blast</span></code>, you will have a <a class="reference internal" href="minced.html#array-network"><span class="std std-ref">Array_network.txt</span></a> file among the output of those tools. This file can be visualized using a network visualization tool such as <a class="reference external" href="https://cytoscape.org/download.html">cytoscape</a> and clusters of related arrays can be selected easily. See <a class="reference internal" href="#diff-example"><span class="std std-ref">Worked example</span></a> for an example of how this workflow may look.</p>
+</section>
+<section id="basic-usage">
+<span id="diff-basic"></span><h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">CRISPRdiff</span></code> requires two command line inputs: an <a class="reference internal" href="minced.html#array-ids"><span class="std std-ref">Array_IDs.txt</span></a> (or <a class="reference internal" href="minced.html#array-seqs"><span class="std std-ref">Array_seqs.txt</span></a>) file using <code class="docutils literal notranslate"><span class="pre">-i</span></code>, and the name of the desired output file using <code class="docutils literal notranslate"><span class="pre">-o</span></code>.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cctk CRISPRdiff -i &lt;Array_IDs.txt&gt; -o &lt;Output plot with desired extension&gt;
+</pre></div>
+</div>
+<p><strong>N.B.</strong> <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">CRISPRdiff</span></code> uses matplotlib to perform all plotting functions. You can specify the format of the output file by providing a filename with an extension corresponding to the desired file format. E.g. out_file.png will produce a PNG format file, while out_file.svg will produce an SVG format file. Any file format compatible with <a class="reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.savefig.html">matplotlib.pyplot.savefig</a> should work.</p>
+</section>
+<section id="output-files">
+<h2>Output files<a class="headerlink" href="#output-files" title="Permalink to this headline"></a></h2>
+<section id="crisprdiff-plot">
+<h3>CRISPRdiff plot<a class="headerlink" href="#crisprdiff-plot" title="Permalink to this headline"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">CRISPRdiff</span></code>’s main output is a plot representing the relationships of a set of arrays. An example of this plot is shown below and the main visual elements are highlighted.</p>
+<img alt="../_images/diffplot_eg.png" src="../_images/diffplot_eg.png" />
+<p>Each row of rectangles in the plot corresponds to an array. Spacers in each array are plotted in the same order as the appear on the corresponding line in the input file. In addition, 4 features of the plot are highlighted with red circles. Below is a description of these 4 elements:</p>
+<ol class="arabic simple">
+<li><p>The ID of the array being plotted. This is whatever the first column of the input file contains.</p></li>
+<li><p>A spacer that is unique to a single array being plotted. Unique spacers are all plotted as identical small, black rectangles. <strong>N.B.</strong> Spacers are determined to be unique soley based on the arrays selected for plotting. A spacer drawn as a thin, black rectangle may be present in other arrays in your dataset that are not included in the plot.</p></li>
+<li><p>A spacer that is found in more than one array. When spacers are drawn as large rectangles with non-black fill colour, the combination of fill and outline colour can be used to identify other instances of the same spacer in other arrays. For small numbers of different spacers found in multiple arrays black outline is used. When the number of spacers found in multiple arrays is large, a combination of the same set of colours is used for fill and outline colour.</p></li>
+<li><p>When tow are arrays that are plotted adjacently share a spacer, a line is drawn connecting the two instances of that spacer to improve the visibility of this relationship. The colour of this line is the same as the fill colour of the spacer.</p></li>
+</ol>
+<p>The above example plot was produced using the following data generated using <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">evolve</span></code> (Array order has been adjusted to correspond between the plot and below data for clarity, but will not necessarily in practice)</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="m">20</span>      <span class="m">16</span> <span class="m">13</span> <span class="m">9</span> <span class="m">5</span> <span class="m">4</span> <span class="m">3</span> <span class="m">2</span> <span class="m">1</span>
+<span class="m">19</span>      <span class="m">21</span> <span class="m">15</span> <span class="m">12</span> <span class="m">6</span> <span class="m">5</span> <span class="m">4</span> <span class="m">3</span> <span class="m">2</span> <span class="m">1</span>
+<span class="m">16</span>      <span class="m">18</span> <span class="m">15</span> <span class="m">12</span> <span class="m">6</span> <span class="m">5</span> <span class="m">4</span> <span class="m">3</span> <span class="m">2</span> <span class="m">1</span>
+<span class="m">7</span>       <span class="m">11</span> <span class="m">6</span> <span class="m">5</span> <span class="m">4</span> <span class="m">3</span> <span class="m">2</span> <span class="m">1</span>
+<span class="m">15</span>      <span class="m">17</span> <span class="m">8</span> <span class="m">5</span> <span class="m">4</span> <span class="m">1</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="advanced-usage">
+<span id="diff-advanced"></span><h2>Advanced Usage<a class="headerlink" href="#advanced-usage" title="Permalink to this headline"></a></h2>
+<section id="specifying-array-order-in-plot">
+<h3>Specifying array order in plot<a class="headerlink" href="#specifying-array-order-in-plot" title="Permalink to this headline"></a></h3>
+</section>
+</section>
+<section id="limitations-and-considerations">
+<span id="diff-limitations"></span><h2>Limitations and considerations<a class="headerlink" href="#limitations-and-considerations" title="Permalink to this headline"></a></h2>
+</section>
+<section id="worked-example">
+<span id="diff-example"></span><h2>Worked example<a class="headerlink" href="#worked-example" title="Permalink to this headline"></a></h2>
+</section>
 </section>
 
 
