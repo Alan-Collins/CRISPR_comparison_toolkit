@@ -35,9 +35,9 @@ def mince_it(minced_path, genomes_dir, outdir):
 
 		command = " ".join([
 			minced_path,
-			genomefile,
+			genomefile.replace(" ", "\\ "),
 			minced_out
-			]) + accession + "_minced_out.txt"
+			]) + accession.replace(" ", "_") + "_minced_out.txt"
 		p = subprocess.Popen(command, shell=True)
 		p_status = p.wait()
 
