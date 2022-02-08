@@ -440,41 +440,9 @@ def main(args):
 		"Identified {} spacers present in more than one array.\n".format(
 			len(imp_spacers)))
 
-	# if provided, read in colour scheme.
-
-	if args.colour_scheme_infile:
-		spacer_colours = file_handling.read_colour_scheme(
-			args.colour_scheme_infile)
-
-		# If the given colour scheme is insufficient, add more colours
-		if any([s not in spacer_colours.keys() for s in imp_spacers]):
-			spacer_colours = colour_schemes.fill_col_scheme_gaps(
-				spacer_colours,
-				imp_spacers,
-				args.seed)
-
-	else:
-		# Else, figure out colour scheme to use
-		if args.colour_file:
-			cf_list = file_handling.read_colour_file(args.colour_file)
-			colours = colour_schemes.choose_col_scheme(
-				len(imp_spacers),
-				args.seed,
-				cf_list)
-		else:
-			colours = colour_schemes.choose_col_scheme(
-				len(imp_spacers),
-				args.seed)
-
-		# build a dictionary with colours assigned to each spacer.
-		spacer_colours  = {}
-		for i, spacer in enumerate(sorted(imp_spacers)):
-			spacer_colours[spacer] = colours[i]
-
-	if args.colour_scheme_outfile:
-		file_handling.write_colour_scheme(
-			args.colour_scheme_outfile,
-			spacer_colours)
+	# Process colour file related args
+	spacer_colours = colour_schemes.process_colour_args(
+		args, imp_spacers)
 
 	plotting.plot_diffplot(arrays_of_interest_dict, array_order, imp_spacers,
 		spacer_colours, text_size=args.font_size,
