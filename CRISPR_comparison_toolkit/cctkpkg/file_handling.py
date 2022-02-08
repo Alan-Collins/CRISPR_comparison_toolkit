@@ -596,3 +596,18 @@ def write_array_loc_bed(all_assemblies, outdir):
 
 	with open(outdir+"Array_locations.bed", 'w') as fout:
 		fout.write("\n".join(bed_contents))
+
+
+def read_genome_reps_file(filename):
+	""" Read file with genome name and the array of interest for constrain
+	"""
+	genome_array_dict = {}
+	with open(filename, 'r') as fin:
+		for line in fin.readlines():
+			bits = line.split()
+			if bits[0].lower() == "outgroup":
+				outgroup_taxon = bits[1]
+				continue
+			genome_array_dict[bits[1]] = bits[0]
+
+	return genome_array_dict, outgroup_taxon
