@@ -96,7 +96,8 @@ class SpacerModule():
 		self.partner = []
 
 
-def find_modules(array1, array2, parent_comparison=False):
+def find_modules(array1, array2, parent_comparison=False, 
+	extra_subtree_arrays=None):
 	"""
 	Identify contiguous stretches of spacers that share an evolutionary
 	property in terms of how they differ from the comparator array (e.g.
@@ -108,6 +109,9 @@ def find_modules(array1, array2, parent_comparison=False):
 		array2 (Array class instance): The second array to be compared.
 		parent_comparison (Bool): Is this a comparison with array1 as
 			the child array of array2?
+		extra_subtree_arrays (list): For contrain.py, this is the list
+		  of arrays belonging to node outside the subtree containing
+		  array1, array2, and their descendents.
 	
 	Returns:
 		(tuple of Array class instances) The provided arrays with module
@@ -206,9 +210,36 @@ def find_modules(array1, array2, parent_comparison=False):
 
 			elif a != b: # Mismatch at leader end probably means they've
 				# both acquired spacers since ancestor
-				# Indel also possible. Maybe implement parsimony
-				# evaluation of that when comparing ancestor to other
-				# arrays?
+				# Indel also possible.
+				# If this is arrays from contrain.py, check if an indel
+				# has happened leader-side of shared spacers by looking
+				# for any of the spacers in arrays outside this subtree
+				if extra_subtree_arrays:
+					if (
+						any([a in spacers for spacers in extra_subtree_arrays]
+							) or (
+						any([b in spacers for spacers in extra_subtree_arrays])
+						)):
+						if module1.type not in ["indel_mm", ""]:
+							array1.modules.append(module1)
+							for k in module1.indices:
+								array1.module_lookup[k] = module1
+							module1 = SpacerModule()
+						module1.type = "indel_mm"
+						module1.indices.append(n)
+						module1.spacers.append(a)
+						# Module2 processing for indel module where mismatched
+						if module2.type not in ["indel_mm", ""]:
+							array2.modules.append(module2)
+							for k in module2.indices:
+								array2.module_lookup[k] = module2
+							module2 = SpacerModule()
+						module2.type = "indel_mm"
+						module2.indices.append(n)
+						module2.spacers.append(b)
+						leader = False
+						continue
+
 
 				if module1.type != "acquisition" and module1.type != "":
 					array1.modules.append(module1)
@@ -831,3 +862,345 @@ def check_for_no_ident(arrays):
 			"other arrays in this dataset. Please ensure that all arrays "
 			"share at least 1 spacer with another array.".format(
 				", ".join(no_id_arrays)))
+
+
+def resolve_pairwise_parsimony(array1, array2, all_arrays, array_dict,
+	node_ids, node_count, tree, event_costs, extra_subtree_arrays=None):
+	"""
+	Given two arrays, make a hypothetical ancestral state and calculate
+	parsimony distance of each input array to that ancestor. 
+	Can only build an ancestor state if there are shared spacers so
+	throws an error if none are found.
+	Args:
+		array1 (Array class instance): The first array to be compared.
+		array2 (Array class instance): The second array to be compared.
+		all_arrays (list): The list of all arrays so that indels can be
+		  resolved to favour keeping spacers found in other arrays.
+		array_dict (dict): Dict of Array class instances with
+		  information about the nodes of your tree.
+		node_ids (list): A list of names to be used to name internal
+		  nodes.
+		node_count (int): The index of the name to use in the node_ids
+		  list to name this internal node.
+		tree (Deondropy Tree class instance): The tree in which the
+		  arrays are located.
+		event_costs (dict): Dict to look up event types and their
+		  parsimony costs.
+		extra_subtree_arrays (list): For contrain.py, this is the list
+		  of arrays belonging to node outside the subtree containing
+		  array1, array2, and their descendents.
+		
+
+
+	Returns:
+		(tuple of Array class instances) The input Array class instances
+		  with module and distance info added, the ancestral array Array
+		    class instance. Tuple order is (array1, array2, ancestor)
+
+	Raises:
+		No ID: Raises an exception if the two arrays share no spacers.
+	"""
+
+	if not len(list(set(array1.spacers) & set(array2.spacers))) > 0:
+		return "No_ID"
+
+	if len(tree) > 1:
+		if tree.find_node_with_taxon_label(array1.id):
+			try:
+				existing_ancestor = array_dict[
+				tree.find_node_with_taxon_label(
+					array1.id).parent_node.taxon.label]
+			except: #root is parent
+				existing_ancestor = False
+		elif tree.find_node_with_taxon_label(array2.id):
+			try:
+				existing_ancestor = array_dict[
+				tree.find_node_with_taxon_label(
+					array2.id).parent_node.taxon.label]
+			except: #root is parent
+				existing_ancestor = False
+		else:
+			existing_ancestor = False
+	else:
+		existing_ancestor = False
+	# Make sure the distance and events haven't carried over from a
+	# previous usage
+	array1.reset()
+	array2.reset()
+	
+	ancestor = infer_ancestor(
+		array1, array2, all_arrays, node_ids, node_count,
+		existing_ancestor, extra_subtree_arrays=extra_subtree_arrays)
+
+	array1 = count_parsimony_events(
+		array1, ancestor, array_dict, tree, True)
+	array2 = count_parsimony_events(
+		array2, ancestor, array_dict, tree, True)
+
+	for k,v in event_costs.items():
+		# Get weighted distance based on each event's cost.
+		array1.distance += array1.events[k] * v
+		array2.distance += array2.events[k] * v
+
+	return array1, array2, ancestor
+
+
+def infer_ancestor(array1, array2, all_arrays, node_ids, node_count,
+	existing_ancestor, extra_subtree_arrays=None):
+	"""
+	Based on the modules found in two aligned arrays, construct a 
+	hypothethetical ancestral state of the two arrays
+	Args:
+		array1 (Array class instance): The first array to be compared.
+		array2 (Array class instance): The second array to be compared.
+		all_arrays (list): The list of all arrays so that indels can be
+		  resolved to favour keeping spacers found in other arrays.
+		node_ids (list): A list of names to be used to name internal nodes.
+		node_count (int): The index of the name to use in the node_ids list to
+		  name this internal node.
+		existing_ancestor(Array class instance): The existing ancestor array if
+		  there is one
+		extra_subtree_arrays (list): For contrain.py, this is the list
+		  of arrays belonging to node outside the subtree containing
+		  array1, array2, and their descendents.
+	
+	Returns:
+		(str or list) A hypothesis of the ancestral state of the provided
+		  sequences.
+	"""
+	
+	ancestor = Array(node_ids[node_count], extant=False)
+
+	array1, array2 = find_modules(
+		array1, array2, extra_subtree_arrays=extra_subtree_arrays)	
+
+	# Process modules to build hypothetical ancestor
+	idx = 0
+	while idx <= max(array1.module_lookup.keys()):
+		mod1 = array1.module_lookup[idx]
+		mod2 = array2.module_lookup[idx]
+		if mod1.type == "acquisition" or mod2.type == "acquisition": 
+			# If either has acquired spacers not in the other then
+			# those weren't in the ancestor.
+			# Skip the rest of this module.
+			idx = max([mod1.indices[-1], mod2.indices[-1]]) + 1 
+			continue
+		else:
+			if mod1.type == "shared":
+				# If spacers are shared in these they are assumed to
+				# have been in the ancestor.
+				ancestor.modules.append(mod1)
+				idx = mod1.indices[-1] + 1
+				continue
+			elif mod1.type == "duplication":
+				# If one has duplicated spacers but the other doesn't
+				# then he ancestral state likely didn't have them
+				# Skip the rest of this module.
+				idx = max([mod1.indices[-1], mod2.indices[-1]]) + 1 
+				continue
+			elif mod1.type == "trailer_loss":
+				# If one lost a trailer end spacer then the ancestor had it.
+				# Figure out which module has actual spacers.
+				if not '-' in mod1.spacers: 
+					ancestor.modules.append(mod1)
+				else:
+					ancestor.modules.append(mod2)
+				idx += 1
+				continue
+			elif mod1.type == "indel_gap" or mod1.type == "indel_mm":
+				# If one array has just spacers and the other just gaps
+				# in the indel then pick the spacers as ancestral.
+				if all(
+					[i == '-' for i in mod1.spacers]) or all(
+					[i == '-' for i in mod2.spacers]):
+					# Figure out which one is all gaps and store the
+					# other one if it isn't singletons.
+					if all([i == '-' for i in mod1.spacers]):
+						# Check first if it's a duplication. If so,
+						# remove from ancestor.
+						count_list = []
+						for sp in mod2.spacers:
+							if sp != '-':
+								count = 0
+								for spacer in mod2.spacers:
+									if sp == spacer:
+										count += 1
+								count_list.append(count)
+						if all([i>2 for i in count_list]):
+							# If all of the spacers are present twice
+							# then duplication has occured in this
+							# region.
+							idx = mod1.indices[-1] + 1 # Skip module
+							continue
+						else:
+							ancestor.modules.append(mod2)
+					else:
+						# Check first if it's a duplication.
+						# If so, remove from ancestor.
+						count_list = []
+						for sp in mod1.spacers:
+							if sp != '-':
+								count = 0
+								for spacer in mod1.spacers:
+									if sp == spacer:
+										count += 1
+								count_list.append(count)
+						if all([i>2 for i in count_list]):
+							# If all of the spacers are present twice
+							# then duplication has occured in this
+							# region.
+							idx = mod1.indices[-1] + 1 # Skip module
+							continue
+						else:
+							ancestor.modules.append(mod1)
+						
+					idx = mod1.indices[-1] + 1
+				else:
+					# If both modules contain spacers then this may be
+					# two deletions from a larger ancestor or a
+					# recombination event.
+					# If there is an existing ancestor to consider, use
+					# it to resolve this event
+					if existing_ancestor:
+						# First check if both modules exist in the
+						# existing ancestral array. If they do then
+						# keep the portion of the ancestor that they
+						# align with.
+						if (all(
+							[s in existing_ancestor.spacers for s in mod1.spacers if s != '-']) 
+							and all(
+							[s in existing_ancestor.spacers for s in mod2.spacers if s != '-'])):
+							existing_ancestor_indices = sorted(
+								[existing_ancestor.spacers.index(s) for s in mod1.spacers + mod2.spacers if s != '-'])
+							new_module = array_parsimony.SpacerModule()
+							new_module.spacers = existing_ancestor.spacers[
+								existing_ancestor_indices[0]:existing_ancestor_indices[-1]+1]
+							ancestor.modules.append(new_module)
+							idx = mod1.indices[-1] + 1 
+							continue
+
+						# Otherwise check if either module exist in the
+						# existing ancestral array. If one does then
+						# keep that one.
+						elif all(
+							[s in existing_ancestor.spacers for s in mod1.spacers if s != '-']):
+							new_module = array_parsimony.SpacerModule()
+							new_module.spacers = [
+								s for s in mod1.spacers if s != '-']
+							ancestor.modules.append(new_module)
+							idx = mod1.indices[-1] + 1
+							continue
+
+						elif all(
+							[s in existing_ancestor.spacers for s in mod2.spacers if s != '-']):
+							new_module = array_parsimony.SpacerModule()
+							new_module.spacers = [
+								s for s in mod2.spacers if s != '-']
+							ancestor.modules.append(new_module)
+							idx = mod2.indices[-1] + 1
+							continue
+
+						else: 
+							# If either has any spacers in the
+							# ancestor pick the one with the most
+							if any([s in existing_ancestor.spacers for s in mod1.spacers+mod2.spacers if s != '-']):
+								n1 = len([s in existing_ancestor.spacers for s in mod1.spacers if s != '-'])
+								n2 = len([s in existing_ancestor.spacers for s in mod2.spacers if s != '-'])
+								if n1 > n2:
+									new_module = array_parsimony.SpacerModule()
+									new_module.spacers = [
+										s for s in mod1.spacers if s != '-']
+									ancestor.modules.append(new_module)
+									idx = mod1.indices[-1] + 1
+									continue
+								else:
+									new_module = array_parsimony.SpacerModule()
+									new_module.spacers = [
+										s for s in mod2.spacers if s != '-']
+									ancestor.modules.append(new_module)
+									idx = mod2.indices[-1] + 1
+									continue
+
+					# Next check if all these spacers exits in another
+					# array
+					spacers_to_check = mod1.spacers + mod2.spacers
+					# If we find all the spacers in an array keep it to
+					# determine order
+					found_array = False 
+					for array in all_arrays:
+						count = 0
+						for spacer in spacers_to_check:
+							if spacer in array:
+								count += 1
+						if count == len(spacers_to_check):
+							found_array = array
+							continue
+					if found_array: 
+						# All the spacers were found in 1 array. That
+						# looks like 2 deletions from larger array.
+						# Were the spacers consecutive in another array
+						if " ".join(
+							mod1.spacers + mod2.spacers) in " ".join(
+								found_array):
+							new_mod = SpacerModule()
+							new_mod.spacers = mod1.spacers + mod2.spacers
+							ancestor.modules.append(new_mod)
+							idx = mod1.indices[-1] + 1
+						elif " ".join(
+							mod2.spacers + mod1.spacers) in " ".join(
+								found_array):
+							new_mod = SpacerModule()
+							new_mod.spacers = mod2.spacers + mod1.spacers
+							ancestor.modules.append(new_mod)
+							idx = mod1.indices[-1] + 1
+						else:
+							# Something else has happened. For now don't
+							#put these spacers in the ancestral array.
+							# May revisit.
+							idx = mod1.indices[-1] + 1
+					else: 
+						# Not all the spacers were found in a single
+						# array. Is either set found in another array?
+						spacers1_found = False
+						spacers2_found = False
+						for array in all_arrays:
+							count = 0
+							for spacer in mod1.spacers:
+								if spacer in array:
+									count += 1
+							if count == len(mod1.spacers):
+								spacers1_found = True
+								continue
+						for array in all_arrays:
+							count = 0
+							for spacer in mod2.spacers:
+								if spacer in array:
+									count += 1
+							if count == len(mod2.spacers):
+								spacers2_found = True
+								continue
+						if spacers1_found and spacers2_found: 
+							# Both are also in another array. Each has
+							# parsimony cost. Pick one.
+							ancestor.modules.append(mod1)
+							idx = mod1.indices[-1] + 1
+						elif spacers1_found:
+							ancestor.modules.append(mod1)
+							idx = mod1.indices[-1] + 1
+						elif spacers2_found:
+							ancestor.modules.append(mod2)
+							idx = mod2.indices[-1] + 1
+						else:
+							# Neither was found.
+							idx = mod2.indices[-1] + 1
+							
+			
+
+
+
+	ancestor.spacers = [i.spacers for i in ancestor.modules]
+	if isinstance(ancestor.spacers[0], list):
+		ancestor.spacers = [
+			spacer for sublist in ancestor.spacers for spacer in sublist]
+
+	return ancestor
