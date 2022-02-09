@@ -104,20 +104,21 @@ def build_arrays_MP(array_entry, args):
             array.reverse = True
             array.start = array_entry[-1].sstart
             array.stop = array_entry[0].send
-            for i, entry in enumerate(reversed(array_entry)):
+            rev_array_entry = [a for a in reversed(array_entry)]
+            for i, entry in enumerate(rev_array_entry):
                 if i+1 != n_reps:
                     sp_fstring += '%s %s %s\n'
                     sp_batch_locations += '{} {}-{} {} '.format(
                         entry.sseqid,
-                        array_entry[-(i+2)].send+1,
-                        entry.sstart-1,
+                        rev_array_entry[i+1].sstart+1,
+                        entry.send-1,
                         entry.strand
                         )
                 rep_fstring += '%s %s %s\n'
                 rep_batch_locations += '{} {}-{} {} '.format(
                     entry.sseqid,
-                    entry.sstart,
                     entry.send,
+                    entry.sstart,
                     entry.strand
                     )
         array.spacers = sequence_operations.run_blastcmd(
@@ -507,6 +508,14 @@ def build_parser(parser):
         help="DEFAULT: 80. Percent ID of blast hit to consider match \
         a candidate repeat"
         )
+    other_options.add_argument(
+        "-s", "--snp-thresh",
+        metavar=" ",
+        type=int,
+        default=0,
+        required = False,
+        help="Specify number of SNPs to consider spacers the same. Default: 0"
+        )
 
     blast_options = parser.add_argument_group("BLASTn settings")
     blast_options.add_argument(
@@ -615,8 +624,10 @@ def main(args):
         non_red_spacer_dict,
         non_red_spacer_id_dict,
         non_red_array_dict,
-        non_red_array_id_dict
-        ) = sequence_operations.non_redundant_CR(all_assemblies)
+        non_red_array_id_dict,
+        cluster_reps_dict,
+        rev_cluster_reps_dict
+        ) = sequence_operations.non_redundant_CR(all_assemblies, args.snp_thresh)
 
     # Output summary info
     sys.stderr.write("Total unique spacers: %i\n" %len(non_red_spacer_id_dict))
@@ -626,13 +637,15 @@ def main(args):
     sequence_operations.add_ids(
         all_assemblies,
         non_red_spacer_id_dict,
-        non_red_array_id_dict)
+        non_red_array_id_dict,
+        rev_cluster_reps_dict)
 
     # Save array files
     file_handling.write_CRISPR_files(
         all_assemblies,
         non_red_spacer_id_dict,
         non_red_array_id_dict,
+        cluster_reps_dict,
         outdir)
 
 
