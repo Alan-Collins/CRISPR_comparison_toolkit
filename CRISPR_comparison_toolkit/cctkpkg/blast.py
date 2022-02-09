@@ -516,6 +516,11 @@ def build_parser(parser):
         required = False,
         help="Specify number of SNPs to consider spacers the same. Default: 0"
         )
+    other_options.add_argument(
+        "--append",
+        action='store_true',
+        help="Indicate that you want to add new CRISPR data to a previous run"
+        )
 
     blast_options = parser.add_argument_group("BLASTn settings")
     blast_options.add_argument(
@@ -620,14 +625,43 @@ def main(args):
     # unpack dict into list for processing
     all_assemblies = [i for i in all_assemblies_dict.values()]
 
-    (
-        non_red_spacer_dict,
-        non_red_spacer_id_dict,
-        non_red_array_dict,
-        non_red_array_id_dict,
-        cluster_reps_dict,
-        rev_cluster_reps_dict
+    if args.append:
+        # Read in previous CRISPR_spacers.fna and reverse dict
+        prev_spacer_id_dict = {
+            v:k for k,v in file_handling.fasta_to_dict(
+                outdir + "CRISPR_spacers.fna"
+                ).items()
+            }
+        
+        # Same for Array_IDs.txt
+        prev_array_dict = {
+            " ".join(v):k for k,v in file_handling.read_array_file(
+                outdir + "Array_seqs.txt"
+                ).items()
+            }
+
+        (non_red_spacer_dict,
+            non_red_spacer_id_dict,
+            non_red_array_dict,
+            non_red_array_id_dict,
+            cluster_reps_dict,
+            rev_cluster_reps_dict
+        ) = sequence_operations.non_redundant_CR(
+            all_assemblies,
+            args.snp_thresh,
+            prev_spacer_id_dict,
+            prev_array_dict
+            )
+
+    else:
+        (non_red_spacer_dict,
+            non_red_spacer_id_dict,
+            non_red_array_dict,
+            non_red_array_id_dict,
+            cluster_reps_dict,
+            rev_cluster_reps_dict
         ) = sequence_operations.non_redundant_CR(all_assemblies, args.snp_thresh)
+
 
     # Output summary info
     sys.stderr.write("Total unique spacers: %i\n" %len(non_red_spacer_id_dict))

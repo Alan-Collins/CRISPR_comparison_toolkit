@@ -42,7 +42,12 @@ def mince_it(minced_path, genomes_dir, outdir):
 		p_status = p.wait()
 
 
-def process_minced_out(CRISPR_types_dict, outdir, snp_thresh=0):
+def process_minced_out(
+	CRISPR_types_dict,
+	outdir,
+	snp_thresh=0,
+	append=False
+	):
 	""" Process minced output into human-friendly/useful formats
 
 	Read in minced output files and aggregate the data into a more 
@@ -73,13 +78,42 @@ def process_minced_out(CRISPR_types_dict, outdir, snp_thresh=0):
 		all_assemblies.append(file_handling.AssemblyCRISPRs(
 			CRISPR_types_dict, infile))
 
-	(non_red_spacer_dict,
-		non_red_spacer_id_dict,
-		non_red_array_dict,
-		non_red_array_id_dict,
-		cluster_reps_dict,
-		rev_cluster_reps_dict
-	) = sequence_operations.non_redundant_CR(all_assemblies, snp_thresh)
+	if append:
+		# Read in previous CRISPR_spacers.fna and reverse dict
+		prev_spacer_id_dict = {
+			v:k for k,v in file_handling.fasta_to_dict(
+				processed_out + "CRISPR_spacers.fna"
+				).items()
+			}
+		
+		# Same for Array_IDs.txt
+		prev_array_dict = {
+			" ".join(v):k for k,v in file_handling.read_array_file(
+				processed_out + "Array_seqs.txt"
+				).items()
+			}
+
+		(non_red_spacer_dict,
+			non_red_spacer_id_dict,
+			non_red_array_dict,
+			non_red_array_id_dict,
+			cluster_reps_dict,
+			rev_cluster_reps_dict
+		) = sequence_operations.non_redundant_CR(
+			all_assemblies,
+			snp_thresh,
+			prev_spacer_id_dict,
+			prev_array_dict
+			)
+
+	else:
+		(non_red_spacer_dict,
+			non_red_spacer_id_dict,
+			non_red_array_dict,
+			non_red_array_id_dict,
+			cluster_reps_dict,
+			rev_cluster_reps_dict
+		) = sequence_operations.non_redundant_CR(all_assemblies, snp_thresh)
 
 	# Fill in spacer and array ID info
 	sequence_operations.add_ids(
@@ -160,6 +194,11 @@ def build_parser(parser):
 		help="Indicate that you want to run processing steps on minced \
 		output"
 		)
+	run_options.add_argument(
+		"--append",
+		action='store_true',
+		help="Indicate that you want to add new CRISPR data to a previous run"
+		)
 
 	return parser
 
@@ -172,6 +211,9 @@ def main(args):
 		indir += "/"
 	if outdir[-1] != "/":
 		outdir+= "/"
+
+	if args.append:
+		file_handling.check_append(outdir+"PROCESSED/")
 
 	if args.repeats_file:
 		crispr_types_dict = file_handling.fasta_to_dict(args.repeats_file)
@@ -189,9 +231,19 @@ def main(args):
 			sys.exit("ERROR: minced executable not found. \
 				To run minced you must provide the path to the \
 				minced executable.")
-		mince_it(args.minced_path, indir, outdir)
+		mince_it(
+			args.minced_path,
+			indir,
+			outdir
+			)
+
 	if args.process_minced:
-		process_minced_out(crispr_types_dict, outdir, args.snp_thresh)
+		process_minced_out(
+			crispr_types_dict,
+			outdir,
+			args.snp_thresh,
+			args.append
+			)
 
 
 if __name__ == '__main__':

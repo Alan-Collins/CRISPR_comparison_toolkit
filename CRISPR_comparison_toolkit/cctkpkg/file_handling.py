@@ -347,17 +347,26 @@ def write_cr_sum_tabs(all_assemblies, outfile):
 		min_delim = "|"
 		inc_count = False
 
-	outcontents = maj_delim.join([
-			"Sequence_ID",
-			"Has_CRISPR",
-			"Array_count",
-			"Spacers",
-			"Spacer_IDs",
-			"Array_IDs",
-			"Array_locations",
-			"Repeat_sequences",
-			"Array_CRISPR_types",
-			]) + "\n"
+	# If appending, store existing contents to avoid redundant lines
+	if os.path.isfile(outfile):
+		with open(outfile) as fin:
+			existing_lines = [line for line in fin]
+		append = True
+		outcontents = "".join(existing_lines) # still have newlines
+	else:
+		append = False
+		outcontents = maj_delim.join([
+				"Sequence_ID",
+				"Has_CRISPR",
+				"Array_count",
+				"Spacers",
+				"Spacer_IDs",
+				"Array_IDs",
+				"Array_locations",
+				"Repeat_sequences",
+				"Array_CRISPR_types",
+				]) + "\n"
+
 	for entry in all_assemblies:
 		# Construct line components
 		if inc_count: #If this is for excel, add the array number to the info
@@ -449,6 +458,13 @@ def write_cr_sum_tabs(all_assemblies, outfile):
 		array_crispr_types,
 		]
 		
+		# If appending (i.e. open_mode = 'a'), check if this id already
+		# in outfile. Quicker to only check open_mode if not appending
+		if append:
+			if any([sequence_id in line for line in existing_lines]):
+				print('found')
+				continue
+
 		outcontents += maj_delim.join(line)+"\n"
 
 	with open(outfile, 'w') as fout:
@@ -619,14 +635,68 @@ def read_genome_reps_file(filename):
 
 
 def write_clus_reps(cluster_reps_dict, spacer_id_dict, outdir):
-	outcontents = ""
-	for reps_dict in cluster_reps_dict.values():
-		# No need to include CR_type
-		for rep, cluster in reps_dict.items():
+
+	# Fist check if we need to append
+	if os.path.isfile(outdir + "Spacer_cluster_members.txt"):
+		with open(outdir + "Spacer_cluster_members.txt") as fin:
+			# Store existing cluster information
+			existing_dict = {}
+			for line in fin:
+				bits = line.split()
+				existing_dict[bits[0]] = bits[1:]
+		# Add new information to relevant clusters
+		for reps_dict in cluster_reps_dict.values():
+			# No need to include CR_type
+			for rep, cluster in reps_dict.items():
+				rep_id = spacer_id_dict[rep]
+				if rep_id not in existing_dict:
+					# If this rep is new add it
+					existing_dict[rep_id] = cluster
+					continue
+
+				# Else check if any new cluster members need appending
+				for member in cluster:
+					if member not in existing_dict[rep_id]:
+						existing_dict[rep_id].append(member)
+		# Prepare modified file
+		outcontents = ""
+		for rep, cluster in existing_dict.items():
 			outcontents += "{}\t{}\n".format(
-				spacer_id_dict[rep],
+				rep,
 				" ".join(cluster))
+
+
+	else:
+		# Otherwise, write it the easy way
+		outcontents = ""
+		for reps_dict in cluster_reps_dict.values():
+			# No need to include CR_type
+			for rep, cluster in reps_dict.items():
+				outcontents += "{}\t{}\n".format(
+					spacer_id_dict[rep],
+					" ".join(cluster))
 
 	with open(outdir + "Spacer_cluster_members.txt", 'w') as fout:
 		fout.write(outcontents)
 
+
+def check_append(outdir):
+	""" Check that the necessary files exist
+	"""
+	if outdir[-1] != "/":
+		outdir+= "/"
+
+	if not os.path.isfile(outdir+"Array_seqs.txt"):
+		sys.stderr.write("Append ERROR: Array_seqs.txt not found in the "
+			"provided outdir: '{}'. To append to a previous run, you must "
+			"provide the Array_seqs.txt from that run in '{}'.\n".format(
+				outdir, outdir))
+		sys.exit()
+
+	if not os.path.isfile(outdir+"CRISPR_spacers.fna"):
+		sys.stderr.write("Append ERROR: CRISPR_spacers.fna not found in the "
+			"provided outdir: '{}'. To append to a previous run, you must "
+			"provide the CRISPR_spacers.fna from that run in the '{}'.\n"
+			"".format(
+				outdir, outdir))
+		sys.exit()

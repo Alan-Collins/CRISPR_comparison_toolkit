@@ -3,6 +3,7 @@ import numpy as np
 from collections import defaultdict, Counter
 from itertools import combinations
 import subprocess
+from copy import deepcopy
 
 from . import (
 	file_handling
@@ -343,7 +344,12 @@ def get_repeat_info(CRISPR_types_dict, repeat):
 	return best_match, best_score, reverse
 
 
-def non_redundant_CR(all_assemblies, snp_thresh=0):
+def non_redundant_CR(
+	all_assemblies,
+	snp_thresh=0,
+	prev_spacer_id_dict={},
+	prev_array_dict={}
+	):
 	""" Identify non-redundant spacers and arrays in AssemblyCRISPRs instances
 	"""
 	all_spacers_dict = defaultdict(list)
@@ -365,47 +371,73 @@ def non_redundant_CR(all_assemblies, snp_thresh=0):
 		for CR_type, network in spacer_snp_network.items():
 			clusters = identify_network_clusters(network)
 			cluster_reps_dict[CR_type] = pick_cluster_rep(
-				clusters, all_spacers_dict[CR_type])
+				clusters, all_spacers_dict[CR_type], prev_spacer_id_dict)
 			# Add to the reverse dict to use for replacing instances of 
 			# cluster members with their rep later
 			for rep, cluster_members in cluster_reps_dict[CR_type].items():
 				for member in cluster_members:
 					rev_cluster_reps_dict[CR_type][member] = rep
 
-	non_red_spacer_id_dict = {}
-	for k, v in non_red_spacer_dict.items():
+	# empty if not appending
+	non_red_spacer_id_dict = deepcopy(prev_spacer_id_dict)
+	
+	for CR_type, spacers in non_red_spacer_dict.items():
 		if snp_thresh > 0:
 			# Remove cluster members if appropriate
-			v = [sp for sp in v if sp not in rev_cluster_reps_dict[CR_type]]
-		for seq,i in zip(v, range(1,len(v)+1)):
-			non_red_spacer_id_dict[seq] = k+"_"+str(i)
+			spacers = [
+				sp for sp in spacers if sp not in rev_cluster_reps_dict[CR_type]]
+		
+		# If appending figure out highest spacer number of this CR_type
+		sp_num = 0
+		if len(prev_spacer_id_dict) > 0:
+			for prev_id in prev_spacer_id_dict.values():
+				# Skip spacers not of this type
+				if CR_type not in prev_id:
+					continue
+				prev_id = int(prev_id.split("_")[1])
+				if prev_id > sp_num:
+					sp_num = prev_id
+		
+		for seq in spacers:
+			if seq in non_red_spacer_id_dict:
+				continue
+
+			sp_num += 1
+			non_red_spacer_id_dict[seq] = CR_type+"_"+str(sp_num)
 
 	if snp_thresh > 0:
 		# Replace cluster members with their rep if appropriate
-		for k,v in all_arrays_dict.items():
+		for CR_type,v in all_arrays_dict.items():
 			for n, array in enumerate(v):
-
 				if not any(
 					[sp in rev_cluster_reps_dict[CR_type] for sp in array.split()]):
 					continue
-
 				new_array = []
 				for sp in array.split():
 					if sp in rev_cluster_reps_dict[CR_type]:
 						new_array.append(rev_cluster_reps_dict[CR_type][sp])
 					else:
 						new_array.append(sp)
-				all_arrays_dict[k][n] = " ".join(new_array)
-				
-
+				all_arrays_dict[CR_type][n] = " ".join(new_array)
 
 
 	non_red_array_dict = {k: set(v) for k,v in all_arrays_dict.items()}
 	all_array_list = [a for ar_ls in non_red_array_dict.values() for a in ar_ls]
-	non_red_array_id_dict = {k:v for k,v in zip(
-		all_array_list, range(1,len(all_array_list)+1)
-		)}
 
+	# empty if not appending
+	non_red_array_id_dict = deepcopy(prev_array_dict)
+
+	# If appending figure out highest array number
+	array_num = 0
+	if len(prev_array_dict) > 0:
+		array_num = max([int(i) for i in prev_array_dict.values()])
+
+	for spacers in all_array_list:
+		if spacers in non_red_array_id_dict:
+			continue
+
+		array_num += 1
+		non_red_array_id_dict[spacers] = array_num
 
 	return (non_red_spacer_dict,
 		non_red_spacer_id_dict,
@@ -432,6 +464,7 @@ def add_ids(
 					array.spacers[n] = spacer
 				array.spacer_ids.append(non_red_spacer_id_dict[spacer])
 			array.id = non_red_array_id_dict[" ".join(array.spacers)]
+
 
 
 def build_network(array_list):
@@ -667,7 +700,7 @@ def identify_network_clusters(network):
 	return cluster_list
 
 
-def pick_cluster_rep(clusters, all_spacers):
+def pick_cluster_rep(clusters, all_spacers, prev_spacer_id_dict):
 	""" Pick a representative from each cluster
 	
 	The cluster member present in the most assemblies is taken to be the
@@ -687,6 +720,10 @@ def pick_cluster_rep(clusters, all_spacers):
 	for clus in clusters:
 		max_count = 0
 		for sp in clus:
+			# prioiritize spacers that were in previous run if appending.
+			if sp in prev_spacer_id_dict:
+				rep = sp
+				break
 			if spacer_count[sp] > max_count:
 				rep = sp
 				max_count = spacer_count[sp]
