@@ -474,6 +474,7 @@ def write_CRISPR_files(
 	all_assemblies,
 	spacer_id_dict,
 	array_id_dict,
+	cluster_reps_dict,
 	outdir):
 	""" Write output files from CRISPR identification scripts
 	"""
@@ -485,6 +486,10 @@ def write_CRISPR_files(
 
 	# Array representatives
 	write_array_reps_file(all_assemblies, outdir)
+
+	# Cluster representatives if snp_threshold used to group spacers
+	if len(cluster_reps_dict) > 0:
+		write_clus_reps(cluster_reps_dict, spacer_id_dict, outdir)
 
 	# CSV summary table
 	write_cr_sum_tabs(all_assemblies, outdir+"CRISPR_summary_table.csv")
@@ -611,3 +616,17 @@ def read_genome_reps_file(filename):
 			genome_array_dict[bits[1]] = bits[0]
 
 	return genome_array_dict, outgroup_taxon
+
+
+def write_clus_reps(cluster_reps_dict, spacer_id_dict, outdir):
+	outcontents = ""
+	for reps_dict in cluster_reps_dict.values():
+		# No need to include CR_type
+		for rep, cluster in reps_dict.items():
+			outcontents += "{}\t{}\n".format(
+				spacer_id_dict[rep],
+				" ".join(cluster))
+
+	with open(outdir + "Spacer_cluster_members.txt", 'w') as fout:
+		fout.write(outcontents)
+

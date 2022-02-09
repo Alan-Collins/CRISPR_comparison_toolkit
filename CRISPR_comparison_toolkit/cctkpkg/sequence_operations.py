@@ -1,7 +1,12 @@
+import sys
 import numpy as np
-from collections import defaultdict
+from collections import defaultdict, Counter
 from itertools import combinations
 import subprocess
+
+from . import (
+	file_handling
+	)
 
 SEQUENCE_DICT = { # IUPAC DNA alphabet
 	"A": "A",
@@ -42,7 +47,7 @@ def rev_comp(string):
 
 	Returns:
 	  str:
-	    reverse complement of given nucleotide sequence
+		reverse complement of given nucleotide sequence
 	
 	Raises:
 	  TypeError: If string is not str.
@@ -79,9 +84,9 @@ def hamming(string1, string2):
 	
 	Args:
 	  string1 (str):
-	    First sequence to be compared
+		First sequence to be compared
 	  string2 (str):
-	    Second sequence to be compared
+		Second sequence to be compared
 
 	Returns:
 	  tuple:
@@ -134,15 +139,15 @@ def needle(seq1, seq2, match = 100, mismatch = -1, gap = -2):
 	Perform Needleman-Wunsch pairwise alignment of two sequences.
 	Args:
 	  seq1 (str, list, or tuple):
-	    First sequence of items to align.
+		First sequence of items to align.
 	  seq2 (str, list, or tuple):
-	    Second sequence of items to align
+		Second sequence of items to align
 	  match (int):
-	    Score for match at a position in alignment.
+		Score for match at a position in alignment.
 	  mismatch(int):
-	    Penalty for mismatch at a position in alignment.
+		Penalty for mismatch at a position in alignment.
 	  gap (int):
-	    Penalty for a gap at a position in alignment.
+		Penalty for a gap at a position in alignment.
 	
 	Returns:
 	  (tuple of str lists) Returns a tuple containing the input 
@@ -272,14 +277,14 @@ def find_indices(lst, element):
 
 	Args:
 	  lst (list): 
-	    a list of anything
+		a list of anything
 	  element (any type):
-	    An element you expect to find in the list
+		An element you expect to find in the list
 	
 	returns:
 	  result (list)
-	    A list of indices at which the element was found in the list.
-	    Returns an empty list if no indices were found.
+		A list of indices at which the element was found in the list.
+		Returns an empty list if no indices were found.
 	"""
 	result = []
 	offset = -1
@@ -338,7 +343,7 @@ def get_repeat_info(CRISPR_types_dict, repeat):
 	return best_match, best_score, reverse
 
 
-def non_redundant_CR(all_assemblies):
+def non_redundant_CR(all_assemblies, snp_thresh=0):
 	""" Identify non-redundant spacers and arrays in AssemblyCRISPRs instances
 	"""
 	all_spacers_dict = defaultdict(list)
@@ -351,10 +356,49 @@ def non_redundant_CR(all_assemblies):
 				all_spacers_dict[CR_type].append(s)
 
 	non_red_spacer_dict = {k: set(v) for k,v in all_spacers_dict.items()}
+
+	cluster_reps_dict = {}
+	rev_cluster_reps_dict = defaultdict(dict)
+	if snp_thresh > 0:
+		spacer_snp_network = make_spacer_snp_network(
+			non_red_spacer_dict, snp_thresh=snp_thresh)
+		for CR_type, network in spacer_snp_network.items():
+			clusters = identify_network_clusters(network)
+			cluster_reps_dict[CR_type] = pick_cluster_rep(
+				clusters, all_spacers_dict[CR_type])
+			# Add to the reverse dict to use for replacing instances of 
+			# cluster members with their rep later
+			for rep, cluster_members in cluster_reps_dict[CR_type].items():
+				for member in cluster_members:
+					rev_cluster_reps_dict[CR_type][member] = rep
+
 	non_red_spacer_id_dict = {}
 	for k, v in non_red_spacer_dict.items():
+		if snp_thresh > 0:
+			# Remove cluster members if appropriate
+			v = [sp for sp in v if sp not in rev_cluster_reps_dict[CR_type]]
 		for seq,i in zip(v, range(1,len(v)+1)):
-			non_red_spacer_id_dict[seq] = k+"_"+str(i) 
+			non_red_spacer_id_dict[seq] = k+"_"+str(i)
+
+	if snp_thresh > 0:
+		# Replace cluster members with their rep if appropriate
+		for k,v in all_arrays_dict.items():
+			for n, array in enumerate(v):
+
+				if not any(
+					[sp in rev_cluster_reps_dict[CR_type] for sp in array.split()]):
+					continue
+
+				new_array = []
+				for sp in array.split():
+					if sp in rev_cluster_reps_dict[CR_type]:
+						new_array.append(rev_cluster_reps_dict[CR_type][sp])
+					else:
+						new_array.append(sp)
+				all_arrays_dict[k][n] = " ".join(new_array)
+				
+
+
 
 	non_red_array_dict = {k: set(v) for k,v in all_arrays_dict.items()}
 	all_array_list = [a for ar_ls in non_red_array_dict.values() for a in ar_ls]
@@ -362,24 +406,31 @@ def non_redundant_CR(all_assemblies):
 		all_array_list, range(1,len(all_array_list)+1)
 		)}
 
+
 	return (non_red_spacer_dict,
 		non_red_spacer_id_dict,
 		non_red_array_dict,
-		non_red_array_id_dict)
+		non_red_array_id_dict,
+		cluster_reps_dict,
+		rev_cluster_reps_dict)
 
 
 def add_ids(
 	all_assemblies,
 	non_red_spacer_id_dict,
-	non_red_array_id_dict):
+	non_red_array_id_dict,
+	rev_cluster_reps_dict):
 	""" Lookup array and spacer IDs and add them to AssemblyCRISPRs 
 	"""
 	for assembly in all_assemblies:
 		if assembly.array_count == 0:
 			continue
 		for array in assembly.arrays.values():
-			array.spacer_ids = [
-				non_red_spacer_id_dict[spacer] for spacer in array.spacers]
+			for n, spacer in enumerate(array.spacers):
+				if spacer in rev_cluster_reps_dict[array.repeat_id]:
+					spacer = rev_cluster_reps_dict[array.repeat_id][spacer]
+					array.spacers[n] = spacer
+				array.spacer_ids.append(non_red_spacer_id_dict[spacer])
 			array.id = non_red_array_id_dict[" ".join(array.spacers)]
 
 
@@ -406,41 +457,41 @@ def percent_id(a, b):
 
 
 def run_blastcmd(db, fstring, batch_locations):
-    """
-    function to call blastdbcmd in a shell and process the output. Uses
-    a batch query of the format provided in the blastdbcmd docs. e.g.
-    printf "%s %s %s %s\\n%s %s %s\\n" 13626247 40-80 plus 30 14772189 \
-    1-10 minus | blastdbcmd -db GPIPE/9606/current/all_contig \
-    -entry_batch -
-    
-    Args:
-        db (str): path to the blast db you want to query.
-        fstring (str):  The string to give to printf
-        batch_locations (str):  the seqid, locations, and strand of all
-          the spacers to be retrieved
-    
-    Returns:
-        (list) List of the sequences of regions returned by blastdbcmd
-          in response to the query locations submitted
-    
-    Raises:
-        ERROR running blastdbcmd: Raises an exception when blastdbcmd
-          returns something to stderr, prints the error as well as the
-          information provided to blastdbcmd and aborts the process.
-    """
-    x = subprocess.run(
-        'printf "{}" {}| blastdbcmd -db {} -entry_batch -\
-            '.format(fstring, batch_locations, db), 
-        shell=True,
-        universal_newlines=True,
-        capture_output=True
-        ) 
-    if x.stderr:
-        print("ERROR running blastdbcmd on {} :\n{}".format(
-            db, batch_locations, x.stderr))
-        sys.exit()
-    else:
-        return [i for i in x.stdout.split('\n') if '>' not in i and len(i) > 0]
+	"""
+	function to call blastdbcmd in a shell and process the output. Uses
+	a batch query of the format provided in the blastdbcmd docs. e.g.
+	printf "%s %s %s %s\\n%s %s %s\\n" 13626247 40-80 plus 30 14772189 \
+	1-10 minus | blastdbcmd -db GPIPE/9606/current/all_contig \
+	-entry_batch -
+	
+	Args:
+		db (str): path to the blast db you want to query.
+		fstring (str):  The string to give to printf
+		batch_locations (str):  the seqid, locations, and strand of all
+		  the spacers to be retrieved
+	
+	Returns:
+		(list) List of the sequences of regions returned by blastdbcmd
+		  in response to the query locations submitted
+	
+	Raises:
+		ERROR running blastdbcmd: Raises an exception when blastdbcmd
+		  returns something to stderr, prints the error as well as the
+		  information provided to blastdbcmd and aborts the process.
+	"""
+	x = subprocess.run(
+		'printf "{}" {}| blastdbcmd -db {} -entry_batch -\
+			'.format(fstring, batch_locations, db), 
+		shell=True,
+		universal_newlines=True,
+		capture_output=True
+		) 
+	if x.stderr:
+		print("ERROR running blastdbcmd on {} :\n{}".format(
+			db, batch_locations, x.stderr))
+		sys.exit()
+	else:
+		return [i for i in x.stdout.split('\n') if '>' not in i and len(i) > 0]
 
 
 def determine_regex_length(pattern):
@@ -516,3 +567,131 @@ def determine_regex_length(pattern):
 		c = pattern[i]
 
 	return minlen
+
+
+def make_spacer_snp_network(spacer_fasta_dict, snp_thresh):
+
+	spacer_network_dict = defaultdict(list)
+
+	for CR_type in spacer_fasta_dict:
+		ID_dict = {}
+		fasta_spacers = ""
+		for n, sp in enumerate(list(spacer_fasta_dict[CR_type])):
+			fasta_spacers += ">{}\\n{}\\n".format(n,sp)
+			ID_dict[str(n)] = sp
+
+		blastn_command = (f"blastn -query <(printf '{fasta_spacers}') "
+			f"-subject <(printf '{fasta_spacers}') -task blastn-short "
+			"-outfmt '6 std qlen slen' | awk '$1 != $2 && $4 == $13'")
+
+		blast_run = subprocess.run(
+			blastn_command,
+			shell=True,
+			universal_newlines=True,
+			capture_output=True,
+			executable='/bin/bash'
+			)
+
+		if blast_run.stderr:
+			sys.stderr.write("ERROR running blast to dereplicate spacers:\n\n")
+			sys.stderr.write(blast_run.stderr)
+			sys.exit()
+		blast_lines = [
+			file_handling.BlastResult(
+				i) for i in blast_run.stdout.split('\n') if len(i) > 0]
+
+		for hit in blast_lines:
+			if hit.mismatch > snp_thresh:
+				continue
+			spacer_network_dict[CR_type].append(
+				(ID_dict[hit.qseqid], ID_dict[hit.sseqid])
+				)
+
+	return spacer_network_dict
+
+
+def identify_network_clusters(network):
+	""" Make a list of clusters
+	Each cluster is a dict containing the nodes (keys) and the number
+	of edges connected to that node (values). Number of edges info is
+	used to determine if the cluster is completely connected.
+	"""
+	cluster_list = []
+	for edge in network:
+		a, b = edge
+		if len(cluster_list) == 0:
+			cluster_list.append({a:1,b:1})
+			continue
+
+		a_idx = -1
+		b_idx = -1
+		for n, subdict in enumerate(cluster_list):
+			if a in subdict:
+				a_idx = n
+			if b in subdict:
+				b_idx = n
+
+			if a_idx != -1 and b_idx != -1:
+				# Both nodes found in existing clusters. Join clusters
+				# if not already in the same cluster
+				if a_idx == b_idx:
+					cluster_list[a_idx][a] += 1
+					cluster_list[a_idx][b] += 1
+					break
+
+
+				for k,v in cluster_list[b_idx].items():
+					cluster_list[a_idx][k] = v
+				cluster_list[a_idx][a] += 1
+				cluster_list[a_idx][b] += 1
+
+				del cluster_list[b_idx]
+				break
+
+			if subdict == cluster_list[-1]: 
+				# If this is the last subdict and a or b is unfound
+				if a_idx == -1 and b_idx == -1:
+					cluster_list.append({a:1, b:1})
+				
+				elif a_idx == -1 and b_idx != -1:
+					cluster_list[b_idx][a] = 1
+					cluster_list[b_idx][b] += 1
+
+				
+				elif a_idx != -1 and b_idx == -1:
+					cluster_list[a_idx][a] += 1
+					cluster_list[a_idx][b] = 1
+
+				break
+
+	return cluster_list
+
+
+def pick_cluster_rep(clusters, all_spacers):
+	""" Pick a representative from each cluster
+	
+	The cluster member present in the most assemblies is taken to be the
+	most likely original spacer sequence while other cluster members
+	have SNPs relative to that.
+
+	N.B. Using this process, some spacers in a cluster may differ by
+	more than the specified number of SNPs if they are connected via
+	an intermediate spacer with which they differ by fewer than the
+	specified SNPs.
+	"""
+
+	spacer_count = Counter(all_spacers)
+
+	rep_dict = {}
+
+	for clus in clusters:
+		max_count = 0
+		for sp in clus:
+			if spacer_count[sp] > max_count:
+				rep = sp
+				max_count = spacer_count[sp]
+
+		rep_dict[rep] = [sp for sp in clus if sp != rep]
+
+	return rep_dict
+

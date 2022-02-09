@@ -42,7 +42,7 @@ def mince_it(minced_path, genomes_dir, outdir):
 		p_status = p.wait()
 
 
-def process_minced_out(CRISPR_types_dict, outdir):
+def process_minced_out(CRISPR_types_dict, outdir, snp_thresh=0):
 	""" Process minced output into human-friendly/useful formats
 
 	Read in minced output files and aggregate the data into a more 
@@ -54,6 +54,8 @@ def process_minced_out(CRISPR_types_dict, outdir):
 	  outdir (str):
 		Path to the output directory into which minced files were saved 
 		in the MINCED/ dir.
+	  snp_thresh (int):
+	    Maximum number of SNPs 2 spacers can have to be considered the same.
 	
 	A dir called PROCESSED will be created and the files generated from
 	processed minced output will be stored there.
@@ -74,14 +76,18 @@ def process_minced_out(CRISPR_types_dict, outdir):
 	(non_red_spacer_dict,
 		non_red_spacer_id_dict,
 		non_red_array_dict,
-		non_red_array_id_dict
-	) = sequence_operations.non_redundant_CR(all_assemblies)
+		non_red_array_id_dict,
+		cluster_reps_dict,
+		rev_cluster_reps_dict
+	) = sequence_operations.non_redundant_CR(all_assemblies, snp_thresh)
 
 	# Fill in spacer and array ID info
 	sequence_operations.add_ids(
 		all_assemblies,
 		non_red_spacer_id_dict,
-		non_red_array_id_dict)
+		non_red_array_id_dict,
+		rev_cluster_reps_dict)
+
 
 	# Output summary info
 	sys.stderr.write("Total unique spacers: %i\n" %len(non_red_spacer_id_dict))
@@ -91,7 +97,9 @@ def process_minced_out(CRISPR_types_dict, outdir):
 	file_handling.write_CRISPR_files(all_assemblies,
 	non_red_spacer_id_dict,
 	non_red_array_id_dict,
-	processed_out)
+	cluster_reps_dict,
+	processed_out
+	)
 
 
 def build_parser(parser):
@@ -130,6 +138,15 @@ def build_parser(parser):
 		These are used to classify arrays and orient them consistently \
 		with one another."
 		)
+	other_options.add_argument(
+		"-s", "--snp-thresh",
+		metavar=" ",
+		type=int,
+		default=0,
+		required = False,
+		help="Specify number of SNPs to consider spacers the same. Default: 0"
+		)
+
 
 	run_options = parser.add_argument_group("Specify run type")
 	run_options.add_argument(
@@ -174,7 +191,7 @@ def main(args):
 				minced executable.")
 		mince_it(args.minced_path, indir, outdir)
 	if args.process_minced:
-		process_minced_out(crispr_types_dict, outdir)
+		process_minced_out(crispr_types_dict, outdir, args.snp_thresh)
 
 
 if __name__ == '__main__':
