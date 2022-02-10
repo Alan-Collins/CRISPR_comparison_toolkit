@@ -680,7 +680,8 @@ def main(args):
         non_red_spacer_id_dict,
         non_red_array_id_dict,
         cluster_reps_dict,
-        outdir)
+        outdir,
+        args.append)
 
 
 

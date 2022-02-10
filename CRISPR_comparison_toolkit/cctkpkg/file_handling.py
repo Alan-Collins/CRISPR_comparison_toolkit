@@ -333,7 +333,7 @@ def write_array_id_seq_file(spacer_id_dict, array_id_dict, outdir):
 				" ".join([str(spacer_id_dict[sp]) for sp in sps.split()])))
 
 
-def write_cr_sum_tabs(all_assemblies, outfile):
+def write_cr_sum_tabs(all_assemblies, outfile, append=False):
 	# Determine delimiters based on file extension
 	if outfile[-3:] == "csv":
 		maj_delim = ","
@@ -347,14 +347,13 @@ def write_cr_sum_tabs(all_assemblies, outfile):
 		min_delim = "|"
 		inc_count = False
 
-	# If appending, store existing contents to avoid redundant lines
-	if os.path.isfile(outfile):
-		with open(outfile) as fin:
-			existing_lines = [line for line in fin]
-		append = True
-		outcontents = "".join(existing_lines) # still have newlines
+	if append:
+		# If appending, store existing contents to avoid redundant lines
+		if os.path.isfile(outfile):
+			with open(outfile) as fin:
+				existing_lines = [line for line in fin]
+			outcontents = "".join(existing_lines) # still have newlines
 	else:
-		append = False
 		outcontents = maj_delim.join([
 				"Sequence_ID",
 				"Has_CRISPR",
@@ -462,7 +461,6 @@ def write_cr_sum_tabs(all_assemblies, outfile):
 		# in outfile. Quicker to only check open_mode if not appending
 		if append:
 			if any([sequence_id in line for line in existing_lines]):
-				print('found')
 				continue
 
 		outcontents += maj_delim.join(line)+"\n"
@@ -491,7 +489,8 @@ def write_CRISPR_files(
 	spacer_id_dict,
 	array_id_dict,
 	cluster_reps_dict,
-	outdir):
+	outdir,
+	append=False):
 	""" Write output files from CRISPR identification scripts
 	"""
 	# Spacers in fasta format
@@ -505,12 +504,18 @@ def write_CRISPR_files(
 
 	# Cluster representatives if snp_threshold used to group spacers
 	if len(cluster_reps_dict) > 0:
-		write_clus_reps(cluster_reps_dict, spacer_id_dict, outdir)
+		write_clus_reps(cluster_reps_dict, spacer_id_dict, outdir, append)
 
 	# CSV summary table
-	write_cr_sum_tabs(all_assemblies, outdir+"CRISPR_summary_table.csv")
+	write_cr_sum_tabs(
+		all_assemblies,
+		outdir+"CRISPR_summary_table.csv",
+		append)
 	# TXT summary table
-	write_cr_sum_tabs(all_assemblies, outdir+"CRISPR_summary_table.txt")
+	write_cr_sum_tabs(
+		all_assemblies,
+		outdir+"CRISPR_summary_table.txt",
+		append)
 
 	# Network
 
@@ -634,10 +639,10 @@ def read_genome_reps_file(filename):
 	return genome_array_dict, outgroup_taxon
 
 
-def write_clus_reps(cluster_reps_dict, spacer_id_dict, outdir):
+def write_clus_reps(cluster_reps_dict, spacer_id_dict, outdir, append):
 
 	# Fist check if we need to append
-	if os.path.isfile(outdir + "Spacer_cluster_members.txt"):
+	if append:
 		with open(outdir + "Spacer_cluster_members.txt") as fin:
 			# Store existing cluster information
 			existing_dict = {}

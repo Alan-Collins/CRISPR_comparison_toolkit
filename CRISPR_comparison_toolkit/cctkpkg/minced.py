@@ -77,7 +77,6 @@ def process_minced_out(
 		infile = Minced_outdir+file
 		all_assemblies.append(file_handling.AssemblyCRISPRs(
 			CRISPR_types_dict, infile))
-
 	if append:
 		# Read in previous CRISPR_spacers.fna and reverse dict
 		prev_spacer_id_dict = {
@@ -132,7 +131,8 @@ def process_minced_out(
 	non_red_spacer_id_dict,
 	non_red_array_id_dict,
 	cluster_reps_dict,
-	processed_out
+	processed_out,
+	append
 	)
 
 
