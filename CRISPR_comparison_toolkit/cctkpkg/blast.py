@@ -650,7 +650,8 @@ def main(args):
             all_assemblies,
             args.snp_thresh,
             prev_spacer_id_dict,
-            prev_array_dict
+            prev_array_dict,
+            outdir
             )
 
     else:
@@ -660,7 +661,10 @@ def main(args):
             non_red_array_id_dict,
             cluster_reps_dict,
             rev_cluster_reps_dict
-        ) = sequence_operations.non_redundant_CR(all_assemblies, args.snp_thresh)
+        ) = sequence_operations.non_redundant_CR(
+            all_assemblies,
+            args.snp_thresh,
+            outdir=outdir)
 
 
     # Output summary info

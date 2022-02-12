@@ -1,4 +1,5 @@
 import sys
+import os
 import numpy as np
 from collections import defaultdict, Counter
 from itertools import combinations
@@ -348,7 +349,8 @@ def non_redundant_CR(
 	all_assemblies,
 	snp_thresh=0,
 	prev_spacer_id_dict={},
-	prev_array_dict={}
+	prev_array_dict={},
+	outdir="./"
 	):
 	""" Identify non-redundant spacers and arrays in AssemblyCRISPRs instances
 	"""
@@ -367,7 +369,7 @@ def non_redundant_CR(
 	rev_cluster_reps_dict = defaultdict(dict)
 	if snp_thresh > 0:
 		spacer_snp_network = make_spacer_snp_network(
-			non_red_spacer_dict, snp_thresh=snp_thresh)
+			non_red_spacer_dict, snp_thresh=snp_thresh, outdir=outdir)
 		for CR_type, network in spacer_snp_network.items():
 			clusters = identify_network_clusters(network)
 			cluster_reps_dict[CR_type] = pick_cluster_rep(
@@ -464,7 +466,6 @@ def add_ids(
 					array.spacers[n] = spacer
 				array.spacer_ids.append(non_red_spacer_id_dict[spacer])
 			array.id = non_red_array_id_dict[" ".join(array.spacers)]
-
 
 
 def build_network(array_list):
@@ -602,20 +603,49 @@ def determine_regex_length(pattern):
 	return minlen
 
 
-def make_spacer_snp_network(spacer_fasta_dict, snp_thresh):
+def make_spacer_snp_network(spacer_fasta_dict, snp_thresh, outdir):
 
 	spacer_network_dict = defaultdict(list)
 
 	for CR_type in spacer_fasta_dict:
 		ID_dict = {}
 		fasta_spacers = ""
-		for n, sp in enumerate(list(spacer_fasta_dict[CR_type])):
-			fasta_spacers += ">{}\\n{}\\n".format(n,sp)
-			ID_dict[str(n)] = sp
+		
+		# If too many spacers, write them to a file and blast that
+		if len(spacer_fasta_dict[CR_type]) > 250:
+			
+			# make file to store spacers to blast.
+			# Make sure to create a file that doesn't exist yet...
+			temp_file = outdir+"temp_spacers_0.fna"
+			file_num = 0
+			while os.path.isfile(temp_file):
+				file_num +=1
+				temp_file = outdir+"temp_spacers_{}.fna".format(file_num)
+			
+			outcontents = ""
+			for n, sp in enumerate(list(spacer_fasta_dict[CR_type])):
+				outcontents += ">{}\n{}\n".format(n,sp)
+				ID_dict[str(n)] = sp
+			with open(temp_file, "w") as fout:
+				fout.write(outcontents)
+			blastn_command = ("blastn -query {} "
+				"-subject {} -task blastn-short "
+				"-outfmt '6 std qlen slen' | "
+				"awk '$1 != $2 && ($4 == $13 || $4 == $14)'"
+				"".format(
+					temp_file,
+					temp_file))
 
-		blastn_command = (f"blastn -query <(printf '{fasta_spacers}') "
-			f"-subject <(printf '{fasta_spacers}') -task blastn-short "
-			"-outfmt '6 std qlen slen' | awk '$1 != $2 && $4 == $13'")
+
+		else:
+			for n, sp in enumerate(list(spacer_fasta_dict[CR_type])):
+				fasta_spacers += ">{}\\n{}\\n".format(n,sp)
+				ID_dict[str(n)] = sp
+
+			blastn_command = (f"blastn -query <(printf '{fasta_spacers}') "
+				f"-subject <(printf '{fasta_spacers}') -task blastn-short "
+				"-outfmt '6 std qlen slen' | "
+				"awk '$1 != $2 && ($4 == $13 || $4 == $14)'")
 
 		blast_run = subprocess.run(
 			blastn_command,
@@ -639,6 +669,8 @@ def make_spacer_snp_network(spacer_fasta_dict, snp_thresh):
 			spacer_network_dict[CR_type].append(
 				(ID_dict[hit.qseqid], ID_dict[hit.sseqid])
 				)
+		if len(spacer_fasta_dict[CR_type]) > 250:
+			os.remove(temp_file)
 
 	return spacer_network_dict
 

@@ -102,7 +102,8 @@ def process_minced_out(
 			all_assemblies,
 			snp_thresh,
 			prev_spacer_id_dict,
-			prev_array_dict
+			prev_array_dict,
+			processed_out
 			)
 
 	else:
@@ -112,7 +113,10 @@ def process_minced_out(
 			non_red_array_id_dict,
 			cluster_reps_dict,
 			rev_cluster_reps_dict
-		) = sequence_operations.non_redundant_CR(all_assemblies, snp_thresh)
+		) = sequence_operations.non_redundant_CR(
+			all_assemblies,
+			snp_thresh,
+			outdir=processed_out)
 
 	# Fill in spacer and array ID info
 	sequence_operations.add_ids(
@@ -221,6 +225,7 @@ def main(args):
 		# Default repeats to make sure identical repeats are
 		# oriented consistently when processing minced output.
 		crispr_types_dict = {
+		'1A': 'GATAATCTACTATAGAATTGAAAG',
 		'1E':'GTGTTCCCCACGGGTGTGGGGATGAACCG',
 		'1F':'GTTCACTGCCGTGTAGGCAGCTAAGAAA',
 		'1C':'GTCGCGCCCCGCACGGGCGCGTGGATTGAAAC'
