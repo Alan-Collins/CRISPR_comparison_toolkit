@@ -118,6 +118,40 @@ def find_modules(array1, array2, parent_comparison=False,
 		information added to the .module attribute.
 	"""
 
+	# first check that neither array is blank
+	if len(array1.spacers) == 0 or len(array2.spacers) == 0:
+		array1.aligned, array2.aligned = array1.spacers, array2.spacers
+		module1 = SpacerModule()
+		module2 = SpacerModule()
+		if len(array1.spacers) == 0:
+			module1.type = "indel_gap"
+			module1.indices = [0]
+			module1.spacers = ["-"]
+			for k in module1.indices:
+				array1.module_lookup[k] = module1
+			array1.aligned = ["-"]
+
+			module2.type = "indel_gap"
+			module2.indices = [n for n in range(len(array2.aligned))]
+			module2.spacers = [b for b in array2.aligned]
+			for k in module2.indices:
+				array2.module_lookup[k] = module1
+		else:
+			module1.type = "indel_gap"
+			module1.indices = [n for n in range(len(array1.aligned))]
+			module1.spacers = [b for b in array1.aligned]
+			for k in module1.indices:
+				array1.module_lookup[k] = module1
+
+			module2.type = "indel_gap"
+			module2.indices = [0]
+			module2.spacers = ["-"]
+			for k in module2.indices:
+				array2.module_lookup[k] = module2
+			array2.aligned = ["-"]
+		return array1, array2
+
+
 	array1.aligned, array2.aligned = sequence_operations.needle(
 		array1.spacers, array2.spacers)
 
@@ -147,7 +181,7 @@ def find_modules(array1, array2, parent_comparison=False,
 		module2.indices = [n for n in range(len(array2.aligned))]
 		module2.spacers = [b for b in array2.aligned]
 		for k in module2.indices:
-			array2.module_lookup[k] = module1
+			array2.module_lookup[k] = module2
 
 		return array1, array2
 

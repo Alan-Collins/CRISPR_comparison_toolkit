@@ -256,6 +256,7 @@ def main(args):
 		}
 
 	array_spacers_dict = file_handling.read_array_file(args.array_file)
+	array_spacers_dict["none"] = []
 
 
 	genome_array_dict, outgroup_taxons = file_handling.read_genome_reps_file(
