@@ -627,16 +627,18 @@ def write_array_loc_bed(all_assemblies, outdir):
 def read_genome_reps_file(filename):
 	""" Read file with genome name and the array of interest for constrain
 	"""
-	genome_array_dict = {}
+	genome_array_dict = defaultdict(list)
+	outgroup_taxons = []
 	with open(filename, 'r') as fin:
 		for line in fin.readlines():
 			bits = line.split()
 			if bits[0].lower() == "outgroup":
-				outgroup_taxon = bits[1]
+				# replace underscores with spaces to relate to newick
+				outgroup_taxons.append(bits[1].replace("_"," "))
 				continue
-			genome_array_dict[bits[1]] = bits[0]
+			genome_array_dict[bits[1].replace("_"," ")].append(bits[0])
 
-	return genome_array_dict, outgroup_taxon
+	return genome_array_dict, outgroup_taxons
 
 
 def write_clus_reps(cluster_reps_dict, spacer_id_dict, outdir, append):
