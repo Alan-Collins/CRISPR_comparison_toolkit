@@ -147,7 +147,7 @@ def add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict,
 					plot_box(
 						ax, nspacers-1, start_pos_x, y, spacer_size,
 						spacer_count, spacer_spacing, spacer_width, colour,
-						box_thickness=0.5, hpad=1, vpad=0.35,
+						box_thickness=0.5, hpad=1, vpad=0.2,
 						v_scaling_factor=v_scaling_factor)
 
 					# Shift future spacers to make spacer for this line.
@@ -163,8 +163,8 @@ def add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict,
 					plot_box(
 						ax, nspacers-1, start_pos_x, y, spacer_size,
 						spacer_count, spacer_spacing, spacer_width, colour,
-						box_thickness=0.5, hpad=1, vpad=0.4,
-							v_scaling_factor=v_scaling_factor)
+						box_thickness=0.5, hpad=1, vpad=0.2,
+						v_scaling_factor=v_scaling_factor)
 
 					# Shift future spacers to make spacer for this line.
 					start_pos_x-=0.5
@@ -178,8 +178,8 @@ def add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict,
 						spacer_width, diff_type.partner,
 						rep_indel_report_count,	rep_indel_message_printed,
 						annot_text_size=annot_text_size)
-
-					rep_indel_report_count += 1
+					if len(diff_type.partner) > 2:
+						rep_indel_report_count += 1
 					rep_indel_message_printed = True
 					
 				elif diff_type.type in ['indel_gap', 'indel_mm', 'indel']:
@@ -373,13 +373,13 @@ def plot_rep_indel_text(ax, nspacers, x, y, spacer_size, spacer_count,
 		
 		if not rep_indel_message_printed:
 			print("Repeated indels were identified with multiple possible "
-				+ "partners. Those cases will be annotated in the tree png "
-				+ "file with the one of the arrays identified as a partner "
-				+ "followed by an event number corresponding to one of the "
-				+ "lists of partner arrays below:\n\n")
+				"partners. Those cases will be annotated in the tree png "
+				"file with the one of the arrays identified as a partner "
+				"followed by an event number corresponding to one of the "
+				"lists of partner arrays below:\n\n")
 		print("Event {}: {}\n\n".format(
 			rep_indel_report_count,
-			" ".join(diff_type.partner)))
+			" ".join(partners)))
 	else:
 		if len(partners) == 2:
 			vpad = 1.4
@@ -388,9 +388,9 @@ def plot_rep_indel_text(ax, nspacers, x, y, spacer_size, spacer_count,
 			vpad = 1
 			message = partners[0]
 
-		ax.text(x-spacer_size*(spacer_count+nspacers/2)-0.5,
-			y-spacer_width/2-vpad, message,
-			color="#cc3300", ha='center', fontsize=font_size)
+	ax.text(x-spacer_size*(spacer_count+nspacers/2)-0.5,
+		y-spacer_width/2-vpad, message,
+		color="#cc3300", ha='center', fontsize=font_size)
 
 
 def calc_vh_ratio_and_label_pad_tree(tree, array_dict, spacing, spacer_size, 
