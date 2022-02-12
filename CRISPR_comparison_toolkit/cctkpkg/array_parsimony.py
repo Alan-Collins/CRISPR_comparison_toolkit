@@ -678,7 +678,9 @@ def identify_repeat_indels(child, ancestor, array_dict, module,
 	if len(tree) > 1:
 		ancestor_node = tree.find_node_with_taxon_label(ancestor.id)
 		if ancestor_node:
-			ancestor_children = ancestor_node.leaf_nodes() + [node for node in ancestor_node.levelorder_iter(lambda x: x.is_internal())]
+			ancestor_children = (ancestor_node.leaf_nodes() 
+				+ [node for node in ancestor_node.levelorder_iter(
+					lambda x: x.is_internal())])
 			ancestor_children_ids = [node.taxon.label for node in ancestor_children]
 
 			non_ancestor_children = []
@@ -692,7 +694,13 @@ def identify_repeat_indels(child, ancestor, array_dict, module,
 			non_ancestor_children_spacers = [array_dict[array].spacers for array in non_ancestor_children_ids]
 
 			child_node = tree.find_node_with_taxon_label(child.id)
-			other_child_children = [] # Store a list of the children that are not the child array being assessed. If the child is already set as the child of this ancestor then this will just be that child's sibling. Otherwise this is a comparison used to place the "child" array which is not yet in the tree and so all the children of the ancestor should be included.
+			# Store a list of the children that are not the child array
+			# being assessed. If the child is already set as the child
+			# of this ancestor then this will just be that child's
+			# sibling. Otherwise this is a comparison used to place the
+			# "child" array which is not yet in the tree and so all the
+			# children of the ancestor should be included.
+			other_child_children = [] 
 			if child_node:
 				if child_node.parent_node == ancestor_node:
 					other_child = child_node.sibling_nodes()[0]
@@ -1072,7 +1080,7 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count,
 							[s in existing_ancestor.spacers for s in mod2.spacers if s != '-'])):
 							existing_ancestor_indices = sorted(
 								[existing_ancestor.spacers.index(s) for s in mod1.spacers + mod2.spacers if s != '-'])
-							new_module = array_parsimony.SpacerModule()
+							new_module = SpacerModule()
 							new_module.spacers = existing_ancestor.spacers[
 								existing_ancestor_indices[0]:existing_ancestor_indices[-1]+1]
 							ancestor.modules.append(new_module)
@@ -1084,7 +1092,7 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count,
 						# keep that one.
 						elif all(
 							[s in existing_ancestor.spacers for s in mod1.spacers if s != '-']):
-							new_module = array_parsimony.SpacerModule()
+							new_module = SpacerModule()
 							new_module.spacers = [
 								s for s in mod1.spacers if s != '-']
 							ancestor.modules.append(new_module)
@@ -1093,7 +1101,7 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count,
 
 						elif all(
 							[s in existing_ancestor.spacers for s in mod2.spacers if s != '-']):
-							new_module = array_parsimony.SpacerModule()
+							new_module = SpacerModule()
 							new_module.spacers = [
 								s for s in mod2.spacers if s != '-']
 							ancestor.modules.append(new_module)
@@ -1107,14 +1115,14 @@ def infer_ancestor(array1, array2, all_arrays, node_ids, node_count,
 								n1 = len([s in existing_ancestor.spacers for s in mod1.spacers if s != '-'])
 								n2 = len([s in existing_ancestor.spacers for s in mod2.spacers if s != '-'])
 								if n1 > n2:
-									new_module = array_parsimony.SpacerModule()
+									new_module = SpacerModule()
 									new_module.spacers = [
 										s for s in mod1.spacers if s != '-']
 									ancestor.modules.append(new_module)
 									idx = mod1.indices[-1] + 1
 									continue
 								else:
-									new_module = array_parsimony.SpacerModule()
+									new_module = SpacerModule()
 									new_module.spacers = [
 										s for s in mod2.spacers if s != '-']
 									ancestor.modules.append(new_module)
