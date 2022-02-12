@@ -164,3 +164,40 @@ def compare_to_trees(tree, comparator):
 		return ident
 
 
+def process_duplicate_arrays_contrain(tree,	genome_array_dict):
+	new_genome_array_dict = {}
+	# extract taxon namespace to add new entries later
+	tns = tree.taxon_namespace
+
+	for current_id, array_id_list in genome_array_dict.items():
+		if len(array_id_list) == 1:
+			array = array_id_list[0]
+			new_id = current_id + ".{}".format(array)
+			new_genome_array_dict[new_id] = array
+
+			tax = dendropy.Taxon(new_id)
+			tns.add_taxon(tax)
+
+			node_mod = tree.find_node_with_taxon_label(current_id)
+			node_mod.taxon = tax
+			node_mod.label = new_id
+			continue
+
+		# Replace corresponding leaf node with a blank node
+		# A new leaf will be added as a child of this node for each
+		# array found in this genome
+		node_mod = tree.find_node_with_taxon_label(current_id)
+		node_mod.taxon = None
+
+		for array in array_id_list:
+			new_id = current_id + ".{}".format(array)
+			new_genome_array_dict[new_id] = array
+
+			# Add new taxon to namespace
+			tax = dendropy.Taxon(new_id)
+			tns.add_taxon(tax)
+			# Create node using new taxon and add as child of node_mod
+			node_mod.add_child(dendropy.Node(taxon=tax, label=new_id))
+
+	return tree, new_genome_array_dict
+

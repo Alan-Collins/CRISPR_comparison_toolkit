@@ -4,6 +4,7 @@ import sys
 from math import ceil, log
 from collections import Counter
 import argparse
+from copy import copy, deepcopy
 
 import dendropy
 
@@ -15,10 +16,28 @@ from . import (
 	plotting
 	)
 
+def find_best_array_no_id(array_a, array_b, array_dict):
+	best_array = None
+	best_score = 0
+	for array in array_dict.values():
+		if array.id in [array_a.id, array_b.id]:
+			continue
+		a_score = len(set(array.spacers).intersection(set(array_a.spacers)))
+		b_score = len(set(array.spacers).intersection(set(array_b.spacers)))
+		
+		if a_score > best_score:
+			best_array = array_a
+			best_score = copy(a_score)
+
+		if b_score > best_score:
+			best_array = array_b
+			best_score = copy(b_score)
+	return best_array
+
 
 def build_parser(parser):
 
-	input_params = parser.add_argument_group('Required inputs')
+	input_params = parser.add_argument_group('Iinputs')
 	input_params.add_argument(
 		"-a", "--array-file",
 		required=True,
@@ -57,6 +76,12 @@ def build_parser(parser):
 
 	run_params = parser.add_argument_group('Running parameters', 
 		"Control run behaviour.")
+	output_params.add_argument(
+		"-u", "--unrooted",
+		action='store_true',  
+		help="Specify that the tree is unrooted. Will be rooted using the "
+		"first outgroup taxon in the input genome array file."
+		)
 	run_params.add_argument(
 		"--acquisition",
 		metavar="",
@@ -233,13 +258,14 @@ def main(args):
 	array_spacers_dict = file_handling.read_array_file(args.array_file)
 
 
-	genome_array_dict, outgroup_taxon = file_handling.read_genome_reps_file(
+	genome_array_dict, outgroup_taxons = file_handling.read_genome_reps_file(
 		args.genome_array_file)
 
 	array_dict = {}
-	for array in genome_array_dict.values():
-		array_dict[array] = array_parsimony.Array(
-			array, array_spacers_dict[array], extant=True)
+	for array_list in genome_array_dict.values():
+		for array in array_list:
+			array_dict[array] = array_parsimony.Array(
+				array, array_spacers_dict[array], extant=True)
 	all_arrays = [array.spacers for array in array_dict.values()]
 
 
@@ -254,28 +280,51 @@ def main(args):
 
 	tree = dendropy.Tree.get(path=args.input_tree, schema="newick")
 
-
-	# If tree not rooted using outgroup node then root it
-	outgroup_node = tree.find_node_with_taxon_label(outgroup_taxon)
-	tree.to_outgroup_position(outgroup_node, update_bipartitions=False)
+	if args.unrooted:
+		# If tree not rooted, use outgroup node to root it
+		outgroup_node = tree.find_node_with_taxon_label(outgroup_taxons[0])
+		tree.to_outgroup_position(outgroup_node, update_bipartitions=False)
 
 	# Now remove outgroup as it isn't used for array analysis
-	tree.prune_taxa_with_labels([outgroup_taxon])
+	tree.prune_taxa_with_labels(outgroup_taxons)
 
+	(
+		tree,
+		genome_array_dict
+	) = tree_operations.process_duplicate_arrays_contrain(
+		tree,
+		genome_array_dict
+	)
+
+	tree.reroot_at_node(tree.seed_node, update_bipartitions=True)
 
 	tree = tree_operations.scale_branches(tree, 10)
 
-	labels = [g for g in genome_array_dict.values()]
+
+	labels = [g for g in genome_array_dict.keys()]
+
+	# Add new labels to array_dict
+	for label in labels:
+		array_id = label.split(".")[-1]
+		array_dict[label] = deepcopy(array_dict[array_id])
+		# update ID
+		array_dict[label].id = label
+
+	# Remove unused arrays
+	to_del = []
+	for array in array_dict:
+		if array not in labels:
+			to_del.append(array)
+	for a in to_del:
+		del array_dict[a]
+
 	node_ids = tree_operations.create_internal_node_ids(
 		len(genome_array_dict))
 
-
-	taxon_namespace = dendropy.TaxonNamespace(labels + node_ids)
-
-
-	for leaf in tree.leaf_node_iter():
-		old_label = leaf.taxon.label
-		leaf.taxon = taxon_namespace.get_taxon(genome_array_dict[old_label])
+	tns = tree.taxon_namespace
+	for new_id in node_ids:
+		tax = dendropy.Taxon(new_id)
+		tns.add_taxon(tax)
 
 
 	node_count = 0
@@ -318,10 +367,20 @@ def main(args):
 			event_costs,
 			extra_subtree_arrays=extra_subtree_array_spacers
 			)
-		# if results == "No_ID":
-		# 	Incomplete_tree = True
-		# 	break
-		array_dict[a], array_dict[b], ancestor = results
+		if results == "No_ID":
+			# Choose the one that shares the most spacers with another array
+			# and make a copy of that the ancestor
+			array_a = array_dict[a]
+			array_b = array_dict[b]
+			best_array = find_best_array_no_id(array_a, array_b, array_dict)
+			ancestor = array_parsimony.Array(
+				node_ids[node_count],
+				spacers=copy(best_array.spacers),
+				extant=False)
+
+		else:
+			array_dict[a], array_dict[b], ancestor = results
+		
 		node_count+=1
 
 		for n, n_id in [(node, a), (sister, b)]:
@@ -331,8 +390,7 @@ def main(args):
 			# n.edge_length = array_dict[n_id].distance
 
 		array_dict[ancestor.id] = ancestor
-		node.parent_node.taxon = taxon_namespace.get_taxon(
-			ancestor.id)
+		node.parent_node.taxon = tns.get_taxon(ancestor.id)
 		# node.parent_node.edge_length = 0 # Start the ancestor with 0 branch length
 
 	# Repeat iteration now that tree is built to add repeat indels.
