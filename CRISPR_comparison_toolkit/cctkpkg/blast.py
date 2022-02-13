@@ -121,12 +121,14 @@ def build_arrays_MP(array_entry, args):
                     entry.sstart,
                     entry.strand
                     )
-        array.spacers = sequence_operations.run_blastcmd(
+        _, array.spacers = sequence_operations.run_blastcmd(
+            [], # only used for multithread running
             args.blast_db_path,
             sp_fstring,
             sp_batch_locations
             )
-        array.repeats = sequence_operations.run_blastcmd(
+        _, array.repeats = sequence_operations.run_blastcmd(
+            [],
             args.blast_db_path,
             rep_fstring,
             rep_batch_locations
@@ -243,10 +245,11 @@ def blastn_to_arrays(args):
         if n_args > args.batch_size:
             x = len(extended_hits)
             extended_hits += sequence_operations.run_blastcmd(
+                [], # Only used for multithread running
                 args.blast_db_path,
                 fstring,
                 batch_locations
-                )
+                )[1]
             fstring = ''
             batch_locations = ''
             n_args = 3
@@ -268,10 +271,11 @@ def blastn_to_arrays(args):
                 )
     
     extended_hits += sequence_operations.run_blastcmd(
+        [],
         args.blast_db_path,
         fstring,
         batch_locations
-        )
+        )[1]
 
     for n, new_seq in zip(hits_to_update, extended_hits):
         hit = blast_lines[n]
