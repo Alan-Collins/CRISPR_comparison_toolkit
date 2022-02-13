@@ -5,6 +5,7 @@ from collections import defaultdict, Counter
 from itertools import combinations
 import subprocess
 from copy import deepcopy
+import multiprocessing
 
 from . import (
 	file_handling
@@ -490,7 +491,54 @@ def percent_id(a, b):
 	return pident
 
 
-def run_blastcmd(db, fstring, batch_locations):
+def pool_MP_blastdbcmd(inputs, db, batch_size, threads):
+	"""
+	Manages the multiprocess worker pool and returns to seqs found by
+	run_blastcmd to whatever called it.
+	Args:
+		inputs (list of tuples): all inputs to be run 
+			(n, fstr, batch_locs)
+		db (str): path to the blast db you want to query.
+		batch_size (int): Max size of batches to be run by blastdbcmd 
+		threads (int): Number of threads to use for multiprocessing.
+		
+	
+	Returns:
+		(list) List of FoundArray instances representing distinct arrays
+	"""
+	pool = multiprocessing.Pool(processes=threads)
+
+	batch_size = min(batch_size, len(inputs)/threads)
+
+	chunksize = int((len(inputs)/batch_size)//threads)
+
+	batches = []
+	for i in range(0, len(inputs), batch_size):
+		ns = []
+		fstring = ""
+		batch_locations = ""
+		for j in range(i, min(i+batch_size, len(inputs))):
+			ns.append(inputs[j][0])
+			fstring += inputs[j][1]
+			batch_locations += inputs[j][2]
+		batches.append((ns, db, fstring, batch_locations))
+
+	output = pool.starmap(run_blastcmd, batches, chunksize)
+	output = [i for i in output]
+	pool.close()
+	pool.join()
+
+
+	# Ensure the data are sorted with respect to the blast results
+	output.sort(key=lambda batch: batch[0][0])
+	seqs = []
+	for batch in output:
+		seqs += batch[1]
+
+	return seqs
+
+
+def run_blastcmd(ns, db, fstring, batch_locations):
 	"""
 	function to call blastdbcmd in a shell and process the output. Uses
 	a batch query of the format provided in the blastdbcmd docs. e.g.
@@ -499,6 +547,8 @@ def run_blastcmd(db, fstring, batch_locations):
 	-entry_batch -
 	
 	Args:
+		ns (list): indices to reorder the output from this func when
+		  running on multiple threads
 		db (str): path to the blast db you want to query.
 		fstring (str):  The string to give to printf
 		batch_locations (str):  the seqid, locations, and strand of all
@@ -525,7 +575,8 @@ def run_blastcmd(db, fstring, batch_locations):
 			db, batch_locations, x.stderr))
 		sys.exit()
 	else:
-		return [i for i in x.stdout.split('\n') if '>' not in i and len(i) > 0]
+		return (ns, 
+			[i for i in x.stdout.split('\n') if '>' not in i and len(i) > 0])
 
 
 def determine_regex_length(pattern):

@@ -63,42 +63,6 @@ class Protospacer():
 		self.length = length
 		
 
-def run_blastcmd(db, fstring, batch_locations):
-	"""
-	function to call blastdbcmd in a shell and process the output. Uses
-	a batch query of the format provided in the blastdbcmd docs. e.g.
-	printf "%s %s %s %s\\n%s %s %s\\n" 13626247 40-80 plus 30 14772189 \
-	1-10 minus | blastdbcmd -db GPIPE/9606/current/all_contig \
-	-entry_batch -
-	
-	Args:
-		db (str): path to the blast db you want to query.
-		fstring (str):  The string to give to printf
-		batch_locations (str):  the seqid, locations, and strand of all
-		  the spacers to be retrieved
-	
-	Returns:
-		(list) List of the sequences of regions returned by blastdbcmd
-		  in response to the query locations submitted
-	
-	Raises:
-		ERROR running blastdbcmd: Raises an exception when blastdbcmd
-		returns something to stderr, prints the error as well as the
-		information provided to blastdbcmd and aborts the process.
-	"""
-	x = subprocess.run(
-		'printf "{}" {}| blastdbcmd -db {} -entry_batch -'.format(
-			fstring, batch_locations, db), 
-		shell=True, universal_newlines=True, capture_output=True) 
-	if x.stderr:
-		print("ERROR running blastdbcmd on {} :\n{}".format(
-			db, batch_locations, x.stderr))
-		sys.exit()
-	else:
-		return [
-			i for i in x.stdout.split('\n') if '>' not in i and len(i) > 0]
-
-
 def run_blastn(args):
 	"""
 	Runs blastn of provided spacers against provided blastdb. Processes
@@ -592,7 +556,11 @@ def main(args):
 	protos = []
 
 	count = 0
-	all_protospacer_infos = []
+	pool_input = [] # grouped information to give to blastdbcmd
+	# Want to work through the flanking sequences in increments that
+	# depend upon which flanking sequences were retrieved
+	increment = 1 + int(bool(flanking_n[0])) + int(bool(flanking_n[1]))
+	args.blastdbcmd_batch_size //= increment
 	for result in blast_output:
 		p, f, b = fill_initial_info(result, flanking_n)
 		# If the match couldn't be extended because it is at the end of
@@ -600,28 +568,18 @@ def main(args):
 		if p == None:
 			continue
 		protos.append(p)
-		fstring += f
-		batch_locations += b
-		count += 3
+		pool_input.append((count, f, b))
+		count += 1
 
-		if count >= args.blastdbcmd_batch_size:
-			count = 0
-			all_protospacer_infos += run_blastcmd(
-				args.blast_db_path,
-				fstring,
-				batch_locations)
-			fstring = batch_locations = ""
-	if count != 0:
-		all_protospacer_infos += run_blastcmd(
-			args.blast_db_path,
-			fstring,
-			batch_locations)
+	all_protospacer_infos = sequence_operations.pool_MP_blastdbcmd(
+		pool_input,
+		args.blast_db_path,
+		args.blastdbcmd_batch_size,
+		args.num_threads
+		)
 
 	p_count = 0
 
-	# Want to work through the flanking sequences in increments that
-	# depend upon which flanking sequences were retrieved
-	increment = 1 + int(bool(flanking_n[0])) + int(bool(flanking_n[1]))
 	for i in range(0,len(all_protospacer_infos),increment):
 		p = protos[p_count]
 		# Depending on which flanking sequence was requested, fill in
@@ -631,7 +589,7 @@ def main(args):
 			p = fill_remaining_info(
 				p,
 				spacer_dict[p.spacer],
-			all_protospacer_infos[i:i+3])
+				all_protospacer_infos[i:i+3])
 		elif flanking_n[0]:
 			p = fill_remaining_info(
 				p,
