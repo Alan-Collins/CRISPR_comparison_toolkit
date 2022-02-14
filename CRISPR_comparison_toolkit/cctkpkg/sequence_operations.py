@@ -682,7 +682,7 @@ def make_spacer_snp_network(spacer_fasta_dict, snp_thresh, outdir):
 			blastn_command = ("blastn -query {} "
 				"-subject {} -task blastn-short "
 				"-outfmt '6 std qlen slen' | "
-				"awk '$1 != $2 && ($4 == $13 || $4 == $14)'"
+				"awk '$1 != $2'"
 				"".format(
 					temp_file,
 					temp_file))
@@ -696,7 +696,7 @@ def make_spacer_snp_network(spacer_fasta_dict, snp_thresh, outdir):
 			blastn_command = (f"blastn -query <(printf '{fasta_spacers}') "
 				f"-subject <(printf '{fasta_spacers}') -task blastn-short "
 				"-outfmt '6 std qlen slen' | "
-				"awk '$1 != $2 && ($4 == $13 || $4 == $14)'")
+				"awk '$1 != $2'")
 
 		blast_run = subprocess.run(
 			blastn_command,
@@ -717,6 +717,10 @@ def make_spacer_snp_network(spacer_fasta_dict, snp_thresh, outdir):
 		for hit in blast_lines:
 			if hit.mismatch > snp_thresh:
 				continue
+			if hit.length != hit.qlen or hit.length != hit.slen:
+				dist = min(hamming(ID_dict[hit.qseqid], ID_dict[hit.sseqid]))
+				if dist > snp_thresh:
+					continue
 			spacer_network_dict[CR_type].append(
 				(ID_dict[hit.qseqid], ID_dict[hit.sseqid])
 				)
