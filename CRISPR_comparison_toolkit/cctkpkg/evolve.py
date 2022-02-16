@@ -211,7 +211,7 @@ def tick(active_arrays, tree, tree_namespace, spacer_n, array_name, events_list,
 
 	if len(source_array.spacers) == 1:
 		while event == "Deletion":
-			event = events_list[random.randint(1,len(events_list))]
+			event = random.choice(events_list)
 
 	array = array_parsimony.Array(str(array_name), 
 		spacers=[i for i in source_array.spacers],
