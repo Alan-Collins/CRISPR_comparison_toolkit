@@ -384,8 +384,6 @@ def main(args):
 			active_arrays, tree, tree_namespace, spacer_n, array_name, events_list,
 			all_arrays, args.loss_rate)
 
-	# for a in all_arrays:
-	# 	print(str(a.id) + '\t' + ' '.join([str(i) for i in a.spacers]))
 
 	# Remove intermediate nodes from tree
 	new_tree = summarise_tree(tree)
