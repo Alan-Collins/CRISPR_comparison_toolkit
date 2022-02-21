@@ -5,60 +5,16 @@ from math import sqrt, ceil
 
 from . import file_handling
 
-Cols_tol = [
-	"#332288",
-	"#117733",
-	"#44AA99",
-	"#88CCEE",
-	"#DDCC77",
-	"#CC6677",
-	"#AA4499",
-	"#882255",
-	]
 
-Cols_hex_12 = [
-	"#07001c",
-	"#ff6f8d",
-	"#4c62ff",
-	"#92ffa9",
-	"#810087",
-	"#bcffe6",
-	"#490046",
-	"#00c8ee",
-	"#b53900",
-	"#ff8cf7",
-	"#5b5800",
-	"#14d625",
-	]
-
-Cols_hex_27 = [
-	"#fd5925",
-	"#dbc58e",
-	"#008d40",
-	"#304865",
-	"#934270",
-	"#f7b8a2",
-	"#907500",
-	"#45deb2",
-	"#1f4195",
-	"#d67381",
-	"#8e7166",
-	"#afb200",
-	"#005746",
-	"#a598ff",
-	"#8f0f1b",
-	"#b96000",
-	"#667f42",
-	"#00c7ce",
-	"#9650f0",
-	"#614017",
-	"#59c300",
-	"#1a8298",
-	"#b5a6bd",
-	"#ea9b00",
-	"#bbcbb3",
-	"#00b0ff",
-	"#cd6ec6",
+Cols_wong = [
+	"#000000",
+	"#e69f00",
+	"#56B4E9",
+	"#009E73",
+	"#F0E442",
+	"#0072B2",
+	"#D55E00",
+	"#CC79A7"
 	]
 
 
@@ -94,27 +50,15 @@ def choose_col_scheme(ncolours, s=None, cf_list=None):
 			col_scheme = cf_list	
 	
 	elif ncolours <= 8:
-		colours = [(i, "#000000") for i in Cols_tol]
+		colours = [(i, "#000000") for i in Cols_wong]
 		return colours
 
 
-	elif ncolours <= 12:
-		colours = [(i, "#000000") for i in Cols_hex_12]
-		return colours
-
-
-	elif ncolours <= 27:
-		colours = [(i, "#000000") for i in Cols_hex_27]
-		return colours
-
-
-	elif ncolours < 65:
-		col_scheme = Cols_tol
-	elif ncolours < 145:
-		col_scheme = Cols_hex_12
+	elif ncolours <= 64:
+		col_scheme = Cols_wong
 	else:
 		cs_name = "built-in"
-		col_scheme = Cols_hex_27
+		col_scheme = Cols_wong
 	
 	colours = []
 	# Repeat the same colour scheme for fill and outline combos.
