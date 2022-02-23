@@ -152,7 +152,7 @@ def process_colour_args(args, non_singleton_spacers):
 
 
 	if args.colour_scheme_outfile:
-		file.handling.write_colour_scheme(
+		file_handling.write_colour_scheme(
 			args.colour_scheme_outfile, spacer_cols_dict)
 
 	return spacer_cols_dict
