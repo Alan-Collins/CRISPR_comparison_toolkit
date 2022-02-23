@@ -280,7 +280,7 @@ def build_parser(parser):
 		want plotted."
 		)
 	run_params.add_argument(
-		"--approxordered",
+		"--approx-ordered",
 		required=False,
 		action='store_true',  
 		help="Declare that the array order you provided should be \
@@ -337,13 +337,6 @@ def build_parser(parser):
 		type=float,  
 		help="Control the width of lines connecting shared spacers. Line width\
 		will be multiplied by the given number. Default = 1.0"
-		)
-	plot_params.add_argument(
-		"--leader-align",
-		required=False,
-		action='store_true',  
-		help="Declare that you want the plot to line up all the leader \
-		ends instead of the default of lining up the trailer ends."
 		)
 	plot_params.add_argument(
 		"--dpi",
