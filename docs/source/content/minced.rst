@@ -228,7 +228,21 @@ Tab-delimited table with "|" (pipe)-delimited lists of arrays in columns 4-9 wit
 Spacer_cluster_members.txt
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+**Summary**
 
+When running ``cctk minced`` with ``-s`` to cluster similar spacers, this file is produced to provide details of which spacers were identified as similar to one another.
+
+**Format**
+
+Tab-delimited table with two columns. Each line represents a distinc cluster of spacers. Column 1 is the ID of the spacer chosen as the representative of the cluster. The ID (or its corresponding sequence - see CRISPR_spacers.fna) is used to represent all cluster members in any files in which they are described. Column 2 is a space-delimited list of the sequences of spacers that are members of the cluster (not including the sequence of the spacer chosen as the representative.)
+
+**Example**
+
+.. code-block:: shell
+
+	CRtype_1	GCCCAGGCACGTTTGCTCGCGCTTTGATCTCA
+	CRtype_13	TGTCCCGAAGTTCATAAGCGGGCTTCGGGCGA GTCGCGAAGTTCATAAGCGGGCTTCGGGCGA
+	CRtype_42	AGCCGATGGCCCGCAGTAGTACCCCGATCAGT
 
 .. _minced-advanced:
 
