@@ -19,6 +19,7 @@ Basic Usage
 
 **N.B.** Basic usage may include ``-l`` and ``-r`` options as well depending on your situation. See the :ref:`minced-advanced` section for details. 
 
+.. _minced-output:
 
 Output files
 ------------

@@ -48,6 +48,16 @@
 <li class="toctree-l1"><a class="reference internal" href="network.html">network</a></li>
 <li class="toctree-l1"><a class="reference internal" href="spacerblast.html">spacerblast</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#quick-worked-example">Quick worked example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#detailed-worked-example">Detailed Worked example</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#data-retrieval">Data retrieval</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#identifying-crispr-arrays">Identifying CRISPR arrays</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#identifying-crispr-arrays-using-cctk-minced">Identifying CRISPR arrays using <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#identifying-crispr-arrays-using-cctk-blast">Identifying CRISPR arrays using <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">blast</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#cctk-minced-vs-cctk-blast-output-comparison"><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> vs <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">blast</span></code> output comparison</a></li>
 </ul>
 </li>
@@ -79,6 +89,174 @@
              
   <section id="tutorial">
 <h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline"></a></h1>
+<section id="quick-worked-example">
+<h2>Quick worked example<a class="headerlink" href="#quick-worked-example" title="Permalink to this headline"></a></h2>
+<p>TO ADD</p>
+</section>
+<section id="detailed-worked-example">
+<h2>Detailed Worked example<a class="headerlink" href="#detailed-worked-example" title="Permalink to this headline"></a></h2>
+<section id="data-retrieval">
+<h3>Data retrieval<a class="headerlink" href="#data-retrieval" title="Permalink to this headline"></a></h3>
+<p>For this tutorial we will work through and analyze part of the dataset used in the CCTK publication, which is itself a subset of the data presented by <a class="reference external" href="https://doi.org/10.1128/mSystems.00075-18">England et al., 2018</a>. The example data used here are hosted on the <a class="reference external" href="https://github.com/Alan-Collins/CRISPR_comparison_toolkit">CCTK github page</a> and can be downloaded and extracted as follows:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>wget https://github.com/Alan-Collins/CRISPR_comparison_toolkit/raw/main/Example_data/Example_data.tar.gz -O - <span class="p">|</span> tar -xz
+</pre></div>
+</div>
+<p>This should download and extract a directory containing 10 <em>Pseudomonas aeruginosa</em> assemblies and some file we will use later. Each assembly filename corresponds to the <a class="reference external" href="https://www.ebi.ac.uk/ena/browser/home">ENA</a> sequence accession for the corresponding sequencing run. These assemblies were produced using <a class="reference external" href="https://github.com/ablab/spades">SPAdes</a>.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ ls -1 Example_assemblies
+ERR431075.fasta
+ERR431089.fasta
+ERR431110.fasta
+ERR431125.fasta
+ERR431274.fasta
+ERR431323.fasta
+ERR431333.fasta
+ERR431387.fasta
+ERR431415.fasta
+ERR431427.fasta
+</pre></div>
+</div>
+</section>
+<section id="identifying-crispr-arrays">
+<h3>Identifying CRISPR arrays<a class="headerlink" href="#identifying-crispr-arrays" title="Permalink to this headline"></a></h3>
+<p>For this example, we will use both of the CRISPR identification tools included in CCTK to illustrate how they both work with the same input data. However, for simplicity, output from <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> will be used in subsequent analysis sections.</p>
+<p>See the <a class="reference internal" href="#minced-blast-comp"><span class="std std-ref">cctk minced vs cctk blast output comparison</span></a> section for a discussion of how the output of <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> and <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">blast</span></code> compare to get an idea of why you might choose one over the other.</p>
+<section id="identifying-crispr-arrays-using-cctk-minced">
+<h4>Identifying CRISPR arrays using <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code><a class="headerlink" href="#identifying-crispr-arrays-using-cctk-minced" title="Permalink to this headline"></a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> is the easier to use of the two CRISPR identification tools included in CCTK and is a good choice to start with.</p>
+<p>First, an important note: For many of the downstream analyses in CCTK, CRISPR array orientation is very important. It is therefore crucial that you know the sequence of CRISPR repeats in your assemblies in the correct orientation (i.e. leader end 5’ of the repeat, trailer end 3’). If you do not yet know the correct orientation of your repeats, you can proceed with these analyses as <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> can identify CRISPR arrays with unknown repeats and will consistently orient them using a built-in database of repeats. However, you will want to come back and correctly orient your arrays before using the tools <code class="docutils literal notranslate"><span class="pre">CRISPRtree</span></code> or <code class="docutils literal notranslate"><span class="pre">constrain</span></code>.</p>
+<section id="setting-up">
+<h5>Setting up<a class="headerlink" href="#setting-up" title="Permalink to this headline"></a></h5>
+<p><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> uses <a class="reference external" href="https://github.com/ctSkennerton/minced">MinCED</a> to identify CRISPR arrays and then processes the output files produced by MinCED. <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> runs MinCED on all of the files in the input directory. In our case the directory is “Example_assemblies/”. Before we run it, we’ll make an directory to contain the output of <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code>, then we can run it. While <cite>cctk minced</cite> includes the three <em>P. aeruginosa</em> CRISPR types in its built-in database of repeats, we will provide them here to illustrate that step. They were included in the data you downloaded above: example_repeats.fna.</p>
+<p>First let’s just make a directory for the output and run the MinCED step. We could run everything in one step using <code class="docutils literal notranslate"><span class="pre">-m</span> <span class="pre">-p</span></code>, but we will split it up here to go through the process in more detail.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Make output dir</span>
+mkdir Minced_CRISPRs/
+
+<span class="c1"># Run cctk minced</span>
+cctk minced -i Example_assemblies/ -o Minced_CRISPRs/ -m
+</pre></div>
+</div>
+<p>After a few seconds, you will see that a new directory has been created in the Minced_CRISPRs/ directory.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ ls Minced_CRISPRs/
+MINCED_OUT
+</pre></div>
+</div>
+<p>This new directory contains all of the output files produced by MinCED. Each of these files is named using the base filename (i.e. excluding extension) of the input files, with “_minced_out.txt” added.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ ls -1 Minced_CRISPRs/MINCED_OUT/
+ERR431075_minced_out.txt
+ERR431089_minced_out.txt
+ERR431110_minced_out.txt
+ERR431125_minced_out.txt
+ERR431274_minced_out.txt
+ERR431323_minced_out.txt
+ERR431333_minced_out.txt
+ERR431387_minced_out.txt
+ERR431415_minced_out.txt
+ERR431427_minced_out.txt
+</pre></div>
+</div>
+<p>These output files are the unaltered output produced by MinCED and are where <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> gets all the information it uses (except reference repeat sequences provided by the user).</p>
+<p>If you are working with assemblies with unknown repeats, you can easily extract a list of the repeats found by MinCED and count the number of times each repeat sequence occurs by pulling out nucleotide sequence from the repeat column in the MinCED output files. For the assemblies analyzed here, the following repeats were found:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>    $ cut -f3 Minced_CRISPRs/MINCED_OUT/* <span class="p">|</span> grep -Po <span class="s2">&quot;[ATCG]{15,100}&quot;</span> <span class="p">|</span> sort <span class="p">|</span> uniq -c <span class="p">|</span> sort -k1 -nr
+<span class="m">127</span> GTTCACTGCCGTATAGGCAGCTAAGAAA
+<span class="m">123</span> TTTCTTAGCTGCCTACACGGCAGTGAAC
+ <span class="m">99</span> TTTCTTAGCTGCCTATACGGCAGTGAAC
+ <span class="m">26</span> GTTCACTGCCGTGTAGGCAGCTAAGAAA
+ <span class="m">13</span> CGGTTCATCCCCACGCATGTGGGGAACAC
+  <span class="m">8</span> CGGTTCATCCCCACACCCGTGGGGAACAC
+  <span class="m">5</span> TTTCTTAGCTGCCTGTACGGCAGTGAAC
+  <span class="m">5</span> TTTCACTGCCACATAGGTCGTCAAGAAA
+  <span class="m">5</span> GTTCACTGCCGTACAGGCAGCTAAGAAA
+  <span class="m">3</span> TTTCTTAGCTACCTATACGGCAGTGAAC
+  <span class="m">3</span> GTTCACTGCCGTATAGGCAGCTAAAAAA
+  <span class="m">2</span> TTTCTTGACGACCTATGTGGCAGTGAAA
+  <span class="m">1</span> TTTTTTAGCTGCCTATACGGCAGTGAAC
+  <span class="m">1</span> TTTCTTAGCTGCCTATACGGCAGTGGAC
+  <span class="m">1</span> TTTCTTAGCGGCCTACACGGCAGTGAAC
+  <span class="m">1</span> TTTCTTAACTGCCTATACGGCAGTGAAC
+  <span class="m">1</span> TGGTTCATCCCCACGCATGTGGGGAACAC
+  <span class="m">1</span> GTTCACTGCCGTGTAGGCCGCTAAGAAA
+  <span class="m">1</span> GTTCACTGCCGTATCGGCAGCTAAGAAA
+  <span class="m">1</span> GTTCACTGCCGTATAGGTAGCTAAGAAA
+  <span class="m">1</span> GTTCACTGCCGTATAGGCAGCAAAAAAT
+  <span class="m">1</span> GTTCACTGCCGTATAGGCAGCAAAAAAA
+  <span class="m">1</span> GTCCACTGCCGTATAGGCAGCTAAGAAA
+  <span class="m">1</span> CAGGTTTATCCCACGCCTGTGGGGGAACA
+  <span class="m">1</span> CAGCTCATCCCCACGCCCGTGGGGAACAC
+  <span class="m">1</span> ATTTTTTGCTGCCTATACGGCAGTGAAC
+</pre></div>
+</div>
+<p>In the output returned by this command, the second column is the nucleotide sequence of each repeat found by MinCED, while the first column is the number of instances of that repeat that were found. Note that the first 2 lines are highly similar sequences that are in different orientations to one another. In fact the first 4 lines are minor variations on the same sequence. This highlights a weakness of MinCED that it is important to be aware of: it does not check the orientation of repeats so there is a roughly 50% chance that the repeat will be correctly oriented in any given sequence.</p>
+<p><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> attempts to consistently orient CRISPR arrays by comparing each query repeat to a built-in database of repeat sequences, or a user-provided database of repeats (reverse complement is also checked). If the query repeat matches best in the reverse complement then the entire corresponding array is reversed. Even if the specific repeat present in your assemblies is not in the built-in database, there is a good chance that all instances of that repeat (even with some SNPs) will match the same reference repeat, resulting in consistent (even if incorrect) orientation even for unknown repeats. We will discuss below what happens when repeats don’t match well with any of the reference repeats used by <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code></p>
+<p>Now that we have briefly explored the output produced by MinCED, we will use <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> to process those output files. As we have already run MinCED, we don’t need <code class="docutils literal notranslate"><span class="pre">-m</span></code> or to point <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> to our assemblies with <code class="docutils literal notranslate"><span class="pre">-i</span></code>.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ cctk minced -o Minced_CRISPRs/ -p
+Total unique spacers: <span class="m">244</span>
+Total unique arrays: <span class="m">21</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> outputs a summary of the number of unique spacers and CRISPR arrays identified to stderr. Output files produced here are described in the <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> <a class="reference internal" href="minced.html#minced-output"><span class="std std-ref">Output files</span></a> section.</p>
+<p>As we did not provide a file containing FASTA format CRISPR repeats, <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> uses the built-in database of CRISPR repeats (currently subtypes I-A, I-C, I-E, and I-F). The built-in database is fine for the assemblies used here as <em>P. aeruginosa</em> encodes CRISPR subtypes I-C, I-E, and I-F.</p>
+<p>Note that each spacer has its predicted CRISPR subtype included in its FASTA header and this header is used as an identifier for each spacer in all other output files.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ head -4 Minced_CRISPRs/PROCESSED/CRISPR_spacers.fna
+&gt;1F_1
+GCCCCAGATCAGCGTTGCGCCGCACGCGATGA
+&gt;1F_2
+AGTAGCCGTCGGCGTTGTGACAAAGCCATTCC
+</pre></div>
+</div>
+<p>Now let’s process the MinCED output using the example_repeats.fna file that we downloaded earlier. This file contains sequences for the three CRISPR subtypes found in <em>P. aeruginosa</em>, but the FASTA headers for those sequences differ from the IDs used in the built-in CRISPR database (e.g. “1F” above vs “I-F” in the example file):</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ cat example_repeats.fna
+&gt;I-C
+GTCGCGCCCCGCACGGGCGCGTGGATTGAAAC
+&gt;I-E
+GTGTTCCCCACGGGTGTGGGGATGAACCG
+&gt;I-F
+GTTCACTGCCGTGTAGGCAGCTAAGAAA
+</pre></div>
+</div>
+<p>We run the processing steps again with these repeat sequences by providing them using <code class="docutils literal notranslate"><span class="pre">-r</span></code>. Notice that providing repeat sequences does not change the number of spacers or arrays found. This is only used to decide which direction each array should be and to assign names to spacers.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ cctk minced -o Minced_CRISPRs/ -p -r example_repeats.fna
+Total unique spacers: <span class="m">244</span>
+Total unique arrays: <span class="m">21</span>
+</pre></div>
+</div>
+<p>Rerunning processing steps will overwrite the existing files in the Minced_CRISPRs/PROCESSED/ directory. If you ever want to preserve the output from a processing run, you will need to rename the PROCESSED folder to something else to prevent the data being overwritten.</p>
+<p>When repeats are provided as an input file, the built-in database of CRISPR repeats is not used. All identified CRISPR spacers will therefore be assigned subtypes with the IDs present in the provided file.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ head -4 Minced_CRISPRs/PROCESSED/CRISPR_spacers.fna
+&gt;I-F_1
+TACTGGAGGTGTCGGAGTTCGAGCCGAGCCAG
+&gt;I-F_2
+GAAAAGAGTTGACTGCACAGTGGGCATCACCT
+</pre></div>
+</div>
+<p>What about if the repeats in the built-in database or in the file provided using <code class="docutils literal notranslate"><span class="pre">-r</span></code> are not the repeats present in our assemblies? Let’s see.</p>
+<p>The example assemblies we are working with here have mostly subtype I-F arrays and a few I-E arrays. Let’s see what happens if we use a repeats file containing only the I-E repeat:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Use grep to find the line containing &quot;I-E&quot; and return that line and the line after</span>
+$ grep -A1 <span class="s2">&quot;I-E&quot;</span> example_repeats.fna &gt; 1E_repeat.fna
+$ cat 1E_repeat.fna
+&gt;I-E
+GTGTTCCCCACGGGTGTGGGGATGAACCG
+<span class="c1"># Now use the new 1E_repeat.fna file as input to cctk minced with -r</span>
+$ cctk minced -o Minced_CRISPRs/ -p -r 1E_repeat.fna
+Total unique spacers: <span class="m">244</span>
+Total unique arrays: <span class="m">21</span>
+</pre></div>
+</div>
+<p>Now if we have a look at our CRISPR spacers we will see that the first couple of spacers in our file, which were previously identified as subtype I-F, have a different header</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ head -4 Minced_CRISPRs/PROCESSED/CRISPR_spacers.fna
+&gt;unknown_CRISPR_type<span class="o">(</span>I-E<span class="o">)</span>_1
+AACGTCTGCACATTATGCGAAGCCTAGGGTGT
+&gt;unknown_CRISPR_type<span class="o">(</span>I-E<span class="o">)</span>_2
+GAGGTGGCCATCTGTCGCCCTGGTGATCCGGA
+</pre></div>
+</div>
+<p>When <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> finds that a repeat differs at more than 5 bases from any repeat in the database being used, that repeat is classified as unknown. When a repeat is classified as unknown, the most similar repeat subtype is included in parentheses in the ID for all spacers in the arrays with that repeat. As we only provided a repeat associated with subtype I-E, that repeat is the best matching and is therefore included in the header for all spacers.</p>
+</section>
+</section>
+<section id="identifying-crispr-arrays-using-cctk-blast">
+<h4>Identifying CRISPR arrays using <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">blast</span></code><a class="headerlink" href="#identifying-crispr-arrays-using-cctk-blast" title="Permalink to this headline"></a></h4>
+</section>
+</section>
+</section>
 <section id="cctk-minced-vs-cctk-blast-output-comparison">
 <span id="minced-blast-comp"></span><h2><code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> vs <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">blast</span></code> output comparison<a class="headerlink" href="#cctk-minced-vs-cctk-blast-output-comparison" title="Permalink to this headline"></a></h2>
 <p>TO ADD</p>
