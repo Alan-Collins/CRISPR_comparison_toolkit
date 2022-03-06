@@ -16,7 +16,7 @@ Introduction
 
 	#. The sequence in which they were identified, 
 
-	#. The strand on which they were idntified, and 
+	#. The strand on which they were identified, and 
 
 	#. The start location.
 

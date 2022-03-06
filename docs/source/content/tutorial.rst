@@ -233,7 +233,7 @@ This process is performed during the processing steps performed by ``cctk minced
 
 Note that the number of unique spacers identified is now 240 instead of 244. 
 
-The spacers that have now been reduced to a single representetive are described in an output file that was not produced by previous runs: Spacer_cluster_members.txt
+The spacers that have now been reduced to a single representetive are described in an output file that was not produced by previous runs: :ref:`spacer-cluster-reps`
 
 .. code-block:: shell
 
@@ -243,12 +243,121 @@ The spacers that have now been reduced to a single representetive are described 
 	1F_33   AGCCGATGGCCCGCAGTAGTACCCCGATCAGT
 
 
-
-
-
-
 Identifying CRISPR arrays using ``cctk blast``
 """"""""""""""""""""""""""""""""""""""""""""""
+
+Setting up
+##########
+
+Before we can run ``cctk blast`` we must first perform a few steps to prepare our sequences. ``cctk blast`` requires that we provide out input in the form of a blast database. 
+
+As described in the ``cctk blast`` :ref:`blast-before-you-run` section, there are several requirements that your sequences must satisfy:
+
+#. No pipe symbols ("|") in any of your fasta headers.
+#. None of the fasta headers in the sequences are the same.
+#. If your sequences are broken up into multiple contigs, ensure that each fasta header contains an identifier that can be used to associate the sequences.
+
+The example sequences we are working with here were assembled using Spades, which produces assemblies with contig headers that can not be distinguished between files:
+
+.. code-block:: shell
+
+	head -1 Example_assemblies/* | head -5
+	==> Example_assemblies/ERR431075.fasta <==
+	>NODE_1_length_486033_cov_46.527666
+
+	==> Example_assemblies/ERR431089.fasta <==
+	>NODE_1_length_794353_cov_41.111729
+
+If we were to combine these sequences into a single blast database, it would be laborious to later figure out which sequences came from which files. Instead, as each filename contains identifying information (the ERR accession number), we will add that accession to each fasta header in each file. This modification can be acheived with the following bash commands:
+
+
+.. code-block:: shell
+	
+	for file in Example_assemblies/*; do id=${file%.*}; id=${id##*/}; sed -i "s/>/>${id}_/" $file; done
+
+Now all of the fasta headers in our assembly files can easily be related back to the assembly to which they belong.
+
+Now let's make a directory to contain our blastdb, combine our sequences, and make the bastabase:
+
+.. code-block:: shell
+
+	mkdir Blastdb
+	cat Example_assemblies/* > all_assemblies.fna
+	makeblastdb -in all_assemblies.fna -out Blastdb/assembly_db -dbtype nucl -parse_seqids
+
+We are now ready to identify CRISPR arrays using ``cctk blast``.
+
+
+
+
+.. _network-tutorial:
+
+Exploring CRISPR array relationships using a network representation
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+Now that we have predicted CRISPR arrays in the example assemblies, we can begin to explore the relationships between these arrays. We will first visualize array relationships as a network to see how arrays in this dataset are related on a broad scale, and then we will explore more closely the relationships between a small number of arrays. In the following example, we will use `Cytoscape <https://cytoscape.org/>`_ to visualize our array relationship network and will work with the data we generated using ``cctk minced``. We will refer to arrays within the network representation as "nodes" and the relationship between two arrays as an "edge".
+
+Both ``cctk minced`` and ``cctk blast`` produced a file called :ref:`array-network` which can be read directly in to Cytoscape by simply clicking and dragging the file onto a Cytoscape window. You should then define the columns as in the following image (These definitions are used for applying styles according to node and edge attributes):
+
+.. image:: images/network_import_tutorial.png
+
+After importing the data, we can use styles to colour edges according to the number of spacers shared or the jaccard similarity between arrays to quickly get a sense of the relationships within each of our clusters. Below is an image showing the network with edges coloured according to the Jaccard similarity between each pair of nodes (darker colours indicate higher array similarity).
+
+.. image:: images/eg_network_tutorial.png
+
+In this network representation of array relationships, it is clear that there are three distinct clusters of arrays. The left-most cluster containing arrays 2, 4, 7, 12, and 17 all have low similarity with one another, while the other two clusters contain some arrays that have a high similarity to one another. Any arrays that do not share any spacers with any other arrays in the dataset are not shown in this network. We will now look more closely at these three clusters using other CCTK tools.
+
+
+
+.. _diffplot-tutorial:
+
+Using CRISPRdiff to visualize array relationships
+"""""""""""""""""""""""""""""""""""""""""""""""""
+
+`CRISPRdiff <crisprdiff.html>`_ can be used to quickly and easily identify the spacers that are shared and distinct between CRISPR arrays. Here we will use it to visualise the three clusters of arrays that we saw in the :ref:`network-tutorial`. For this example we will create a directory within our Minced_CRISPRs/ directory and save plots at that location.
+
+**N.B.** In the following sections, the spacers within arrays will be referred to using their index within the array and their colour. e.g. the leader-most (i.e. left-most) spacer in a given array is spacer 1, while the next spacer (2nd spacer) is spacer 2. From the trailer end, spacers will be numbered using negative numbers. E.g. the trailer-most (i.e. right-most) spacer is spacer -1, while the next spacer from the trailer end is -2 etc.
+
+.. code-block:: shell
+
+	Minced_CRISPRs$ mkdir PLOTS
+	Minced_CRISPRs$ cd PLOTS/
+
+
+First let's look at the left-most cluster in which all arrays have a low level of similarity to one another.
+
+.. code-block:: shell
+
+	Minced_CRISPRs/PLOTS$ cctk CRISPRdiff -a ../PROCESSED/Array_IDs.txt -o left_cluster.png 2 4 7 12 17
+
+That produces a plot similar to that shown below (the below plot was generated using the additional option ``--plot-height 1.5`` to reduce vertical spacing).
+
+.. image:: images/diff_tutorial_left.png
+
+In the above image, it is clear that most spacers are not shared between arrays as they are depicted as thin, black rectangles. This is consistent with the network representation in which all the edges in this cluster have a light colour. In fact, all of the arrays in this cluster share their trailer-most spacer (spacer -1, green), but other spacers are either unique or only shared by a subset of arrays. This pattern may indicate that these arrays come from a common ancestral array that diverged long ago as only the presumably oldest spacer (trailer-most) is shared. 
+
+Other interesting relationships are also clear. For example, Arrays 4 and 7 share a black spacer (-5 in array 7, -4 in array 4), which is surrounded on both sides by spacers that are not shared between these two arrays. Some possible explanations for this pattern of spacer sharing will be discussed below in the :ref:`tree-tutorial` section.
+
+.. code-block:: shell
+
+	Minced_CRISPRs/PLOTS$ cctk CRISPRdiff -a ../PROCESSED/Array_IDs.txt -o left_cluster.png 1 9 11 14
+
+.. image:: images/diff_tutorial_middle.png
+
+.. code-block:: shell
+
+	Minced_CRISPRs/PLOTS$ cctk CRISPRdiff -a ../PROCESSED/Array_IDs.txt -o left_cluster.png 3 13 16 18
+
+.. image:: images/diff_tutorial_right.png
+
+
+.. _tree-tutorial:
+
+Using CRISPRtree to create hypotheses of array histories
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+.. image:: images/tree_tutorial_left.png
+
 
 .. _minced-blast-comp:
 
