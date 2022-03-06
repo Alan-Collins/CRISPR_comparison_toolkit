@@ -56,6 +56,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#array-network-txt">Array_network.txt</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#crispr-summary-table-csv">CRISPR_summary_table.csv</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#crispr-summary-table-txt">CRISPR_summary_table.txt</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#spacer-cluster-members-txt">Spacer_cluster_members.txt</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#advanced-usage">Advanced Usage</a></li>
@@ -231,6 +232,19 @@ Assembly2_contig1       <span class="m">29424</span>   <span class="m">30050</sp
 <p><strong>Example</strong></p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>Sequence_ID     Has_CRISPR      Array_count     Spacers Spacer_IDs      Array_IDs       Array_locations Repeat_sequences        Array_CRISPR_types
 Assembly1       True    <span class="m">3</span>       TAGCTGATCAGCAGGCCGACAGTCAGGCCTGC TACCCGAATACGACTTGCGCGAGGAAGACGGT AGCATCGCATCAAATCGTGCAGAACACGATAA TGGTCGAGCAGTTCGGCAAAGGGGCCGTGGTT TTCACCTGGTCGCCGGCCAGGCTGATCACTGC TACAAGGTCATGGCGCTCGGCAACGTGGTGGAA GCTGTGCGTCGCCGTGGTCTGACGGTCGAATC AGCAGATACCCGAACCACTGGAGGTACATGCA TTCATCAGGATGCCGCCAAGGGTCCGCATAAT<span class="p">|</span>AGGTCGAGGTGGGCTCGGCGGCGATGATCGAT GGTACGTGGTTTCGACCAACAGCACTGCCCAA TAAAGGAGATTGCCATGCTGATCAAACTTCCC GTCAGGGTCGTGCATGACTCCGATGTGGTGGC CGTCCAGAACGTCACACGCTCGCCGTCGATGT AACCGGAGCCTTCGGGCCGCGTTGGGATCCAC TTGACTGCTGGGGCCTGACGCTCATCGCGCGG GCGACCCTGGCCAGGGCGGCGTCGCGCTCTGC TTGAGCACAACCGGCTGAGCCAGCTGGTTGTC<span class="p">|</span>CAGCAGCGGCTCCAGGAAGAGGGGCGCTGCCT AAGAGTCGCGGCGACAACTACCAGACGTCCGC GTATGGCTCTCTCCATTGGGGTGGCGATACTC GATCTGGGGCGGCATCATCACAGCAGAATCTA ACAACATCAATCGCCTGATGCTGGGGCACCTG AGCTTCGGCACCCTGATGCGCGCCGTCGAGGG AATGCGGTCCTGCGCATCCGAACTGGTAAGTG GACCCCCGGAGGACCAACCGTGGACAACGACA TCCTTCGGCTCCGCCGGCCGGATCGCTGCAT GTCGCGAAGTTCATAAGCGGGCTTAGGGCGA      1F_156 1F_19 1F_46 1F_123 1F_59 1F_64 1F_34 1F_93 1F_33<span class="p">|</span>1F_99 1F_1 1F_45 1F_83 1F_124 1F_126 1F_30 1F_39 1F_49<span class="p">|</span>1F_134 1F_81 1F_55 1F_84 1F_16 1F_5 1F_51 1F_100 1F_106 1F_145 <span class="m">6</span><span class="p">|</span><span class="m">7</span><span class="p">|</span><span class="m">11</span>    Assembly1_contig2 <span class="m">209013</span>-208445<span class="p">|</span>Assembly1_contig4 <span class="m">19992</span>-20559<span class="p">|</span>Assembly1_contig4 <span class="m">30050</span>-29425 GTTCACTGCCGTATAGGCAGCTAAGAAA<span class="p">|</span>GTTCACTGCCGTGTAGGCAGCTAAGAAA<span class="p">|</span>GTTCACTGCCGTATAGGCAGCTAAGAAA      1F<span class="p">|</span>1F<span class="p">|</span>1F
+</pre></div>
+</div>
+</section>
+<section id="spacer-cluster-members-txt">
+<span id="spacer-cluster-reps"></span><h3>Spacer_cluster_members.txt<a class="headerlink" href="#spacer-cluster-members-txt" title="Permalink to this headline"></a></h3>
+<p><strong>Summary</strong></p>
+<p>When running <code class="docutils literal notranslate"><span class="pre">cctk</span> <span class="pre">minced</span></code> with <code class="docutils literal notranslate"><span class="pre">-s</span></code> to cluster similar spacers, this file is produced to provide details of which spacers were identified as similar to one another.</p>
+<p><strong>Format</strong></p>
+<p>Tab-delimited table with two columns. Each line represents a distinc cluster of spacers. Column 1 is the ID of the spacer chosen as the representative of the cluster. The ID (or its corresponding sequence - see CRISPR_spacers.fna) is used to represent all cluster members in any files in which they are described. Column 2 is a space-delimited list of the sequences of spacers that are members of the cluster (not including the sequence of the spacer chosen as the representative.)</p>
+<p><strong>Example</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>CRtype_1        GCCCAGGCACGTTTGCTCGCGCTTTGATCTCA
+CRtype_13       TGTCCCGAAGTTCATAAGCGGGCTTCGGGCGA GTCGCGAAGTTCATAAGCGGGCTTCGGGCGA
+CRtype_42       AGCCGATGGCCCGCAGTAGTACCCCGATCAGT
 </pre></div>
 </div>
 </section>
