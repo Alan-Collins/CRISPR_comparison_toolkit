@@ -335,7 +335,7 @@ def build_parser(parser):
 		required=False,
 		default=1,
 		type=float,  
-		help="Control the width of lines connecting shared spacers. Line width\
+		help="Control the width of lines connecting shared spacers. Line width \
 		will be multiplied by the given number. Default = 1.0"
 		)
 	plot_params.add_argument(
@@ -413,8 +413,8 @@ def main(args):
 			array_order, local_best_score = decide_array_order_local_best(
 				arrays_of_interest_dict, 100, args.iterations)
 			print(
-				"The score (sum of spacers shared between all neighbouring \
-				arrays) of the best ordering found was: {}".format(
+				"The score (sum of spacers shared between all neighbouring "
+				"arrays) of the best ordering found was: {}".format(
 					local_best_score))
 
 	## Find spacers present in more than one array
