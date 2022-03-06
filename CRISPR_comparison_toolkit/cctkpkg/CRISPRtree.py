@@ -815,11 +815,12 @@ def main(args):
 
 	# First check how many spacers will need to be coloured
 
-	all_spacers = []
+	occurrences = defaultdict(int)
 	for array in array_choices[0]:
-		all_spacers += array.spacers
+		for spacer in set(array.spacers):
+			occurrences[spacer]+=1
 	non_singleton_spacers = [
-		spacer for spacer, count in Counter(all_spacers).items() if count >1]
+		spacer for spacer, count in occurrences.items() if count >1]
 		
 	# Process colour file related args
 	spacer_cols_dict = colour_schemes.process_colour_args(

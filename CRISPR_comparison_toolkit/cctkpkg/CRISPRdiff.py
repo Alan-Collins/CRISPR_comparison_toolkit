@@ -2,7 +2,7 @@
 
 import matplotlib.pyplot as plt
 import sys
-import collections
+from collections import defaultdict
 from itertools import combinations, permutations
 from random import sample, randrange, seed
 import argparse
@@ -402,7 +402,7 @@ def main(args):
 	if args.preordered:
 		# Reverse order so order of list plots top to bottom
 		array_order = arrays_of_interest[::-1]
-	elif args.approxordered:
+	elif args.approx_ordered:
 		array_order, _ = jiggle_list_to_local_max(
 			arrays_of_interest_dict, arrays_of_interest[::-1])
 	else:
@@ -419,9 +419,10 @@ def main(args):
 
 	## Find spacers present in more than one array
 	all_spacers = list(arrays_of_interest_dict.values())
-	occurrences = dict(collections.Counter(
-		[item for sublist in all_spacers for item in sublist]
-		))
+	occurrences = defaultdict(int)
+	for array in all_spacers:
+		for spacer in set(array):
+			occurrences[spacer]+=1
 
 	imp_spacers = []
 
