@@ -18,7 +18,7 @@ For this tutorial we will work through and analyze part of the dataset used in t
 
 	wget https://github.com/Alan-Collins/CRISPR_comparison_toolkit/raw/main/Example_data/Example_data.tar.gz -O - | tar -xz
 
-This should download and extract a directory containing 10 *Pseudomonas aeruginosa* assemblies and some file we will use later. Each assembly filename corresponds to the `ENA <https://www.ebi.ac.uk/ena/browser/home>`_ sequence accession for the corresponding sequencing run. These assemblies were produced using `SPAdes <https://github.com/ablab/spades>`_.
+This should download and extract a directory containing 10 *Pseudomonas aeruginosa* assemblies and some files we will use later. Each assembly filename corresponds to the `ENA <https://www.ebi.ac.uk/ena/browser/home>`_ sequence accession for the corresponding sequencing run. These assemblies were produced using `SPAdes <https://github.com/ablab/spades>`_.
 
 .. code-block:: shell
 

@@ -481,8 +481,8 @@ def build_parser(parser):
         metavar=" ",
         required=False,
         default='P',
-        help="DEFAULT: P. {E, P} Regex type to be used in step taht calls grep \
-            See CCTK documentation for details."
+        help="DEFAULT: P. {E, P} Regex type to be used in step that calls \
+            grep. See CCTK documentation for details."
         )
     other_options.add_argument(
         "-t", "--threads",
