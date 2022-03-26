@@ -16,7 +16,7 @@ For this tutorial we will work through and analyze part of the dataset used in t
 
 .. code-block:: shell
 
-	wget https://github.com/Alan-Collins/CRISPR_comparison_toolkit/raw/main/Example_data/Example_data.tar.gz -O - | tar -xz
+	$ wget https://github.com/Alan-Collins/CRISPR_comparison_toolkit/raw/main/Example_data/Example_data.tar.gz -O - | tar -xz
 
 This should download and extract a directory containing 10 *Pseudomonas aeruginosa* assemblies and some files we will use later. Each assembly filename corresponds to the `ENA <https://www.ebi.ac.uk/ena/browser/home>`_ sequence accession for the corresponding sequencing run. These assemblies were produced using `SPAdes <https://github.com/ablab/spades>`_.
 
@@ -36,6 +36,13 @@ This should download and extract a directory containing 10 *Pseudomonas aerugino
 
 Identifying CRISPR arrays
 ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you haven't already, install CCTK into a ``conda`` environment
+
+.. code-block:: shell
+
+	$ conda create -n cctk -c alan-collins cctk
+	$ conda activate cctk
 
 For this example, we will use both of the CRISPR identification tools included in CCTK to illustrate how they both work with the same input data. However, for simplicity, output from ``cctk minced`` will be used in subsequent analysis sections.
 
@@ -58,10 +65,10 @@ First let's just make a directory for the output and run the MinCED step. We cou
 .. code-block:: shell
 	
 	# Make output dir
-	mkdir Minced_CRISPRs/
+	$ mkdir Minced_CRISPRs/
 
 	# Run cctk minced
-	cctk minced -i Example_assemblies/ -o Minced_CRISPRs/ -m
+	$ cctk minced -i Example_assemblies/ -o Minced_CRISPRs/ -m
 
 Exploring MinCED output before processing using ``cctk minced``
 ###############################################################
@@ -261,7 +268,7 @@ The example sequences we are working with here were assembled using Spades, whic
 
 .. code-block:: shell
 
-	head -1 Example_assemblies/* | head -5
+	$ head -1 Example_assemblies/* | head -5
 	==> Example_assemblies/ERR431075.fasta <==
 	>NODE_1_length_486033_cov_46.527666
 
@@ -273,7 +280,7 @@ If we were to combine these sequences into a single blast database, it would be 
 
 .. code-block:: shell
 	
-	for file in Example_assemblies/*; do id=${file%.*}; id=${id##*/}; sed -i "s/>/>${id}_/" $file; done
+	$ for file in Example_assemblies/*; do id=${file%.*}; id=${id##*/}; sed -i "s/>/>${id}_/" $file; done
 
 Now all of the fasta headers in our assembly files can easily be related back to the assembly to which they belong.
 
@@ -281,14 +288,51 @@ Now let's make a directory to contain our blastdb, combine our sequences, and ma
 
 .. code-block:: shell
 
-	mkdir Blastdb
-	cat Example_assemblies/* > all_assemblies.fna
-	makeblastdb -in all_assemblies.fna -out Blastdb/assembly_db -dbtype nucl -parse_seqids
+	$ mkdir Blastdb
+	$ cat Example_assemblies/* > all_assemblies.fna
+	$ makeblastdb -in all_assemblies.fna -out Blastdb/assembly_db -dbtype nucl -parse_seqids
 
 We are now ready to identify CRISPR arrays using ``cctk blast``.
 
+Running ``cctk blast``
+######################
 
+First, make a folder to contain the outputs produced by ``cctk blast``. Then we can run it. We need to provide a description of an identifier that is present in all the fasta headers for a given assembly as our assemblies are all in multiple contigs. In our case that identifier is the ERR accession we added above. We will provide it as a regex here, but see the :ref:`blast-contig-ids` section of the `cctk blast <blast.html>`_ documentation page for a description of other options for how you can specify this information.
 
+.. code-block:: shell
+	
+	# Make output dir
+	$ mkdir Blast_CRISPRs
+
+	# Run cctk blast
+	$ cctk blast -d Blastdb/assembly_db -r example_repeats.fna -o Blast_CRISPRs/ -p "ERR\d+" -s 2
+	Total unique spacers: 242
+	Total unique arrays: 22
+
+Note that ``cctk blast`` identifies a different number of spacers and a different number of arrays than ``cctk minced`` did. (242 vs 244 and 22 vs 21 when run without using ``-s``). A description of the differences between the two approaches that lead to these different outputs can be found in the :ref:`minced-blast-comp` section below.
+
+``cctk blast`` can also use a SNP threshold to consider slightly different spacers to be the same, just like with ``cctk minced``. In addition, as most of the running time of ``cctk minced`` is spent running ``blastn`` using a BLASTdb followed by lots of ``blastdbcmd``, we can improve running time by using multiple threads for those two steps with ``-t``
+
+.. code-block:: shell
+	
+	# Omit -t if you are on a computer with only 1 thread
+	$ cctk blast -d Blastdb/assembly_db -r example_repeats.fna -o Blast_CRISPRs/ -p "ERR\d+" -s 2 -t 2
+
+``cctk blast`` produces the same kind of outputs as ``cctk minced``. We can see the list of output files produced by each tool as a sort of table, with the ``cctk minced`` output in the left column and ``cctk blast`` output in the right column. The following command ``echo``s a column header and then lists the contents of each output directory in separate columns:
+
+.. code-block:: shell
+
+	$ paste <(echo "Minced"; ls Minced_CRISPRs/PROCESSED/) <(echo "Blast"; ls Blast_CRISPRs/) | column -t
+	Minced                      Blast
+	Array_IDs.txt               Array_IDs.txt
+	Array_locations.bed         Array_locations.bed
+	Array_network.txt           Array_network.txt
+	Array_representatives.txt   Array_representatives.txt
+	Array_seqs.txt              Array_seqs.txt
+	CRISPR_spacers.fna          CRISPR_spacers.fna
+	CRISPR_summary_table.csv    CRISPR_summary_table.csv
+	CRISPR_summary_table.txt    CRISPR_summary_table.txt
+	Spacer_cluster_members.txt  Spacer_cluster_members.txt
 
 .. _network-tutorial:
 
@@ -306,8 +350,6 @@ After importing the data, we can use styles to colour edges according to the num
 .. image:: images/eg_network_tutorial.png
 
 In this network representation of array relationships, it is clear that there are three distinct clusters of arrays. The left-most cluster containing arrays 2, 4, 7, 12, and 17 all have low similarity with one another, while the other two clusters contain some arrays that have a high similarity to one another. Any arrays that do not share any spacers with any other arrays in the dataset are not shown in this network. We will now look more closely at these three clusters using other CCTK tools.
-
-
 
 .. _diffplot-tutorial:
 
