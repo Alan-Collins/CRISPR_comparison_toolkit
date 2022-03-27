@@ -364,7 +364,8 @@ def non_redundant_CR(
 			for s in v.spacers:
 				all_spacers_dict[CR_type].append(s)
 
-	non_red_spacer_dict = {k: set(v) for k,v in all_spacers_dict.items()}
+	# Sort arrays for reproducibility
+	non_red_spacer_dict = {k: sorted(list(set(v))) for k,v in all_spacers_dict.items()}
 
 	cluster_reps_dict = {}
 	rev_cluster_reps_dict = defaultdict(dict)
@@ -435,7 +436,8 @@ def non_redundant_CR(
 	if len(prev_array_dict) > 0:
 		array_num = max([int(i) for i in prev_array_dict.values()])
 
-	for spacers in all_array_list:
+	# Sort arrays for reproducibility
+	for spacers in sorted(all_array_list):
 		if spacers in non_red_array_id_dict:
 			continue
 
