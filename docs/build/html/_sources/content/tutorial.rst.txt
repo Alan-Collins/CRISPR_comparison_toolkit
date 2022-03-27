@@ -18,7 +18,7 @@ For this tutorial we will work through and analyze part of the dataset used in t
 
 	wget https://github.com/Alan-Collins/CRISPR_comparison_toolkit/raw/main/Example_data/Example_data.tar.gz -O - | tar -xz
 
-This should download and extract a directory containing 10 *Pseudomonas aeruginosa* assemblies and some file we will use later. Each assembly filename corresponds to the `ENA <https://www.ebi.ac.uk/ena/browser/home>`_ sequence accession for the corresponding sequencing run. These assemblies were produced using `SPAdes <https://github.com/ablab/spades>`_.
+This should download and extract a directory containing 10 *Pseudomonas aeruginosa* assemblies and some files we will use later. Each assembly filename corresponds to the `ENA <https://www.ebi.ac.uk/ena/browser/home>`_ sequence accession for the corresponding sequencing run. These assemblies were produced using `SPAdes <https://github.com/ablab/spades>`_.
 
 .. code-block:: shell
 
@@ -36,6 +36,13 @@ This should download and extract a directory containing 10 *Pseudomonas aerugino
 
 Identifying CRISPR arrays
 ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you haven't already, install CCTK into a ``conda`` environment
+
+.. code-block:: shell
+
+	conda create -n cctk -c alan-collins cctk
+	conda activate cctk
 
 For this example, we will use both of the CRISPR identification tools included in CCTK to illustrate how they both work with the same input data. However, for simplicity, output from ``cctk minced`` will be used in subsequent analysis sections.
 
@@ -287,7 +294,22 @@ Now let's make a directory to contain our blastdb, combine our sequences, and ma
 
 We are now ready to identify CRISPR arrays using ``cctk blast``.
 
+Running ``cctk blast``
+######################
 
+First, make a folder to contain the outputs produced by ``cctk blast``. Then we can run it. We need to provide a description of an identifier that is present in all the fasta headers for a given assembly as our assemblies are all in multiple contigs. In our case that identifier is the ERR accession we added above. We will provide it as a regex here, but see the :ref:`blast-contig-ids` section of the `cctk blast <blast.html>`_ page for a description of other options for how you can specify this information.
+
+.. code-block:: shell
+	
+	# Make output dir
+	mkdir Blast_CRISPRs
+
+	# Run cctk blast
+	cctk blast -d Blastdb/assembly_db -r example_repeats.fna -o Blast_CRISPRs/ -p "ERR\d+"
+	Total unique spacers: 242
+	Total unique arrays: 22
+
+``cctk blast`` produces the same kind of outputs as ``cctk minced``. The command line output is a description of how many unique arrays and spacers were identified, and all the same output files are saved to the specified output directory
 
 
 .. _network-tutorial:

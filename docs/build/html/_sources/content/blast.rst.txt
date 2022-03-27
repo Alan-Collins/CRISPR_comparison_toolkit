@@ -306,6 +306,8 @@ Tab-delimited table with two columns. Each line represents a distinc cluster of 
 Advanced Usage
 --------------
 
+.. _blast-contig-ids:
+
 Associating arrays from different contigs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
