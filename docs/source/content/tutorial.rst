@@ -1,14 +1,6 @@
 Tutorial
 ========
 
-Quick worked example
---------------------
-
-TO ADD
-
-Detailed Worked example
------------------------
-
 Data retrieval
 ^^^^^^^^^^^^^^
 
@@ -53,7 +45,7 @@ Identifying CRISPR arrays using ``cctk minced``
 
 ``cctk minced`` is the easier to use of the two CRISPR identification tools included in CCTK and is a good choice to start with. 
 
-First, an important note: For many of the downstream analyses in CCTK, CRISPR array orientation is very important. It is therefore crucial that you know the sequence of CRISPR repeats in your assemblies in the correct orientation (i.e. leader end 5' of the repeat, trailer end 3'). If you do not yet know the correct orientation of your repeats, you can proceed with these analyses as ``cctk minced`` can identify CRISPR arrays with unknown repeats and will consistently orient them using a built-in database of repeats. However, you will want to come back and correctly orient your arrays before using the tools ``CRISPRtree`` or ``constrain``.
+First, an important note: For many of the downstream analyses in CCTK, CRISPR array orientation is very important. It is therefore crucial that you know the sequence of CRISPR repeats in your assemblies in the correct orientation (i.e., leader end 5' of the repeat, trailer end 3'). If you do not yet know the correct orientation of your repeats, you can proceed with these analyses as ``cctk minced`` can identify CRISPR arrays with unknown repeats and will consistently orient them using a built-in database of repeats. However, you will want to come back and correctly orient your arrays before using the tools ``CRISPRtree`` or ``constrain``.
 
 Setting up and running MinCED
 #############################
@@ -80,7 +72,7 @@ After a few seconds, you will see that a new directory has been created in the M
 	$ ls Minced_CRISPRs/
 	MINCED_OUT
 
-This new directory contains all of the output files produced by MinCED. Each of these files is named using the base filename (i.e. excluding extension) of the input files, with "_minced_out.txt" added.
+This new directory contains all of the output files produced by MinCED. Each of these files is named using the base filename (i.e., excluding extension) of the input files, with "_minced_out.txt" added.
 
 .. code-block:: shell
 
@@ -155,9 +147,9 @@ Note that each spacer has its predicted CRISPR subtype included in its FASTA hea
 
 	$ head -4 Minced_CRISPRs/PROCESSED/CRISPR_spacers.fna
 	>1F_1
-	GCCCCAGATCAGCGTTGCGCCGCACGCGATGA
+	AAACTCATCAGGCACCGGCAGCGCAATCAACT
 	>1F_2
-	AGTAGCCGTCGGCGTTGTGACAAAGCCATTCC
+	AAAGCGGGCATGACGTTCAACCCCAACAGCCG
 
 Specifying expected repeat sequences
 ####################################
@@ -190,9 +182,9 @@ When repeats are provided as an input file, the built-in database of CRISPR repe
 
 	$ head -4 Minced_CRISPRs/PROCESSED/CRISPR_spacers.fna
 	>I-F_1
-	TACTGGAGGTGTCGGAGTTCGAGCCGAGCCAG
+	AAACTCATCAGGCACCGGCAGCGCAATCAACT
 	>I-F_2
-	GAAAAGAGTTGACTGCACAGTGGGCATCACCT
+	AAAGCGGGCATGACGTTCAACCCCAACAGCCG
 
 What about if the repeats in the built-in database or in the file provided using ``-r`` are not the repeats present in our assemblies? Let's see.
 
@@ -217,9 +209,9 @@ Now if we have a look at our CRISPR spacers we will see that the first couple of
 
 	$ head -4 Minced_CRISPRs/PROCESSED/CRISPR_spacers.fna
 	>unknown_CRISPR_type(I-E)_1
-	AACGTCTGCACATTATGCGAAGCCTAGGGTGT
+	AAAAAGCCCAGCTCGAAGGCTGGGCTTTTTCT
 	>unknown_CRISPR_type(I-E)_2
-	GAGGTGGCCATCTGTCGCCCTGGTGATCCGGA
+	AAAGCCGGCCTCGCGCACCGACTTGGCAGCCT
 
 When ``cctk minced`` finds that a repeat differs at more than 5 bases from any repeat in the database being used, that repeat is classified as unknown. When a repeat is classified as unknown, the most similar repeat subtype is included in parentheses in the ID for all spacers in the arrays with that repeat. As we only provided a repeat associated with subtype I-E, that repeat is the best matching and is therefore included in the header for all spacers.
 
@@ -245,9 +237,9 @@ The spacers that have now been reduced to a single representetive are described 
 .. code-block:: shell
 
 	$ cat Minced_CRISPRs/PROCESSED/Spacer_cluster_members.txt
-	1F_12   GCCCAGGCACGTTTGCTCGCGCTTTGATCTCA
-	1F_32   TGTCCCGAAGTTCATAAGCGGGCTTCGGGCGA GTCGCGAAGTTCATAAGCGGGCTTCGGGCGA
-	1F_33   AGCCGATGGCCCGCAGTAGTACCCCGATCAGT
+	1F_33   AGCCGATGGCCCGCAGTAGTACCCCGATTAGT
+	1F_116  GCCCAGGCACGTTTGCTCGCGCTTTGATCTCA
+	1F_192  GTCGCGAAGTTCATAAGCGGGCTTCGGGCGA TGTCCCGAAGTTCATAAGCGGGCTTCGGGCGA
 
 
 Identifying CRISPR arrays using ``cctk blast``
@@ -318,7 +310,7 @@ Note that ``cctk blast`` identifies a different number of spacers and a differen
 	# Omit -t if you are on a computer with only 1 thread
 	$ cctk blast -d Blastdb/assembly_db -r example_repeats.fna -o Blast_CRISPRs/ -p "ERR\d+" -s 2 -t 2
 
-``cctk blast`` produces the same kind of outputs as ``cctk minced``. We can see the list of output files produced by each tool as a sort of table, with the ``cctk minced`` output in the left column and ``cctk blast`` output in the right column. The following command ``echo``s a column header and then lists the contents of each output directory in separate columns:
+``cctk blast`` produces the same kind of outputs as ``cctk minced``. We can see the list of output files produced by each tool as a sort of table, with the ``cctk minced`` output in the left column and ``cctk blast`` output in the right column. The following command lists the contents of each output directory in separate columns with the name of the ``cctk`` tool that produced them as column headers:
 
 .. code-block:: shell
 
@@ -358,37 +350,35 @@ Using CRISPRdiff to visualize array relationships
 
 `CRISPRdiff <crisprdiff.html>`_ can be used to quickly and easily identify the spacers that are shared and distinct between CRISPR arrays. Here we will use it to visualise the three clusters of arrays that we saw in the :ref:`network-tutorial`. For this example we will create a directory within our Minced_CRISPRs/ directory and save plots at that location.
 
-**N.B.** In the following sections, the spacers within arrays will be referred to using their index within the array and their colour. e.g. the leader-most (i.e. left-most) spacer in a given array is spacer 1, while the next spacer (2nd spacer) is spacer 2. From the trailer end, spacers will be numbered using negative numbers. E.g. the trailer-most (i.e. right-most) spacer is spacer -1, while the next spacer from the trailer end is -2 etc.
+**N.B.** In the following sections, the spacers within arrays will be referred to using their index within the array and their colour. e.g. the leader-most (i.e., left-most) spacer in a given array is spacer 1, while the next spacer (2nd spacer) is spacer 2. From the trailer end, spacers will be numbered using negative numbers. E.g. the trailer-most (i.e., right-most) spacer is spacer -1, while the next spacer from the trailer end is -2 etc.
 
 .. code-block:: shell
 
-	Minced_CRISPRs$ mkdir PLOTS
-	Minced_CRISPRs$ cd PLOTS/
-
+	Minced_CRISPRs$ mkdir Plots
 
 First let's look at the left-most cluster in which all arrays have a low level of similarity to one another.
 
 .. code-block:: shell
 
-	Minced_CRISPRs/PLOTS$ cctk CRISPRdiff -a ../PROCESSED/Array_IDs.txt -o left_cluster.png 2 4 7 12 17
+	Minced_CRISPRs$ cctk CRISPRdiff -a PROCESSED/Array_IDs.txt -o Plots/left_cluster.png 2 6 11 17 18
 
 That produces a plot similar to that shown below (the below plot was generated using the additional option ``--plot-height 1.5`` to reduce vertical spacing).
 
 .. image:: images/diff_tutorial_left.png
 
-In the above image, it is clear that most spacers are not shared between arrays as they are depicted as thin, black rectangles. This is consistent with the network representation in which all the edges in this cluster have a light colour. In fact, all of the arrays in this cluster share their trailer-most spacer (spacer -1, green), but other spacers are either unique or only shared by a subset of arrays. This pattern may indicate that these arrays come from a common ancestral array that diverged long ago as only the presumably oldest spacer (trailer-most) is shared. 
+In the above image, it is clear that most spacers are not shared between arrays as they are depicted as thin, black rectangles. This is consistent with the network representation in which all the edges in this cluster have a light colour. In fact, all of the arrays in this cluster share their trailer-most spacer (spacer -1, cyan), but other spacers are either unique or only shared by a subset of arrays. This pattern may indicate that these arrays come from a common ancestral array that diverged long ago as only the presumably oldest spacer (trailer-most) is shared. 
 
-Other interesting relationships are also clear. For example, Arrays 4 and 7 share a black spacer (-5 in array 7, -4 in array 4), which is surrounded on both sides by spacers that are not shared between these two arrays. Some possible explanations for this pattern of spacer sharing will be discussed below in the :ref:`tree-tutorial` section.
+Other interesting relationships are also clear. For example, Arrays 2 and 17 share a black spacer (-5 in array 7, -4 in array 4), which is surrounded on both sides by spacers that are not shared between these two arrays. Some possible explanations for this pattern of spacer sharing will be discussed below in the :ref:`tree-tutorial` section.
 
 .. code-block:: shell
 
-	Minced_CRISPRs/PLOTS$ cctk CRISPRdiff -a ../PROCESSED/Array_IDs.txt -o left_cluster.png 1 9 11 14
+	Minced_CRISPRs$ cctk CRISPRdiff -a PROCESSED/Array_IDs.txt -o Plots/middle_cluster.png 5 12 20 21
 
 .. image:: images/diff_tutorial_middle.png
 
 .. code-block:: shell
 
-	Minced_CRISPRs/PLOTS$ cctk CRISPRdiff -a ../PROCESSED/Array_IDs.txt -o left_cluster.png 3 13 16 18
+	Minced_CRISPRs$ cctk CRISPRdiff -a PROCESSED/Array_IDs.txt -o Plots/right_cluster.png 7 8 9 15
 
 .. image:: images/diff_tutorial_right.png
 
@@ -404,6 +394,6 @@ Using CRISPRtree to create hypotheses of array histories
 .. _minced-blast-comp:
 
 ``cctk minced`` vs ``cctk blast`` output comparison
----------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 TO ADD
