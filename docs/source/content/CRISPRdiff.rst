@@ -22,11 +22,11 @@ If you identified CRISPR arrays using ``cctk minced`` or ``cctk blast``, you wil
 Basic Usage
 -----------
 
-``cctk CRISPRdiff`` requires two command line inputs: an :ref:`array-ids` (or :ref:`array-seqs`) file using ``-i``, and the name of the desired output file using ``-o``.
+``cctk CRISPRdiff`` requires two command line inputs: an :ref:`array-ids` (or :ref:`array-seqs`) file using ``-a``, and the name of the desired output file using ``-o``.
 
 .. code-block:: shell
 	
-	cctk CRISPRdiff -i <Array_IDs.txt> -o <output plot with desired extension>
+	cctk CRISPRdiff -a <Array_IDs.txt> -o <output plot with desired extension>
 
 **N.B.** ``cctk CRISPRdiff`` uses `matplotlib <https://matplotlib.org/>`_ to perform all plotting functions. You can specify the format of the output file by providing a filename with an extension corresponding to the desired file format. E.g. out_file.png will produce a PNG format file, while out_file.svg will produce an SVG format file. Any file format compatible with `matplotlib.pyplot.savefig() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.savefig.html>`_ should work.
 
