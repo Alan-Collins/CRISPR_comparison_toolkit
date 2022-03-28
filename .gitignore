@@ -2,3 +2,4 @@ test_data/
 __pycache__
 cctk.sublime-project
 cctk.sublime-workspace
+docs/build/*
