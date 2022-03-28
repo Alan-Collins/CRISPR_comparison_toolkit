@@ -46,12 +46,11 @@ N.B. some dependencies are only required for certain tools. If you are only usin
 - [python3](https://www.python.org/downloads/) (Tested with Python >= 3.8)
   - [matplotlib](https://matplotlib.org/3.1.1/users/installing.html)
   - [dendropy](https://dendropy.org/downloading.html)
+  - [numpy](https://numpy.org/install/)
 
 - [minced](https://github.com/ctSkennerton/minced)
-- [CRISPRCasFinder](https://crisprcas.i2bc.paris-saclay.fr/Home/Download)
 - [BLAST+](https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/) (tested with BLAST 2.9.0)
-- [fuzznuc](http://emboss.sourceforge.net/apps/cvs/emboss/apps/fuzznuc.html)
-- [FASTX](http://hannonlab.cshl.edu/fastx_toolkit/download.html)
+
 
 
 
