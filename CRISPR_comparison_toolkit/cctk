@@ -17,6 +17,12 @@ from cctkpkg import spacerblast
 from cctkpkg import constrain
 
 description = """
+usage: cctk [-h] [--version]
+
+optional arguments:
+  -h, --help  show this help message and exit
+  --version   show program's version number and exit
+
 Call any command followed by -h or --help to show help for that command
 
 Find CRISPR arrays in assemblies:
@@ -32,11 +38,33 @@ Analyze the differences between CRISPR arrays:
 Other:
   evolve       perform in silico evolution of CRISPR arrays
   spacerblast  BLAST spacers against a BLASTdb, process output & check for PAMs
-
 """
 
+class MyArgumentParser(argparse.ArgumentParser):
+	# Custom subclass to allow custom help messages in subcommands.
+	def print_help(self, message = ""):
+		if self.prog == "cctk":
+			message = description
+		elif self.prog == "cctk blast":
+			message = blast.description
+		elif self.prog == "cctk minced":
+			message = minced.description
+		elif self.prog == "cctk CRISPRdiff":
+			message = CRISPRdiff.description
+		elif self.prog == "cctk CRISPRtree":
+			message = CRISPRtree.description
+		elif self.prog == "cctk constrain":
+			message = constrain.description
+		elif self.prog == "cctk network":
+			message = network.description
+		elif self.prog == "cctk evolve":
+			message = evolve.description
+		elif self.prog == "cctk spacerblast":
+			message = spacerblast.description
+		print(message)
+
 def parse_args(args=None):
-	cli = argparse.ArgumentParser(
+	cli = MyArgumentParser(
 		formatter_class=argparse.RawDescriptionHelpFormatter)
 	cli.add_argument(
 		"--version",

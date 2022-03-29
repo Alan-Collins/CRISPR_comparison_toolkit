@@ -16,6 +16,44 @@ from . import (array_parsimony,
 	file_handling,
 	plotting)
 
+description = """
+usage: cctk evolve [-h] [-s] [-n] [-o] [-i] [-a] [-t] [-d] [-l] [-f] \
+[--font-override-labels] [--font-override-annotations] [-b] [--dpi] \
+[--tree-width] [--tree-height] [--branch-weight] [--branch-spacing] \
+[--brlen-scale] [--no-align] [--no-fade-ancestral]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -s, --seed            set seed for random processes
+  -n, --num-events      events to run the simulation. Default = 20
+  -o, --outdir          output directory. Default ./
+
+evolution parameters:
+  specify parameters of simulation
+
+  -i, --initial-length  length of the starting array. Default = 5
+  -a, --acquisition     relative frequency of spacer acquisitions. Default = 75
+  -t, --trailer-loss    relative frequency of trailer spacer decay. Default = 15
+  -d, --deletion        relative frequency of deletions . Default = 10
+  -l, --loss-rate       rate arrays are lost after spawning descendant. Default = 50
+
+plotting parameters:
+  set parameters for plotting the tree to file
+
+  --font-override-labels
+                    set label font size in pts
+  --font-override-annotations
+                    set annotation font size in pts
+  -b, --brlen-labels    include branch lengths in tree plot
+  --dpi                 resolution of the output image. Default = 300
+  --tree-width          width of plot in inches. Default = 3
+  --tree-height         height of plot in inches. Default = 3
+  --branch-weight       thickness of branch lines. Default = 1
+  --branch-spacing      vertical space between branches scaling
+  --brlen-scale         factor to scale branch length
+  --no-align            draw array labels and cartoons at leaf nodes
+  --no-fade-ancestral   do not apply transparency to ancestral array depiction
+"""
 
 def build_parser(parser):
 
@@ -79,13 +117,6 @@ def build_parser(parser):
 
 	plotting = parser.add_argument_group('Plotting parameters', 
 		"Set parameters for plotting the tree to file")
-	plotting.add_argument(
-		"-f", "--font-scale",
-		type=float,
-		default=1,
-		metavar="",
-		help="Font size is multiplied by this number. Default is to scale \
-		based on the plot size")
 	plotting.add_argument(
 		"--font-override-labels",
 		type=float,
@@ -442,7 +473,6 @@ def main(args):
 	# Plot tree
 	fig_h = args.tree_height
 	fig_w = args.tree_width
-	font_scale = args.font_scale
 	dpi = args.dpi
 	line_scale = args.branch_weight
 	label_text_size = args.font_override_labels
@@ -485,7 +515,7 @@ def main(args):
 
 	plotting.plot_tree(
 		new_tree, final_array_dict, outdir+tree_name,
-		spacer_colours, fig_h=fig_h, fig_w=fig_w, font_scale=font_scale,
+		spacer_colours, fig_h=fig_h, fig_w=fig_w,
 		dpi=dpi, line_scale=line_scale, branch_lengths=args.brlen_labels,
 		branch_spacing=branch_spacing, brlen_scale=brlen_scale,
 		label_text_size=label_text_size, annot_text_size=annot_text_size,

@@ -12,6 +12,48 @@ from . import (colour_schemes,
 	sequence_operations,
 	plotting)
 
+description = """
+usage: cctk CRISPRdiff [-h] -a -o [--iterations] [--preordered] \
+[--approx-ordered] [--seed] [--colour-file] [--colour-scheme-outfile] \
+[--colour-scheme-infile] [--line-width] [--dpi] [--connection-outline] \
+[--plot-width] [--plot-height] [--font-size] [arrays_to_align]
+
+positional arguments:
+  arrays_to_align    IDs of the arrays you want to analyse. Default: all
+
+optional arguments:
+  -h, --help         show this help message and exit
+  -a, --array-file   Array_IDs.txt or Array_seqs.txt
+  -o, --out-file     output plot file name
+
+running parameters:
+  control run behaviour
+
+  --iterations      number of iterations of order determination. Default = 10
+  --preordered      array order you provided is the one you want plotted
+  --approx-ordered  array order you provided should be optimized slightly
+  --seed            set seed for random processes
+
+colour scheme files:
+  set inputs and outputs for optional colour scheme files
+
+  --colour-file     file with custom colour list
+  --colour-scheme-outfile
+                    output file to store json format colour schemes
+  --colour-scheme-infile
+                    input file json format colour scheme
+
+plotting parameters:
+  control elements of the produced plot
+
+  --line-width      scale factor for lines between identical spacers
+  --dpi             resolution of output image
+  --connection-outline 
+                    add outline colour to lines connecting identical spacers
+  --plot-width      width of plot in inches. Default = 3
+  --plot-height     height of plot in inches. Default = 3
+  --font-size       font size. Defualt 10pt.
+"""
 
 def get_list_score(arrays_dict, arrays_order):
 	"""Returns number of shared spacers between all neighbouring arrays.

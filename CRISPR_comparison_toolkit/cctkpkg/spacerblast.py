@@ -10,6 +10,43 @@ from collections import defaultdict
 
 from . import sequence_operations, file_handling
 
+description = """
+usage: cctk spacerblast [-h] -d -s [-o] [-q] [-n] [-u] [-w] [-R] [-P] [-l] \
+[-p] [-b] [-r] [-e] [-m] [-t] [-x]
+
+optional arguments:
+  -h, --help        show this help message and exit
+
+required arguments:
+  -d, --blastdb     path to blast db excluding extension
+  -s, --spacers     spacers in fasta format
+
+output control arguments:
+  -o, --out         path to output file. Default: stdout
+  -q, --no-pam-out  path to output file for protospacers with no PAM if desired
+  -n, --flanking    number of bases to return from both sides of protospacers
+  -u, --upstream    number of bases to return from the 5'side of protospacers
+  -w, --downstream  number of bases to return from the 3'side of protospacers
+  -R, --regex-pam   regex describing the PAM sequence
+  -P, --pam         nucleotide pattern describing the PAM sequence e.g. NNNCC
+  -l, --pam-location
+                    {'up', 'down'} PAM location relative to protospacer
+  -p, --percent-id  minimum percent identity between spacer and protospacer
+  -b, --batch-size  size of batch to submit to blastdbcmd. Default: 1000
+  -r, --mask-regions
+                    file in bed format listing regions to ignore
+
+BLAST arguments:
+  arguments to control the blastn command used by this script
+
+  -e, --evalue      blast e value. Default: 10
+  -m, --max-target-seqs
+                    blast max target seqs. Default: 10000
+  -t, --threads     threads to use. Default: 1
+  -x, --other-options
+                    additional blastn options. Forbidden options: \
+blastn -query -db -task -outfmt -num_threads -max_target_seqs -evalue
+"""
 
 class Protospacer():
 	"""

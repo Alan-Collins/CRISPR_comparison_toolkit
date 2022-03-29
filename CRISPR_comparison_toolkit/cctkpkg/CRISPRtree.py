@@ -29,7 +29,75 @@ from . import (
 	tree_operations,
 	plotting)
 
+description = """
+usage: cctk CRISPRtree [-h] -a [-o] [--output-arrays] [--print-tree] [-x] \
+[-r] [--acquisition] [--indel] [--rep-indel] [--duplication] [--trailer-loss] \
+[--no-ident] [-t] [--seed] [--colour-file] [--colour-scheme-outfile] \
+[--colour-scheme-infile] [-e] [-b] [--brlen-scale] [--no-align-cartoons] \
+[--no-align-labels] [--dpi] [--no-fade-anc] [--plot-width] [--plot-height] \
+[--font-override-labels] [--font-override-annotations] [arrays_to_join]
 
+optional arguments:
+  -h, --help        show this help message and exit
+
+positional arguments:
+  arrays_to_join    IDs of the arrays you want to analyse. Default: all
+
+required arguments:
+  -a                Array_IDs.txt or Array_seqs.txt
+
+output control:
+  set which of the optional outputs you want
+
+  -o, --out-file    output plot file name
+  --output-arrays   file to store analyzed arrays and hypothetical ancestors
+  --print-tree      print an ascii symbol representation of the tree
+
+running parameters:
+  control run behaviour
+
+  -x, --fix-order   only build one tree using the provided order of arrays
+  -r, --replicates  number of replicates of tree building. Default: 100
+  --acquisition     parsimony cost of a spacer acquisition event. Default: 1
+  --indel           parsimony cost of an indel event. Default: 10
+  --rep-indel       parsimony cost independently acquiring spacers. Default: 50
+  --duplication     parsimony cost of a duplication event. Default: 1
+  --trailer-loss    parsimony cost of trailer spacer loss. Default: 1
+  --no-ident        parsimony cost of an array having no identity with its \
+ancestor. Default: 100
+  
+  -t, --num-threads 
+                    number of threads to use. Default: 1
+  --seed            set seed for random processes
+
+colour scheme files:
+  set inputs and outputs for optional colour scheme files
+
+  --colour-file     file with custom colour list
+  --colour-scheme-outfile
+                    output file to store json format colour schemes
+  --colour-scheme-infile
+                    input file json format colour scheme
+
+plotting parameters:
+  control elements of the produced plot
+
+  -e                emphasize events in each array since its ancestor
+  -b                include branch lengths in tree plot
+  --brlen-scale     factor to scale branch length
+  --no-align-cartoons
+                    draw array cartoons next to leaf node
+  --no-align-labels
+                    draw leaf labels next to leaf node
+  --dpi             resolution of the output image
+  --no-fade-anc     do not apply transparency to ancestral array depiction
+  --plot-width      width of plot in inches. Default = 3
+  --plot-height     height of plot in inches. Default = 3
+  --font-override-labels
+                    set label font size in pts
+  --font-override-annotations
+                    set annotation font size in pts
+"""
 
 def find_closest_array(array, array_dict, tree, event_costs):
 	"""
@@ -509,7 +577,7 @@ def build_parser(parser):
 			line in file. e.g. #fd5925."
 		)
 	cs_files.add_argument(
-		"----colour-scheme-outfile",
+		"--colour-scheme-outfile",
 		metavar="",
 		required=False, 
 		help="Specify output file to store json format dictionary of the colour schemes used for spacers in this run."

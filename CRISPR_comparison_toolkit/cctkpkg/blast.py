@@ -10,6 +10,36 @@ from collections import defaultdict
 
 from . import sequence_operations, file_handling
 
+description = """
+usage: cctk blast [-h] -r -d -o [-a] [-p] [-q] [-t] [-i] [-c] [-s] \
+[--min-shared] [--append] [-e] [-m] [-b] [-x]
+
+optional arguments:
+  -h, --help            show this help message and exit
+
+required arguments:
+  -r, --repeats         CRISPR repeats in FASTA format
+  -d, --blastdb         path to blast db (excluding file extension)
+  -o, --outdir          directory to store output files
+
+other inputs:
+  -a, --assemblies      file containing a list of your assembly names
+  -p, --regex-pattern   pattern describing your assembly names
+  -q, --regex-type      {E, P} regex type describing assembly names. Default: P
+  -t, --threads         number of threads to use. Default: 1
+  -i, --repeat-interval maximum interval between repeats. Default: 80
+  -c, --percent-id      minumum percent ID of repeat BLAST hits. Default: 80
+  -s, --snp-thresh      number of SNPs to consider spacers the same. Default: 0
+  --min-shared          minimum spacers shared to draw an edge in network
+  --append              add new CRISPR data to a previous run
+
+BLASTn settings:
+  -e, --evalue          blastn evalue. Default: 10
+  -m, --max-target-seqs max_target_seqs option for blastn. Default: 10000
+  -b, --batch-size      batch size for blastdbcmd. Default: 1000
+  -x, --blast-options   input additional blastn options. Forbidden options: \
+blastn -query -db -task -outfmt -num_threads -max_target_seqs -evalue
+"""
 
 def pool_MP_spacer_finder(array_entries, args, threads, chunksize):
     """

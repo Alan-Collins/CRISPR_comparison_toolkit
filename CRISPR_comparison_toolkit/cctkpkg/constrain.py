@@ -5,8 +5,74 @@ from math import ceil, log
 from collections import Counter
 import argparse
 from copy import copy, deepcopy
+import textwrap
 
 import dendropy
+
+description = """
+usage: cctk constrain [-h] -a -t -g -o [--output-arrays] [--print-tree] [-u] \
+[--acquisition] [--indel] [--rep-indel] [--duplication] [--trailer-loss] \
+[--no-ident] [--seed] [--colour-file] [--colour-scheme-outfile] \
+[--colour-scheme-infile] [-e] [-b] [--brlen-scale] [--no-align-cartoons] \
+[--no-align-labels] [--dpi] [--no-fade-anc] [--plot-width] [--plot-height] \
+[--font-override-labels] [--font-override-annotations]
+
+optional arguments:
+  -h, --help        show this help message and exit
+
+inputs:
+  -a, --array-file  Array_IDs.txt or Array_seqs.txt file
+  -t, --input-tree  file containing tree in newick format
+  -g, --genome-array-file	
+                    file corresponding array ID and genome ID
+
+output control:
+  set which of the optional outputs you want.
+
+  -o, --out-plot    output plot file name
+  --output-arrays   file to store analyzed arrays and hypothetical ancestors
+  --print-tree      print an ascii symbol representation of the tree
+  -u, --unrooted    input tree is unrooted
+
+running parameters:
+  control run behaviour.
+
+  --acquisition     parsimony cost of a spacer acquisition event. Default: 1
+  --indel           parsimony cost of an indel event. Default: 10
+  --rep-indel       parsimony cost independently acquiring spacers. Default: 50
+  --duplication     parsimony cost of a duplication event. Default: 1
+  --trailer-loss    parsimony cost of trailer spacer loss. Default: 1
+  --no-ident        parsimony cost of an array having no identity with its \
+ancestor. Default: 100
+  --seed            set seed for random processes
+
+colour scheme files:
+  set inputs and outputs for optional colour scheme files.
+
+  --colour-file     file with custom colour list
+  --colour-scheme-outfile
+                    output file to store json format colour schemes
+  --colour-scheme-infile
+                    input file json format colour scheme
+
+plotting parameters:
+  control elements of the produced plot.
+
+  -e                emphasize events in each array since its ancestor
+  -b                include branch lengths in tree plot
+  --brlen-scale     factor to scale branch length.
+  --no-align-cartoons
+                    draw array cartoons next to leaf node
+  --no-align-labels
+                    draw leaf labels next to leaf node
+  --no-fade-anc     do not apply transparency to ancestral array depiction
+  --plot-width      width of plot in inches. Default = 3
+  --plot-height     height of plot in inches. Default = 3
+  --font-override-labels
+                    set label font size in pts
+  --font-override-annotations
+                    set annotation font size in pts
+"""
 
 from . import (
 	array_parsimony,

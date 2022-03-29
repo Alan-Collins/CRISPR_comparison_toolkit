@@ -10,6 +10,28 @@ from collections import Counter, defaultdict
 
 from . import file_handling, sequence_operations
 
+description = """
+usage: cctk minced [-h] -o [-i ] [-l ] [-r ] [-s ] [-m] [-p] [--append]
+
+optional arguments:
+  -h, --help          	show this help message and exit
+
+Required arguments:
+  -o, --outdir        	directory for minced output and processed files
+
+Other inputs:
+  -i, --indir         	input directory containing genome fastas.
+  -l, --minced-path   	ath to minced executable if not in PATH
+  -r, --repeats       	CRISPR repeats in FASTA format
+  -s, --snp-thresh    	number of SNPs to consider spacers the same. Default: 0
+
+Specify run type:
+  -m, --run-minced      run minced to find CRISPR arrays
+  -p, --process-minced  run processing steps on minced output
+  --min-shared          minimum spacers shared to draw an edge in network
+  --append              add new CRISPR data to a previous run
+"""
+
 def mince_it(minced_path, genomes_dir, outdir):
 	"""Run minced on the files in your input directory
 	
