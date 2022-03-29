@@ -184,6 +184,13 @@ def build_parser(parser):
 		required = False,
 		help="Specify number of SNPs to consider spacers the same. Default: 0"
 		)
+	other_options.add_argument(
+		"--min-shared",
+		metavar=" ",
+		default=1,
+		type=int,
+		help="Minimum number of spacers shared to draw an edge"
+		)
 
 
 	run_options = parser.add_argument_group("Specify run type")
@@ -247,7 +254,8 @@ def main(args):
 			crispr_types_dict,
 			outdir,
 			args.snp_thresh,
-			args.append
+			args.append,
+			args.min_shared
 			)
 
 

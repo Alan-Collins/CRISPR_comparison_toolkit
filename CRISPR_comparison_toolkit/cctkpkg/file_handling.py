@@ -490,7 +490,8 @@ def write_CRISPR_files(
 	array_id_dict,
 	cluster_reps_dict,
 	outdir,
-	append=False):
+	append=False,
+	min_shared=1):
 	""" Write output files from CRISPR identification scripts
 	"""
 	# Spacers in fasta format
@@ -531,7 +532,7 @@ def write_CRISPR_files(
 	network = sequence_operations.build_network(array_list)
 
 	# Write network file
-	write_network_file(network, outdir+"Array_network.txt")
+	write_network_file(network, outdir+"Array_network.txt", min_shared)
 
 	# Write bed file of array locations
 	write_array_loc_bed(all_assemblies, outdir)
@@ -556,7 +557,7 @@ def read_array_types_file(filename):
 	return array_types
 
 
-def write_network_file(network, filename):
+def write_network_file(network, filename, min_shared=1):
 	if len(network) == 0:
 		return
 	# If no types provided, don't include those columns in the outfile
@@ -569,6 +570,9 @@ def write_network_file(network, filename):
 				"Array_A_type",
 				"Array_B_type"])]
 		for edge in network:
+			if edge.nshared < min_shared:
+				continue
+
 			outcontents.append("\t".join([str(i) for i in [
 				edge.a,
 				edge.b,
@@ -583,6 +587,9 @@ def write_network_file(network, filename):
 				"Shared_spacers",
 				"Jaccard_similarity"])]
 		for edge in network:
+			if edge.nshared < min_shared:
+				continue
+
 			outcontents.append("\t".join([str(i) for i in [
 				edge.a,
 				edge.b,

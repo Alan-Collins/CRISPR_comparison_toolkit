@@ -11,18 +11,25 @@ def build_parser(parser):
 		"-i", "--input",
 		metavar=" ",
 		required = True,
-		help="Array_IDs.txt or Array_seqs.txt."
+		help="Array_IDs.txt or Array_seqs.txt"
 		)
 	parser.add_argument(
 		"-t", "--types",
 		metavar=" ",
-		help="what CRISPR subtype is each array. 2 columns: Array\tType."
+		help="what CRISPR subtype is each array. 2 columns: Array\tType"
 		)
 	parser.add_argument(
 		"-o", "--outdir",
 		metavar=" ",
 		default="./",
 		help="output directory path"
+		)
+	parser.add_argument(
+		"--min-shared",
+		metavar=" ",
+		default=1,
+		type=int,
+		help="Minimum number of spacers shared to draw an edge"
 		)
 	
 
@@ -54,7 +61,10 @@ def main(args):
 	network = sequence_operations.build_network(array_list)
 
 	# Write network file
-	file_handling.write_network_file(network, args.outdir+"Array_network.txt")
+	file_handling.write_network_file(
+		network,
+		args.outdir+"Array_network.txt",
+		args.min_shared)
 
 
 if __name__ == '__main__':

@@ -347,7 +347,7 @@ def identify_same_array_hits(blast_entries, args):
                 # If two parts of a repeat matched separately and the 
                 # matches were extended, don't process both.
                 continue
-            if ((last_loc > entry.sstart - args.rep_interval)
+            if ((last_loc > entry.sstart - args.repeat_interval)
                 and (last_strand == entry.strand)
                 and (last_contig == entry.sseqid)):
                 this_array.append(entry)
@@ -439,7 +439,6 @@ def check_repeat_similarity(repeats_file):
 
 
 def build_parser(parser):
-
     req_options = parser.add_argument_group("Required arguments")
     req_options.add_argument(
         "-r", "--repeats",
@@ -453,7 +452,7 @@ def build_parser(parser):
         metavar=" ",
         dest="blast_db_path",
         required=True,
-        help="path to blast db files (not including the file extensions)"
+        help="path to blast db files not including the file extensions"
         )
     req_options.add_argument(
         "-o", "--outdir",
@@ -481,8 +480,8 @@ def build_parser(parser):
         metavar=" ",
         required=False,
         default='P',
-        help="DEFAULT: P. {E, P} Regex type to be used in step that calls \
-            grep. See CCTK documentation for details."
+        help="DEFAULT: P. {E, P} Regex type to be used in step that calls "
+            "grep. See CCTK documentation for details."
         )
     other_options.add_argument(
         "-t", "--threads",
@@ -496,12 +495,11 @@ def build_parser(parser):
     other_options.add_argument(
         "-i", "--repeat-interval",
         metavar=" ",
-        dest="rep_interval",
         required=False,
         default=80,
         type=int,
-        help="DEFAULT: 80. Set the expected interval between the start \
-            position of your repeats."
+        help="DEFAULT: 80. Set the expected interval between the start "
+            "position of your repeats."
         )
     other_options.add_argument(
         "-c", "--percent-id",
@@ -509,8 +507,8 @@ def build_parser(parser):
         required=False,
         default=80,
         type=float,
-        help="DEFAULT: 80. Percent ID of blast hit to consider match \
-        a candidate repeat"
+        help="DEFAULT: 80. Percent ID of blast hit to consider match "
+        "a candidate repeat"
         )
     other_options.add_argument(
         "-s", "--snp-thresh",
@@ -519,6 +517,14 @@ def build_parser(parser):
         default=0,
         required = False,
         help="Specify number of SNPs to consider spacers the same. Default: 0"
+        )
+    other_options.add_argument(
+        "--min-shared",
+        metavar=" ",
+        default=1,
+        type=int,
+        help="minimum number of spacers shared to draw an edge in the output "
+        "network"
         )
     other_options.add_argument(
         "--append",
@@ -539,8 +545,7 @@ def build_parser(parser):
         metavar=" ",
         required=False,
         default='10000',
-        help="DEFAULT: 10000. Set the max_target_seqs option for blastn \
-        (see CCTK documentation for details)"
+        help="DEFAULT: 10000. Set the max_target_seqs option for blastn"
         )
     blast_options.add_argument(
         "-b", "--batch-size",
@@ -548,8 +553,8 @@ def build_parser(parser):
         required=False,
         default=1000,
         type=int,
-        help="DEFAULT: 1000. batch size for blastdbcmd. Higher values run \
-        quicker. Reduce if you get and error about argument list length"
+        help="DEFAULT: 1000. batch size for blastdbcmd. Higher values run "
+        "quicker. Reduce if you get and error about argument list length"
         )
     blast_options.add_argument(
         "-x", "--blast-options",
@@ -557,11 +562,10 @@ def build_parser(parser):
         dest="other_blast_options",
         required=False,
         default='',
-        help="DEFAULT: none. Input additional blastn options. \
-        Forbidden options: blastn -query -db -task -outfmt -num_threads \
-        -max_target_seqs -evalue"
+        help="DEFAULT: none. Input additional blastn options. "
+        "Forbidden options: blastn -query -db -task -outfmt -num_threads "
+        "-max_target_seqs -evalue"
         )
-    
     return parser
 
 
@@ -689,7 +693,8 @@ def main(args):
         non_red_array_id_dict,
         cluster_reps_dict,
         outdir,
-        args.append)
+        args.append,
+        args.min_shared)
 
 
 
