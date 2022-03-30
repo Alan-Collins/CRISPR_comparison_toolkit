@@ -127,6 +127,14 @@ def process_colour_args(args, non_singleton_spacers):
 	if args.colour_scheme_infile:
 		spacer_cols_dict = file_handling.read_colour_scheme(
 			args.colour_scheme_infile)
+		# If any colours correspond to spacers not in our list, remove
+		to_del = []
+		for spacer in spacer_cols_dict:
+			if spacer not in non_singleton_spacers:
+				to_del.append(spacer)
+		if len(to_del) != 0:
+			for s in to_del:
+				del spacer_cols_dict[s]
 		# If necessary add colours to colour scheme for missing spacers
 		if any([s not in spacer_cols_dict for s in non_singleton_spacers]):
 			spacer_cols_dict = fill_col_scheme_gaps(
