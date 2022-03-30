@@ -74,6 +74,15 @@ See :ref:`CRISPRdiff-json` for details.
 Advanced Usage
 --------------
 
+Specifying which arrays to plot
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you do not wish to plot all arrays in your input file, you can specify the subset to be plotted by adding them as a list at the end of your command. This is a positional input that must come after all other inputs. E.g.:
+
+.. code-block:: shell
+
+	cctk CRISPRdiff -a <Array_IDs.txt> -o <output plot> 1 2 5 8 20 7
+
 Specifying array order in plot
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
