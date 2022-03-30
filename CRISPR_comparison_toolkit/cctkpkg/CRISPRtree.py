@@ -89,7 +89,7 @@ plotting parameters:
                     draw array cartoons next to leaf node
   --no-align-labels
                     draw leaf labels next to leaf node
-  --dpi             resolution of the output image
+  --dpi             resolution of the output image. Default = 600
   --no-fade-anc     do not apply transparency to ancestral array depiction
   --plot-width      width of plot in inches. Default = 3
   --plot-height     height of plot in inches. Default = 3
