@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="cctk",
-    version="0.5.5",
+    version="0.5.6",
     author="Alan Collins",
     autor_email="alan.collins@bath.edu",
     url="https://github.com/Alan-Collins/CRISPR_comparison_toolkit",
