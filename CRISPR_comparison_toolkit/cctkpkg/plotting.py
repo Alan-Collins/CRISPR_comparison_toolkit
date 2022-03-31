@@ -86,7 +86,8 @@ def add_labels(tree, node_locs, ax, branch_lengths=True,font_scale=1,
 def add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict,
 	spacer_width=0.3, spacer_outline=3, spacer_spacing=0.45, spacer_size=2.5,
 	label_pad=5, no_fade_ancestral=False, no_align_cartoons=False,
-	emphasize_diffs=False, v_scaling_factor=1, annot_text_size=False):
+	emphasize_diffs=False, v_scaling_factor=1, annot_text_size=False,
+	label_pad_dict={}):
 
 	# Add cartoon arrays to show hypothetical ancestral states
 	# plot each array using the coordinates of the array label on the plotted
@@ -116,8 +117,10 @@ def add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict,
 		x, y = location
 		if not no_align_cartoons:
 			x = min([int(i[0]) for i in node_locs.values()])
+			start_pos_x = x-label_pad
 
-		start_pos_x = x-label_pad
+		else:
+			start_pos_x = x - label_pad_dict[array]
 
 		spacer_count = 0 # How many spacers have been plotted?
 		reshift_loc = 1000 # init to number that won't be seen
@@ -533,6 +536,16 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict,
 		tree, array_dict, spacing, spacer_size, branch_spacing, brlen_scale,
 		fig_w, fig_h, label_text_size)
 
+	# Calculate label size if not aligning cartoons
+	label_pad_dict = {}
+	if no_align_cartoons:
+		for array in array_dict.values():
+			max_v = len(tree.nodes())*branch_spacing
+			max_h = max_v/v_scaling_factor
+			label_pad_dict[array.id] = calc_label_pad_size(
+			array.id, label_text_size, fig_w, fig_h,
+			xlim=(0,max_h), ylim=(0,max_v))
+
 	# Set spacer width based on vertical vs horizontal ratio. Max 1.3
 	spacer_width = min([spacer_size*v_scaling_factor, 1.3])
 
@@ -553,7 +566,7 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict,
 		spacer_spacing=spacing, spacer_width=spacer_width,
 		no_align_cartoons=no_align_cartoons, emphasize_diffs=emphasize_diffs,
 		v_scaling_factor=v_scaling_factor, annot_text_size=annot_text_size,
-		no_fade_ancestral=no_fade_ancestral)
+		no_fade_ancestral=no_fade_ancestral, label_pad_dict=label_pad_dict)
 
 	plt.axis('off')
 	plt.tight_layout()
