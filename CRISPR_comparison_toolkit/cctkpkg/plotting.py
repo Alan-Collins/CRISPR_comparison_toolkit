@@ -132,7 +132,7 @@ def add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict,
 			if n == reshift_loc:
 				start_pos_x-=0.5 # Shift future spacers to make space for line
 	
-			if n == diff_type.indices[-1]:
+			if n == diff_type.indices[-1] and emphasize_diffs:
 				# If this is the start of a new module (working from the
 				# back of the module) then process this module
 				if diff_type == "shared":

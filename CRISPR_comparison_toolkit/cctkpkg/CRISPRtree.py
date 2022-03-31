@@ -82,9 +82,10 @@ colour scheme files:
 plotting parameters:
   control elements of the produced plot
 
-  -e                emphasize events in each array since its ancestor
   -b                include branch lengths in tree plot
   --brlen-scale     factor to scale branch length
+  --no-emphasize-diffs
+                    don't emphasize events in each array since its ancestor
   --no-align-cartoons
                     draw array cartoons next to leaf node
   --no-align-labels
@@ -592,10 +593,10 @@ def build_parser(parser):
 	plot_params = parser.add_argument_group('Plotting parameters', 
 		"Control elements of the produced plot.")
 	plot_params.add_argument(
-		"-e",
+		"--no-emphasize-diffs",
 		dest="emphasize_diffs",
-		action='store_true',  
-		help="When plotting a representation of the tree with cartooned arrays, emphasize locations where arrays differ from their hypothetical ancestor."
+		action='store_false',  
+		help="When plotting a representation of the tree with cartooned arrays, don't emphasize locations where arrays differ from their hypothetical ancestor."
 		)
 	plot_params.add_argument(
 		"-b",
