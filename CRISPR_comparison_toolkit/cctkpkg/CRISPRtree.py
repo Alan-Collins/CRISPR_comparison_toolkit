@@ -101,6 +101,49 @@ plotting parameters:
                     set annotation font size in pts
 """
 
+class NodeBS(dendropy.Node):
+	def __init__(self, **kwargs):
+		dendropy.Node.__init__(self, **kwargs)
+
+	def write_newick_bs(self, out, **kwargs):
+		# adapted from 
+		# https://github.com/jeetsukumaran/DendroPy/blob/29fd294bf05d890ebf6a8d576c501e471db27ca1/src/dendropy/datamodel/treemodel.py#L2439
+		edge_lengths = not kwargs.get('suppress_edge_lengths', False)
+		edge_lengths = kwargs.get('edge_lengths', edge_lengths)
+		child_nodes = self.child_nodes()
+		if child_nodes:
+			out.write('(')
+			f_child = child_nodes[0]
+			for child in child_nodes:
+				if child is not f_child:
+					out.write(',')
+				child.write_newick_bs(out, **kwargs)
+			# out.write(')%0.2f:' % self.comments[0])
+			out.write(')')
+
+		out.write(self._get_node_token(**kwargs))
+		if edge_lengths:
+			e = self.edge
+			if e:
+				sel = e.length
+				if sel is not None:
+					fmt = kwargs.get('edge_length_formatter', None)
+					if fmt:
+						out.write(":%s" % fmt(sel))
+					else:
+						s = ""
+						try:
+							s = float(sel)
+							s = str(s)
+						except ValueError:
+							s = str(sel)
+						if s:
+							out.write(":%s" % s)
+		if child_nodes and self.parent_node:
+			out.write('[%0.2f]' % self.comments[0])
+		return out.getvalue()
+
+
 def find_closest_array(array, array_dict, tree, event_costs):
 	"""
 	Args:
@@ -197,7 +240,7 @@ def replace_existing_array(existing_array, new_array, current_parent, tree,
 		array_dict[existing_array.id] = existing_array
 		for a in [new_array, ancestor]:
 			# Create tree nodes
-			tree_child_dict[a.id] = dendropy.Node(edge_length=a.distance)
+			tree_child_dict[a.id] = NodeBS(edge_length=a.distance)
 			tree_child_dict[a.id].taxon = tree_namespace.get_taxon(a.id)
 			#Store arrays for further comparisons
 			array_dict[a.id] = a
@@ -254,7 +297,7 @@ def build_tree_single(arrays, tree_namespace, score, all_arrays, node_ids,
 	array1, array2, ancestor = results
 	for a in [array1, array2, ancestor]:
 		# Create tree nodes
-		tree_child_dict[a.id] = dendropy.Node(edge_length=a.distance)
+		tree_child_dict[a.id] = NodeBS(edge_length=a.distance)
 		tree_child_dict[a.id].taxon = tree_namespace.get_taxon(a.id)
 		#Store arrays for further comparisons
 		array_dict[a.id] = a
@@ -385,7 +428,7 @@ def build_tree_multi(arrays, tree_namespace, all_arrays, node_ids,
 
 	for a in [array1, array2, ancestor]:
 		# Create tree nodes
-		tree_child_dict[a.id] = dendropy.Node(edge_length=a.distance)
+		tree_child_dict[a.id] = NodeBS(edge_length=a.distance)
 		tree_child_dict[a.id].taxon = tree_namespace.get_taxon(a.id)
 		#Store arrays for further comparisons
 		array_dict[a.id] = a
@@ -926,6 +969,11 @@ def main(args):
 				clade_bins,
 				leaf_bits_dict)
 			
+			out = dendropy.utility.textprocessing.StringIO()
+			print(best_tree.seed_node.write_newick_bs(out))
+			# print(best_tree.as_string("newick"))
+			sys.exit()
+
 
 	# First check how many spacers will need to be coloured
 
