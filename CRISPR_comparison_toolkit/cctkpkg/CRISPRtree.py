@@ -84,6 +84,7 @@ plotting parameters:
 
   -b                include branch lengths in tree plot
   --brlen-scale     factor to scale branch length
+  --branch-support  Show support at nodes
   --no-emphasize-diffs
                     don't emphasize events in each array since its ancestor
   --no-align-cartoons
@@ -220,7 +221,7 @@ def replace_existing_array(existing_array, new_array, current_parent, tree,
 
 
 def build_tree_single(arrays, tree_namespace, score, all_arrays, node_ids,
-	event_costs):
+	event_costs, branch_support=False):
 	"""
 	Search treespace for most parsimonious tree using single process.
 	Args:
@@ -230,9 +231,10 @@ def build_tree_single(arrays, tree_namespace, score, all_arrays, node_ids,
 		all_arrays (list): The list of all arrays so that indels can be resolved to favour keeping spacers found in other arrays.
 		node_ids (list): The names for internal nodes in the tree to be assigned.
 		event_costs (dict): Dict to look up event types and their parsimony costs.
+		branch_support (bool): Should tree always be returned to be included in branch support calculation.
 	
 	Returns:
-		(tuple) Returns array_dict and dendropy.tree object if the tree beats or equals the provide score. Else retuns tuple of (False, False).
+		(tuple) Returns array_dict and dendropy.tree object if the tree beats or equals the provide score (or if branch_support = True). Else retuns tuple of (False, False).
 	"""
 	initial_arrays = copy.deepcopy(arrays)
 	tree = dendropy.Tree(taxon_namespace=tree_namespace)
@@ -334,7 +336,7 @@ def build_tree_single(arrays, tree_namespace, score, all_arrays, node_ids,
 
 		
 			brlen = tree.length()
-			if brlen > score:
+			if brlen > score and not branch_support:
 				return (False, False, False)
 
 					
@@ -601,7 +603,7 @@ def build_parser(parser):
 	plot_params.add_argument(
 		"-b",
 		dest="branch_lengths",
-		action='store_true', 
+		action='store_true',
 		help="When plotting a representation of the tree Include branch lengths at midpoint on branches. N.B. This does not control inclusion of branch lengths in newick format tree output, which are always included."
 		)
 	plot_params.add_argument(
@@ -611,6 +613,11 @@ def build_parser(parser):
 		metavar='',
 		default=1,
 		help="Factor to scale branch length."
+		)
+	plot_params.add_argument(
+		"--branch-support",
+		action='store_true',
+		help="Show support at nodes"
 		)
 	plot_params.add_argument(
 		"--no-align-cartoons",
@@ -759,6 +766,8 @@ def main(args):
 	if len(array_choices) < num_threads:
 		num_threads = 1
 
+	if args.branch_support:
+		tree_list = []
 	if num_threads == 1:
 		for i in range(min([args.replicates, len(array_choices)])):
 			if args.fix_order:
@@ -777,7 +786,8 @@ def main(args):
 					best_score,
 					all_arrays,
 					node_ids,
-					event_costs)
+					event_costs,
+					args.branch_support)
 			except:
 				no_id_count += 1
 				continue
@@ -785,6 +795,9 @@ def main(args):
 			# Returns false if tree exeeds best score while building
 			if not tree:
 				continue
+			if args.branch_support:
+				# tuple to be consistent with multithread structure
+				tree_list.append(("",tree,"")) 
 			score = tree.length()
 			if score < best_score:
 				# Keep inferred ancestral states and information
@@ -880,6 +893,39 @@ def main(args):
 			"you didn't mistype the array IDs to align.")
 
 	sys.stderr.write("\nScore of best tree is: {}\n".format(best_score))
+
+
+	######################### TEMP
+	##########################
+	if args.branch_support:
+		leaf_bits_dict = {k:v for k,v in zip(
+			args.arrays_to_join, [i for i in range(len(args.arrays_to_join))]
+			)}
+		tree_list_sub = [t[1] for t in tree_list]
+		tree_list_polytomy = [
+			tree_operations.resolve_polytomies(t) for t in copy.deepcopy(tree_list_sub)
+			]
+
+		clade_bins = [
+			tree_operations.get_binary_nodes(
+					t, leaf_bits_dict
+				) for t in tree_list_polytomy
+			]
+
+		if isinstance(best_tree, list):
+			for good_tree in best_tree:
+				tree_operations.resolve_polytomies(good_tree)
+				tree_operations.calculate_branch_support(
+					good_tree,
+					clade_bins,
+					leaf_bits_dict)
+		else:
+			tree_operations.resolve_polytomies(best_tree)
+			tree_operations.calculate_branch_support(
+				best_tree,
+				clade_bins,
+				leaf_bits_dict)
+			
 
 
 	# First check how many spacers will need to be coloured

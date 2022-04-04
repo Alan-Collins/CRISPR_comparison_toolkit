@@ -201,3 +201,29 @@ def process_duplicate_arrays_contrain(tree,	genome_array_dict):
 
 	return tree, new_genome_array_dict
 
+
+def calculate_branch_support(best_tree, clade_bins, leaf_bits_dict):
+	tree_nodes = get_binary_nodes(best_tree, leaf_bits_dict)
+	import sys
+	node_supp_dict = {k:0 for k in tree_nodes}
+	print(node_supp_dict)
+	sys.exit()
+
+
+def get_binary_nodes(tree, leaf_bits_dict):
+	nodes_bin = []
+	for node in tree.preorder_node_iter(filter_fn=lambda x: x.is_internal()):
+		bit_list = ["0" for _ in range(len(leaf_bits_dict))]
+		for leaf in node.leaf_nodes():
+			idx = leaf_bits_dict[leaf.taxon.label]
+			bit_list[idx] = "1"
+		nodes_bin.append("".join(bit_list))
+	
+	return nodes_bin
+
+def convert_tree_to_binary(tree, leaf_bits_dict):
+	# iterate over internal nodes and generate bit string of leaves
+	for node in tree.preorder_node_iter(filter_fn=lambda x: x.is_internal()):
+		print([i.taxon.label for i in node.leaf_nodes()])
+
+	return ""
