@@ -104,6 +104,7 @@ plotting parameters:
 class NodeBS(dendropy.Node):
 	def __init__(self, **kwargs):
 		dendropy.Node.__init__(self, **kwargs)
+		self.node_support=0
 
 	def write_newick_bs(self, out, **kwargs):
 		# adapted from 
@@ -118,7 +119,6 @@ class NodeBS(dendropy.Node):
 				if child is not f_child:
 					out.write(',')
 				child.write_newick_bs(out, **kwargs)
-			# out.write(')%0.2f:' % self.comments[0])
 			out.write(')')
 
 		out.write(self._get_node_token(**kwargs))
@@ -140,7 +140,7 @@ class NodeBS(dendropy.Node):
 						if s:
 							out.write(":%s" % s)
 		if child_nodes and self.parent_node:
-			out.write('[%0.2f]' % self.comments[0])
+			out.write('[%i]' % self.node_support)
 		return out.getvalue()
 
 
@@ -1016,7 +1016,8 @@ def main(args):
 						no_fade_ancestral=args.no_fade_anc,
 						fig_h=args.plot_height, fig_w=args.plot_width,
 						label_text_size=args.font_override_labels,
-						annot_text_size=args.font_override_annotations)
+						annot_text_size=args.font_override_annotations,
+						branch_support=args.branch_support)
 
 				if args.output_arrays:
 					filename = "{}_{}.txt".format(args.output_arrays[:-4], n+1)
@@ -1053,7 +1054,8 @@ def main(args):
 					no_fade_ancestral=args.no_fade_anc,
 					fig_h=args.plot_height, fig_w=args.plot_width,
 					label_text_size=args.font_override_labels,
-					annot_text_size=False)
+					annot_text_size=False,
+					branch_support=args.branch_support)
 			if args.output_arrays:
 				sys.stderr.write(
 					"Saving details of arrays to "
