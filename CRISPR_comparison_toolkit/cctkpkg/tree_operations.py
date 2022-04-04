@@ -205,19 +205,36 @@ def process_duplicate_arrays_contrain(tree,	genome_array_dict):
 def calculate_branch_support(best_tree, clade_bins, leaf_bits_dict):
 	tree_nodes = get_binary_nodes(best_tree, leaf_bits_dict)
 	import sys
-	node_supp_dict = {k:0 for k in tree_nodes}
-	print(node_supp_dict)
-	sys.exit()
+	clade_supp_dict = {k:0 for k in tree_nodes}
+	for tree_supp in clade_bins:
+		for clade in tree_supp:
+			if clade in clade_supp_dict:
+				clade_supp_dict[clade] += 1
+
+	# Scale 0-1 for proportion support
+	for clade in clade_supp_dict:
+		clade_supp_dict[clade] /= len(clade_bins)
+	for node in best_tree.preorder_node_iter(
+		filter_fn=lambda x: x.is_internal()
+	):
+		node_bin = node_binary_id(node, leaf_bits_dict)
+		node.comments.append(clade_supp_dict[node_bin])
+
+
+
+def node_binary_id(node, leaf_bits_dict):
+	bit_list = ["0" for _ in range(len(leaf_bits_dict))]
+	for leaf in node.leaf_nodes():
+		idx = leaf_bits_dict[leaf.taxon.label]
+		bit_list[idx] = "1"
+
+	return "".join(bit_list)
 
 
 def get_binary_nodes(tree, leaf_bits_dict):
 	nodes_bin = []
 	for node in tree.preorder_node_iter(filter_fn=lambda x: x.is_internal()):
-		bit_list = ["0" for _ in range(len(leaf_bits_dict))]
-		for leaf in node.leaf_nodes():
-			idx = leaf_bits_dict[leaf.taxon.label]
-			bit_list[idx] = "1"
-		nodes_bin.append("".join(bit_list))
+		nodes_bin.append(node_binary_id(node, leaf_bits_dict))
 	
 	return nodes_bin
 

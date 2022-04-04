@@ -927,7 +927,6 @@ def main(args):
 				leaf_bits_dict)
 			
 
-
 	# First check how many spacers will need to be coloured
 
 	occurrences = defaultdict(int)
