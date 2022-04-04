@@ -39,6 +39,13 @@ def draw_branches(tree, node_locs, ax, branch_lengths=True, brlen_scale=0.5,
 			ax.plot([x, x], [y1, y2], color='black', linewidth=line_scale,
 				solid_capstyle="round")
 
+			# add branch support if appropriate
+			# node.comments is an empty list if --branch-support not used
+			if node.comments != [] and node != tree.seed_node:
+				support = node.comments[0]
+				ax.scatter(x, y, c=support, cmap='cividis', vmin=0, vmax=1)
+
+
 
 def add_labels(tree, node_locs, ax, branch_lengths=True,font_scale=1,
 	line_scale=1, label_text_size=False, annot_text_size=False,
