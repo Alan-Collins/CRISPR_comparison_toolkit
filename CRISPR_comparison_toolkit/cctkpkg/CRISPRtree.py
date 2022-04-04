@@ -937,12 +937,9 @@ def main(args):
 
 	sys.stderr.write("\nScore of best tree is: {}\n".format(best_score))
 
-
-	######################### TEMP
-	##########################
 	if args.branch_support:
 		leaf_bits_dict = {k:v for k,v in zip(
-			args.arrays_to_join, [i for i in range(len(args.arrays_to_join))]
+			labels, [i for i in range(len(labels))]
 			)}
 		tree_list_sub = [t[1] for t in tree_list]
 		tree_list_polytomy = [
@@ -968,12 +965,6 @@ def main(args):
 				best_tree,
 				clade_bins,
 				leaf_bits_dict)
-			
-			out = dendropy.utility.textprocessing.StringIO()
-			print(best_tree.seed_node.write_newick_bs(out))
-			# print(best_tree.as_string("newick"))
-			sys.exit()
-
 
 	# First check how many spacers will need to be coloured
 
@@ -998,12 +989,15 @@ def main(args):
 				sys.stderr.write(
 					"\nThe addition order to make the following tree was: "
 					"{}\n\n".format(" ".join(order)))
-				tree_operations.resolve_polytomies(good_tree)
 				if args.print_tree:
 					print(good_tree.as_ascii_plot(
 						show_internal_node_labels=True))
 					print('\n')
-				print(good_tree.as_string("newick"))
+				if args.branch_support:
+					out = dendropy.utility.textprocessing.StringIO()
+					print(good_tree.seed_node.write_newick_bs(out))
+				else:
+					print(good_tree.as_string("newick"))
 				if args.out_file:
 					# Reset events in root array
 					best_arrays[n] = reset_anc_mods(good_tree, best_arrays[n])
@@ -1034,11 +1028,14 @@ def main(args):
 			sys.stderr.write(
 				"\nThe addition order to make the best tree was: "
 				"{}\n\n".format(" ".join(order)))
-			tree_operations.resolve_polytomies(best_tree)
 			if args.print_tree:
 				print(best_tree.as_ascii_plot(show_internal_node_labels=True))
 				print("\n")
-			print(best_tree.as_string("newick"))
+			if args.branch_support:
+				out = dendropy.utility.textprocessing.StringIO()
+				print(best_tree.seed_node.write_newick_bs(out))
+			else:
+				print(best_tree.as_string("newick"))
 			if args.out_file:
 				# Reset events in root array
 				best_arrays = reset_anc_mods(best_tree, best_arrays)
