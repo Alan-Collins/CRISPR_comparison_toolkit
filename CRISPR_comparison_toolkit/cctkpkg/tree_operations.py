@@ -213,14 +213,13 @@ def calculate_branch_support(best_tree, clade_bins, leaf_bits_dict):
 
 	# Scale 0-1 for proportion support
 	for clade in clade_supp_dict:
-		clade_supp_dict[clade] = round(
-			clade_supp_dict[clade]/len(clade_bins), 2)
+		clade_supp_dict[clade] = int(100*
+			clade_supp_dict[clade]/len(clade_bins))
 	for node in best_tree.preorder_node_iter(
 		filter_fn=lambda x: x.is_internal()
 	):
 		node_bin = node_binary_id(node, leaf_bits_dict)
-		node.comments.append(clade_supp_dict[node_bin])
-
+		node.node_support =clade_supp_dict[node_bin]
 
 
 def node_binary_id(node, leaf_bits_dict):
@@ -239,9 +238,3 @@ def get_binary_nodes(tree, leaf_bits_dict):
 	
 	return nodes_bin
 
-def convert_tree_to_binary(tree, leaf_bits_dict):
-	# iterate over internal nodes and generate bit string of leaves
-	for node in tree.preorder_node_iter(filter_fn=lambda x: x.is_internal()):
-		print([i.taxon.label for i in node.leaf_nodes()])
-
-	return ""
