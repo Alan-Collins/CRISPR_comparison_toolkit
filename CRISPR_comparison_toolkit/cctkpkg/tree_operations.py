@@ -213,7 +213,8 @@ def calculate_branch_support(best_tree, clade_bins, leaf_bits_dict):
 
 	# Scale 0-1 for proportion support
 	for clade in clade_supp_dict:
-		clade_supp_dict[clade] /= len(clade_bins)
+		clade_supp_dict[clade] = round(
+			clade_supp_dict[clade]/len(clade_bins), 2)
 	for node in best_tree.preorder_node_iter(
 		filter_fn=lambda x: x.is_internal()
 	):
