@@ -11,7 +11,8 @@ from . import (
 	sequence_operations)
 
 def draw_branches(tree, node_locs, ax, branch_lengths=True, brlen_scale=0.5,
-	font_scale=1, line_scale=1, label_text_size=False, annot_text_size=False):
+	font_scale=1, line_scale=1, label_text_size=False, annot_text_size=False,
+	branch_support=False):
 
 	for name, location in node_locs.items():
 		x, y = location
@@ -40,10 +41,13 @@ def draw_branches(tree, node_locs, ax, branch_lengths=True, brlen_scale=0.5,
 				solid_capstyle="round")
 
 			# add branch support if appropriate
-			# node.comments is an empty list if --branch-support not used
-			if node.comments != [] and node != tree.seed_node:
-				support = node.comments[0]
-				ax.scatter(x, y, c=support, cmap='cividis', vmin=0, vmax=1)
+			if branch_support and node != tree.seed_node:
+				support = node.node_support
+				ax.scatter(
+					x, y,
+					c=support,
+					cmap='cividis',
+					vmin=0, vmax=100)
 
 
 
@@ -526,7 +530,7 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict,
 	branch_lengths=False, emphasize_diffs=False, dpi=600, line_scale=1,
 	brlen_scale=1, branch_spacing=2, font_scale=1, fig_h=1, fig_w=1,
 	no_align_cartoons=False, no_align_labels=False, no_fade_ancestral=False,
-	label_text_size=False, annot_text_size=False):
+	label_text_size=False, annot_text_size=False, branch_support=False):
 
 	outline = 0.3 # Thickness of lines
 	spacing = 0.5
@@ -561,7 +565,7 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict,
 	draw_branches(tree, node_locs, ax, font_scale=font_scale,
 		line_scale=line_scale, branch_lengths=branch_lengths,
 		label_text_size=label_text_size, annot_text_size=annot_text_size,
-		brlen_scale=brlen_scale)
+		brlen_scale=brlen_scale, branch_support=branch_support)
 
 	add_labels(tree, node_locs, ax, font_scale=font_scale,
 		branch_lengths=branch_lengths, label_text_size=label_text_size,
@@ -576,6 +580,19 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict,
 		no_fade_ancestral=no_fade_ancestral, label_pad_dict=label_pad_dict)
 
 	plt.axis('off')
+	if branch_support:
+		import matplotlib
+		plt.rcParams.update({'font.size': label_text_size})
+		fig.colorbar(
+			matplotlib.cm.ScalarMappable(
+				matplotlib.colors.Normalize(
+					vmin=0,vmax=100),
+				cmap="cividis"),
+			ax=ax,
+			location = "bottom",
+			pad=0,
+			label="Branch support (%)",
+			shrink=0.5)
 	plt.tight_layout()
 
 	plt.savefig(filename, dpi=dpi, bbox_inches='tight')
