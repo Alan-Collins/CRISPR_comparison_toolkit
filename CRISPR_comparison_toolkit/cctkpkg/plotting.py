@@ -46,7 +46,7 @@ def draw_branches(tree, node_locs, ax, branch_lengths=True, brlen_scale=0.5,
 				ax.scatter(
 					x, y,
 					c=support,
-					cmap='cividis',
+					cmap='cividis_r',
 					vmin=0, vmax=100)
 
 
@@ -587,7 +587,7 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict,
 			matplotlib.cm.ScalarMappable(
 				matplotlib.colors.Normalize(
 					vmin=0,vmax=100),
-				cmap="cividis"),
+				cmap="cividis_r"),
 			ax=ax,
 			location = "bottom",
 			pad=0,
