@@ -32,7 +32,7 @@ The above command will produce a newick string for the most parsimonious tree(s)
 
 	cctk CRISPRtree -a <Array_IDs.txt> -o <output plot with desired extension>
 
-**N.B.** ``cctk CRISPRtree`` uses `matplotlib <https://matplotlib.org/>`_ to perform all plotting functions. You can specify the format of the output file by providing a filename with an extension corresponding to the desired file format. E.g. out_file.png will produce a PNG format file, while out_file.svg will produce an SVG format file. Any file format compatible with `matplotlib.pyplot.savefig() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.savefig.html>`_ should work.
+**N.B.** ``cctk CRISPRtree`` uses `matplotlib <https://matplotlib.org/>`_ to perform all plotting functions. You can specify the format of the output file by providing a filename with an extension corresponding to the desired file format. E.g., out_file.png will produce a PNG format file, while out_file.svg will produce an SVG format file. Any file format compatible with `matplotlib.pyplot.savefig() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.savefig.html>`_ should work.
 
 Outputs
 -------
@@ -108,7 +108,7 @@ If you do not wish to analyze all arrays in your input file, you can specify the
 
 .. code-block:: shell
 
-	cctk CRISPRtree -a <Array_IDs.txt> -o <output plot> 1 2 5 8 20 7
+	cctk CRISPRtree -a <Array_IDs.txt> -o <output plot> 15 20 7 16 19
 
 
 .. _tree-fix-order:
@@ -143,6 +143,72 @@ Saving hypothetical ancestral arrays
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``cctk CRISPRtree`` produces hypothetical ancestral arrays that that contain a subset of the spacers present in the input arrays. These arrays can be saved to an output file using ``--output-arrays <filename>``.
+
+Calculating branch support
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Branch support calculation approach
+"""""""""""""""""""""""""""""""""""
+
+``cctk CRISPRtree`` finds the most parsimonious tree by constructing many trees and comparing their parsimony cost. Each tree is the result of adding arrays to a growing tree in different orders as described in the :ref:`tree-process` section. The order in which arrays are added determines the final topology in large part by determining the ancestral arrays that are inferred (as ancestral arrays are not changed once created). However, while overall topologies may differ between each replicate of the tree-building process, highly similar arrays may still be consistently placed together. ``cctk CRISPRtree`` therefore assesses the frequency with which a given node is seen in all of the trees produced during the tree-building process.
+
+In order to score the presence or absence of nodes, each node is assigned a binary identifier that describes the leaves that descend from it. For example, given the following most parsimonious tree:
+
+.. code-block:: shell
+
+	                                                   /------------------------- 4
+	                         /-------------------------c
+	/------------------------b                         \------------------------- 3
+	|                        |
+	a                        \--------------------------------------------------- 2
+	|
+	\---------------------------------------------------------------------------- 1
+
+We begin by assigning each leaf a binary identifier. There are 4 leaves so they are assigned IDs as follows:
+
+.. code-block:: shell
+
+	1	1000
+	2	0100
+	3	0010
+	4	0001
+
+We can then assign an identifier to each internal node (a, b, and c) describing which nodes descend from that node (i.e., the sum of the IDs of leaves descended from the node). This can be thought of by considering each position in the 4 digit ID as a presence/absence of the corresponding leaf. The first position indicates the presence of array 1 as a leaf, the second array 2 etc. Node a has all four leaves as its descendents so it is assigned an ID that is the sum of the IDs of those leaves: 1000 + 0100 + 0010 + 0001 = 1111. Node b has arrays 2, 3, and 4 so it's ID is 0111. Node c has arrays 3 and 4 so its ID is 0011.
+
+Having identified the nodes present in the most parsimonious tree, we then assign binary IDs to all internal nodes in all other trees and count the number of times each ID in our most parsimonious tree is seen. For example, given the following not very parsimonious tree:
+
+.. code-block:: shell
+
+	                                                   /------------------------- 4
+	/--------------------------------------------------b
+	|                                                  \------------------------- 3
+	a
+	|                                                  /------------------------- 2
+	\--------------------------------------------------c
+	                                                   \------------------------- 1
+
+The IDs for the three internal nodes are a: 1111, b: 0011, c: 1100. We then search this list for any of the IDs from our most parsimonious tree and add to the count of those IDs. 1111 is seen (the ID of the root node is always present in every tree as every tree contains every leaf), and so is 0011, while 0111 is absent. Therefore, after this first tree the counts are 1111: 1, 0111: 0, 0011: 1. This process is repeated for all the trees that were generated during this run. The count is then divided by the number of trees checked to produce a percent branch support value.
+
+Adding branch support to your tree
+""""""""""""""""""""""""""""""""""
+
+branch support calculation is activated by the inclusion of ``--branch-support``. The number of trees used in the branch support calculation is determined by the number of replicated set using ``-r`` (default = 100).
+
+.. code-block:: shell
+
+	cctk CRISPRtree -a <Array_IDs.txt> -o <output plot> -r <num replicates> --branch-support
+
+Adding branch support to the tree shown in the :ref:`tree-plot` section with 100 replicates produces the below image. Branch support is indicated at each internal node (except the root) using a coloured circle. ``cctk CRISPRtree`` uses the colour map `cividis <https://doi.org/10.1371/journal.pone.0199239>`_ for which a colour key is added to the bottom of the image.
+
+.. image:: images/treeplot_branch_support.png
+
+In addition to adding the branch support to the produced tree plot, branch support values are added to the produced newick string as well. For example, the above tree has the following newick string:
+
+.. code-block:: shell
+
+	(((19:1.0,16:1.0)Anc_c:2.0[100],7:1.0)Anc_b:1.0[99],15:12.0,20:3.0)Anc_d:0.0
+
+Branch support values are shown as, e.g., [100] next to the corresponding internal node ID. For example, Anc_c has 100% support, while Anc_b has 99% support. This newick string can be easily used with other tree visualization software such as `iToL <https://itol.embl.de/itol.cgi>`_.
 
 Controlling plot colours
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -268,7 +334,7 @@ Limitations and considerations
 Sequence blindness
 ^^^^^^^^^^^^^^^^^^
 
-``cctk CRISPRtree`` pays no attention to similarities in the sequences of spacers being plotted. All spacers are treated as characters that are either identical or different. If you would like spacers to be assigned the same colour based on some level of similarity (e.g. if they differ at fewer than 2 bases), then you need to adjust your input files accordingly. A single base difference in the sequence of two spacers will result in ``cctk CRISPRtree`` considering those two spacers as distinct.
+``cctk CRISPRtree`` pays no attention to similarities in the sequences of spacers being plotted. All spacers are treated as characters that are either identical or different. If you would like spacers to be assigned the same colour based on some level of similarity (e.g., if they differ at fewer than 2 bases), then you need to adjust your input files accordingly. A single base difference in the sequence of two spacers will result in ``cctk CRISPRtree`` considering those two spacers as distinct.
 
 Plot scaling for tall or wide plots
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
