@@ -161,23 +161,31 @@ def find_closest_array(array, array_dict, tree, event_costs):
 	for array_id in array_dict.keys():
 		comparator_array = copy.deepcopy(array_dict[array_id])
 		comparator_array.reset()
-		comparator_array = array_parsimony.count_parsimony_events(comparator_array, array, array_dict, tree, False)
 		array.reset()
+		comparator_array = array_parsimony.count_parsimony_events(comparator_array, array, array_dict, tree, False)
+		# calc comarator_array_dist now. It's reset during next comparison
+		comparator_array_dist = 0
+		for k,v in event_costs.items():
+			comparator_array_dist += comparator_array.events[k] * v
 		array = array_parsimony.count_parsimony_events(array, comparator_array, array_dict, tree, True)
 		for k,v in event_costs.items():
-			comparator_array.distance += comparator_array.events[k] * v
 			array.distance += array.events[k] * v
-
 		if any([i.type == "shared" for i in comparator_array.modules]):
-			# if comparator_array.distance < best_score:
-			if array.distance < best_score:
-				# best_score = comparator_array.distance
-				best_score = array.distance
+			if array.distance+comparator_array_dist < best_score:
+				best_score = array.distance+comparator_array_dist
 				best_match = comparator_array
-			elif comparator_array.distance == best_score:
+			elif array.distance+comparator_array_dist == best_score:
 				if best_match.extant and not comparator_array.extant:
 					# Prefer to join arrays to existing ancestors rather than to leaves if they are the same distance.
 					best_match = comparator_array
+				if not best_match.extant:
+					# Check if this is an internal polytomy.
+					# If it is then set best match to ultimate parent
+					node = tree.find_node_with_taxon_label(best_match.id)
+					if node.edge_length == 0:
+						while node.edge_length == 0 and node.parent_node is not tree.seed_node:
+							node = node.parent_node
+						best_match = copy.deepcopy(array_dict[node.taxon.label])
 	if not best_match:
 		return "No_ID"
 
@@ -316,7 +324,6 @@ def build_tree_single(arrays, tree_namespace, score, all_arrays, node_ids,
 			# Find the most similar array already in the tree (measured in parsimony score)
 			best_match = find_closest_array(a, array_dict, tree, event_costs)
 			while best_match == "No_ID":
-
 				arrays.append(arrays[i])
 				del arrays[i]
 				a = arrays[i]
@@ -840,7 +847,7 @@ def main(args):
 				continue
 			if args.branch_support:
 				# tuple to be consistent with multithread structure
-				tree_list.append(("",tree,"")) 
+				tree_list.append((array_dict,tree,addition_order)) 
 			score = tree.length()
 			if score < best_score:
 				# Keep inferred ancestral states and information
