@@ -68,7 +68,8 @@ def process_minced_out(
 	CRISPR_types_dict,
 	outdir,
 	snp_thresh=0,
-	append=False
+	append=False,
+	min_shared=0
 	):
 	""" Process minced output into human-friendly/useful formats
 
@@ -83,6 +84,9 @@ def process_minced_out(
 		in the MINCED/ dir.
 	  snp_thresh (int):
 	    Maximum number of SNPs 2 spacers can have to be considered the same.
+	  append (bool): is this run appending to an existing run?
+	  min_shared (int): Minimum number of spacers shared between arrays to 
+	    draw a network edge
 	
 	A dir called PROCESSED will be created and the files generated from
 	processed minced output will be stored there.
@@ -158,7 +162,8 @@ def process_minced_out(
 	non_red_array_id_dict,
 	cluster_reps_dict,
 	processed_out,
-	append
+	append,
+	min_shared
 	)
 
 
