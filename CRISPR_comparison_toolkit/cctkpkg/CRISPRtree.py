@@ -31,11 +31,12 @@ from . import (
 
 description = """
 usage: cctk CRISPRtree [-h] -a [-o] [--output-arrays] [--print-tree] [-x] \
-[-r] [--acquisition] [--indel] [--rep-indel] [--duplication] [--trailer-loss] \
-[--no-ident] [-t] [--seed] [--colour-file] [--colour-scheme-outfile] \
-[--colour-scheme-infile] [-e] [-b] [--brlen-scale] [--no-align-cartoons] \
-[--no-align-labels] [--dpi] [--no-fade-anc] [--plot-width] [--plot-height] \
-[--font-override-labels] [--font-override-annotations] [arrays_to_join]
+[-r] [--acquisition] [--deletion] [--insertion] [--rep-indel] \
+[--duplication] [--trailer-loss] [--no-ident] [-t] [--seed] \
+[--colour-file] [--colour-scheme-outfile] [--colour-scheme-infile] [-e] \
+[-b] [--brlen-scale] [--no-align-cartoons] [--no-align-labels] [--dpi] \
+[--no-fade-anc] [--plot-width] [--plot-height] [--font-override-labels] \
+[--font-override-annotations] [arrays_to_join]
 
 optional arguments:
   -h, --help        show this help message and exit
@@ -59,7 +60,8 @@ running parameters:
   -x, --fix-order   only build one tree using the provided order of arrays
   -r, --replicates  number of replicates of tree building. Default: 100
   --acquisition     parsimony cost of a spacer acquisition event. Default: 1
-  --indel           parsimony cost of an indel event. Default: 10
+  --deletion        parsimony cost of a deletion event. Default: 10
+  --insertion       parsimony cost of an insertion event. Default: 30
   --rep-indel       parsimony cost independently acquiring spacers. Default: 50
   --duplication     parsimony cost of a duplication event. Default: 1
   --trailer-loss    parsimony cost of trailer spacer loss. Default: 1
@@ -568,11 +570,18 @@ def build_parser(parser):
 		help="Specify the parsimony cost of a spacer acquisition event. Default: 1"
 		)
 	run_params.add_argument(
-		"--indel",
+		"--deletion",
 		metavar="",
 		type=int,
 		default=10,
-		help="Specify the parsimony cost of an indel event involving one or more spacers. Default: 10"
+		help="Specify the parsimony cost of a deletion event involving one or more spacers. Default: 10"
+		)
+	run_params.add_argument(
+		"--insertion",
+		metavar="",
+		type=int,
+		default=30,
+		help="Specify the parsimony cost of an insertion event involving one or more spacers. Default: 30"
 		)
 	run_params.add_argument(
 		"--rep-indel",
@@ -747,9 +756,10 @@ def main(args):
 		" ".join(sys.argv)))
 
 	event_costs = { 
-					"acquisition" : args.acquisition,
-					"indel" : args.indel,
-					"repeated_indel" : args.rep_indel,
+					"acquisition": args.acquisition,
+					"deletion": args.deletion,
+					"insertion": args.insertion,
+					"repeated_indel": args.rep_indel,
 					"duplication": args.duplication,
 					"trailer_loss": args.trailer_loss,
 					"no_ident": args.no_ident
@@ -838,7 +848,12 @@ def main(args):
 					node_ids,
 					event_costs,
 					args.branch_support)
-			except:
+			except Exception as e:
+				import os
+				exc_type, exc_obj, exc_tb = sys.exc_info()
+				fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+				print(sys.exc_info())
+				print(exc_type, fname, exc_tb.tb_lineno)
 				no_id_count += 1
 				continue
 
