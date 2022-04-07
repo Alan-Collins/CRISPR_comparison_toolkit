@@ -329,7 +329,7 @@ Note that ``cctk blast`` identifies a different number of spacers and a differen
 .. _network-tutorial:
 
 Exploring CRISPR array relationships using a network representation
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Now that we have predicted CRISPR arrays in the example assemblies, we can begin to explore the relationships between these arrays. We will first visualize array relationships as a network to see how arrays in this dataset are related on a broad scale, and then we will explore more closely the relationships between a small number of arrays. In the following example, we will use `Cytoscape <https://cytoscape.org/>`_ to visualize our array relationship network and will work with the data we generated using ``cctk minced``. We will refer to arrays within the network representation as "nodes" and the relationship between two arrays as an "edge".
 
@@ -346,7 +346,10 @@ In this network representation of array relationships, it is clear that there ar
 .. _diffplot-tutorial:
 
 Using CRISPRdiff to visualize array relationships
-"""""""""""""""""""""""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Introduction
+""""""""""""
 
 `CRISPRdiff <crisprdiff.html>`_ can be used to quickly and easily identify the spacers that are shared and distinct between CRISPR arrays. Here we will use it to visualise the three clusters of arrays that we saw in the :ref:`network-tutorial`. For this example we will create a directory within our Minced_CRISPRs/ directory and save plots at that location.
 
@@ -355,6 +358,9 @@ Using CRISPRdiff to visualize array relationships
 .. code-block:: shell
 
 	Minced_CRISPRs$ mkdir Plots
+
+Left cluster
+""""""""""""
 
 First let's look at the left-most cluster in which all arrays have a low level of similarity to one another.
 
@@ -370,11 +376,21 @@ In the above image, it is clear that most spacers are not shared between arrays 
 
 Other interesting relationships are also clear. For example, Arrays 2 and 17 share a black spacer (-5 in array 7, -4 in array 4), which is surrounded on both sides by spacers that are not shared between these two arrays. Some possible explanations for this pattern of spacer sharing will be discussed below in the :ref:`tree-tutorial` section.
 
+Middle cluster
+""""""""""""""
+
 .. code-block:: shell
 
 	Minced_CRISPRs$ cctk CRISPRdiff -a PROCESSED/Array_IDs.txt -o Plots/middle_cluster.png 5 12 20 21
 
 .. image:: images/diff_tutorial_middle.png
+
+The middle cluster of arrays have darker edges in the network representation, indicating more shared spacers between arrays. The diffplot shown about makes this relationship clear. Many spacers are shared between all four arrays, with unique spacers only found in a single array (12). 
+
+The lines drawn between shared spacers in adjacently plotted arrays help to identify spacers that are shared between arrays, but they also help to highlight spacers that are present in one array and missing in another. For example, arrays 12 and 21 share several spacers, but multiple regions in each array is missing in the other. This can be readily picked out by scanning across the lines between them and noticing regions where lines are missing or the angle of the lines changes. 
+
+Right cluster
+"""""""""""""
 
 .. code-block:: shell
 
@@ -382,13 +398,24 @@ Other interesting relationships are also clear. For example, Arrays 2 and 17 sha
 
 .. image:: images/diff_tutorial_right.png
 
+The arrays in the right cluster are also highly related. Of note in this cluster is the presence of a duplicated spacer in array 15. This is readily identified in the diffplot as the corresponding spacer in the two adjacently plotted arrays are connected to both copies of the spacer in array 15, leading to a V or A shape formed by the lines connecting shared spacers between arrays.
+
 
 .. _tree-tutorial:
 
 Using CRISPRtree to create hypotheses of array histories
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. image:: images/tree_tutorial_left.png
+Representing array relationships as a network allows you to quickly assess how similar a group of arrays are. Visualizing a cluster of arrays using ``cctk CRISPRdiff`` allows you to further assess which spacers are shared or different, and where the differences between arrays are located. However, it
+
+To analyse the left cluster using ``cctk CRISPRtree`` we will use the following command. Logging outputs are sent to stderr which we will direct to to a file for now . 
+
+.. code-block:: shell
+
+	Minced_CRISPRs$ cctk CRISPRtree -a PROCESSED/Array_IDs.txt -o Plots/tree_left_cluster --branch-support 2 6 11 17 18 2>tree_left_cluster.log
+	(((2:16.0,17:83.0)Anc_d:3.0[32],6:56.0)Anc_c:1.0[96],18:15.0,11:14.0)Anc_b:0.0
+
+.. image:: images/tutorial_tree_left_cluster.png
 
 
 .. _minced-blast-comp:
