@@ -37,9 +37,10 @@ class Array():
 		self.module_lookup = {}
 		self.distance = 0
 		self.events = { 
-						"acquisition" : 0,
-						"indel" : 0,
-						"repeated_indel" : 0,
+						"acquisition": 0,
+						"deletion": 0,
+						"insertion": 0,
+						"repeated_indel": 0,
 						"duplication": 0,
 						"trailer_loss": 0,
 						"no_ident": 0,
@@ -58,7 +59,8 @@ class Array():
 		self.module_lookup = {}
 		self.events = { 
 						"acquisition" : 0,
-						"indel" : 0,
+						"deletion": 0,
+						"insertion": 0,
 						"repeated_indel" : 0,
 						"duplication": 0,
 						"trailer_loss": 0,
@@ -253,7 +255,8 @@ def find_modules(array1, array2, parent_comparison=False,
 						any([a in spacers for spacers in extra_subtree_arrays]
 							) or (
 						any([b in spacers for spacers in extra_subtree_arrays])
-						)):
+						)
+					):
 						if module1.type not in ["indel_mm", ""]:
 							array1.modules.append(module1)
 							for k in module1.indices:
@@ -666,9 +669,9 @@ def count_parsimony_events(child, ancestor, array_dict, tree,
 						child, ancestor, array_dict, mod,
 						ancestor.module_lookup[idx], tree)
 				else:
-					child.events['indel'] += 1
+					child.events['deletion'] += 1
 			else:
-				child.events['indel'] += 1
+				child.events['deletion'] += 1
 			idx = mod.indices[-1] + 1 # Skip the rest of this module.
 		elif mod.type == 'duplication':
 			child.events['duplication'] += 1
@@ -680,9 +683,14 @@ def count_parsimony_events(child, ancestor, array_dict, tree,
 			if mod.spacers[0] == '-':
 				child.events['trailer_loss'] += 1
 			else:
-				mod.type = 'indel_mm'
-				child.module_lookup[idx] = mod
-				child.events['indel'] += 1
+				if parent_comparison:
+					mod.type = 'insertion'
+					child.module_lookup[idx] = mod
+					child.events['insertion'] += 1
+				else:	
+					mod.type = 'indel_mm'
+					child.module_lookup[idx] = mod
+					child.events['deletion'] += 1
 			idx = mod.indices[-1] + 1
 		elif mod.type == "no_ident":
 			child.events['no_ident'] += 1
@@ -707,169 +715,193 @@ def identify_repeat_indels(child, ancestor, array_dict, module,
 		(Array class instance) The child array, modified to contain newly identified SpacerModule instances if any are found.
 	"""
 
-	indels = repeated_indels = acquisition = 0 # Start counters to keep track of events identified
+	deletions, inserts, repeated_indels, acquisition = 0, 0, 0, 0 
 	new_modules = [] # Initialize a list to contain new modules if any are found
-	if len(tree) > 1:
-		ancestor_node = tree.find_node_with_taxon_label(ancestor.id)
-		if ancestor_node:
-			ancestor_children = (ancestor_node.leaf_nodes() 
-				+ [node for node in ancestor_node.levelorder_iter(
-					lambda x: x.is_internal())])
-			ancestor_children_ids = [node.taxon.label for node in ancestor_children]
-
-			non_ancestor_children = []
-			for node in tree:
-				if node.taxon:
-					if node.taxon.label not in ancestor_children_ids:
-						non_ancestor_children.append(node)
-
-			non_ancestor_children_ids = [node.taxon.label for node in non_ancestor_children]
-
-			non_ancestor_children_spacers = [array_dict[array].spacers for array in non_ancestor_children_ids]
-
-			child_node = tree.find_node_with_taxon_label(child.id)
-			# Store a list of the children that are not the child array
-			# being assessed. If the child is already set as the child
-			# of this ancestor then this will just be that child's
-			# sibling. Otherwise this is a comparison used to place the
-			# "child" array which is not yet in the tree and so all the
-			# children of the ancestor should be included.
-			other_child_children = [] 
-			if child_node:
-				if child_node.parent_node == ancestor_node:
-					other_child = child_node.sibling_nodes()[0]
-					other_child_children = other_child.leaf_nodes() + [node for node in other_child.levelorder_iter(lambda x: x.is_internal())]
-				else:
-					for n in ancestor_node.child_nodes():
-						other_child_children += n.leaf_nodes() + [node for node in n.levelorder_iter(lambda x: x.is_internal())]
-			else:
-				for n in ancestor_node.child_nodes():
-					other_child_children += n.leaf_nodes() + [node for node in n.levelorder_iter(lambda x: x.is_internal())]
-			other_child_children_ids = [node.taxon.label for node in other_child_children]
-			other_child_children_spacers = [array_dict[array].spacers for array in other_child_children_ids]
-
-			repeat_search = True
-			original_spacers_to_check = copy.deepcopy(module.spacers) 
-			spacers_to_check = copy.deepcopy(module.spacers) # Store which spacers to look for and an original copy to maintain index information
-			array_IDs_of_concern = non_ancestor_children_ids + other_child_children_ids
-			arrays_of_concern = non_ancestor_children_spacers + other_child_children_spacers
-			while repeat_search:
-				longest_match = 0
-				longest_indices = []
-				arrays_to_check = []
-				# If lost spacers are found in either of these two groups it indicates independent gain of the same spacers in different lineages.
-				for spacer in spacers_to_check:
-					for a, array in enumerate(arrays_of_concern):
-						if spacer in set(array):
-							arrays_to_check.append(a)
-				if len(arrays_to_check) == 0:
-					repeat_search = False 
-				else:
-					for a in set(arrays_to_check):
-						x = Array("x", spacers_to_check)
-						y = Array("y", arrays_of_concern[a])
-						x.aligned, y.aligned = sequence_operations.needle(x.spacers, y.spacers) # Find where the match is by aligning
-						x,y = find_modules(x,y) # Then identify any shared regions
-						for m in x.modules: # Pull out the shared modules
-							if m.type == "shared":
-								if len(m.indices) > longest_match:
-									longest_match = len(m.indices)
-									longest_indices = [original_spacers_to_check.index(s) for s in m.spacers if s in original_spacers_to_check]
-									longest_spacers = [s for s in spacers_to_check if s in m.spacers]
-									partner = [array_IDs_of_concern[a]]
-									partner_extant = array_dict[array_IDs_of_concern[a]].extant
-								elif len(m.indices) == longest_match and set(m.spacers) == set(longest_spacers):
-									# If the modules are equally long, prefer to keep extant arrays.
-									if not partner_extant and array_dict[array_IDs_of_concern[a]].extant:
-										longest_match = len(m.indices)
-										longest_indices = [original_spacers_to_check.index(s) for s in m.spacers if s in original_spacers_to_check]
-										longest_spacers = [s for s in spacers_to_check if s in m.spacers]
-										partner = [array_IDs_of_concern[a]]
-										partner_extant = array_dict[array_IDs_of_concern[a]].extant
-									else:
-										if array_dict[array_IDs_of_concern[a]].extant:
-											if array_IDs_of_concern[a] not in partner:
-												partner.append(array_IDs_of_concern[a])
-					new_rep_indel_mod = SpacerModule()
-					new_rep_indel_mod.spacers = longest_spacers
-					new_rep_indel_mod.indices = [module.indices[i] for i in longest_indices]
-					new_rep_indel_mod.type = "repeated_indel"
-					new_rep_indel_mod.partner = partner
-					new_modules.append(new_rep_indel_mod)
-					repeated_indels += 1
-					# Remove spacers that have been found from list and look again
-					spacers_to_check = [s for s in spacers_to_check if s not in longest_spacers]
-			if len(spacers_to_check) > 0:
-				# identify consecutive runs of spacers that are unique to this array
-				spacer_indices = [n for n, s in enumerate(module.spacers) if s in spacers_to_check]
-				if module.type == "acquisition":
-					expected_index = 0 # If this is an acquisition then the first spacer will still be present.
-					new_ac_mod = SpacerModule()
-					new_ac_mod.type = "acquisition"
-					while spacer_indices[0] == expected_index:
-						new_ac_mod.indices.append(module.indices[spacer_indices[0]])
-						new_ac_mod.spacers.append(module.spacers[spacer_indices[0]])
-						acquisition += 1 # If true then this spacer was acquired since ancestor.
-						expected_index = spacer_indices.pop(0)+1 # Update expected index to be the one higher. Remove the index from the list so it isn't later counted as an indel
-						if len(spacer_indices) == 0: # If we finish the list then break the while loop
-							break
-					if len(new_ac_mod.spacers) > 0: # If any acquisition was found then add the new acquisition module to the list of new modules
-						new_modules.append(new_ac_mod)
-				if spacers_to_check != module.spacers: # If we haven't found anything, no need to update the existing indel. This check is passed if we found something
-					if len(spacer_indices) > 0: # Then find consecutive runs of spacers. Each must be an indel
-						new_indel_mod = SpacerModule() # Make a new SpacerModule to store the indel.
-						new_indel_mod.type = "indel" # Call it just an idel as gap or mm relative to comparator is not assessed here.
-						last_n = False # Keep track of what the last index was to know if this is a consecutive run.
-						for n in spacer_indices:
-							if n == spacer_indices[-1]: # If the list is over then add the last indel and break
-								new_indel_mod.indices.append(module.indices[n])
-								new_indel_mod.spacers.append(module.spacers[n])
-								new_modules.append(new_indel_mod)
-								indels += 1
-								break
-							if last_n:
-								if n != last_n + 1: # If this number is not one more than the last then consecutive run is over
-									new_modules.append(new_indel_mod)
-									new_indel_mod = SpacerModule() # Make a new SpacerModule to store the next indel.
-									new_indel_mod.type = "indel"
-									indels += 1
-								last_n = n
-								new_indel_mod.indices.append(module.indices[n])
-								new_indel_mod.spacers.append(module.spacers[n])
-							else: # Otherwise move to the next number
-								last_n = n 
-								new_indel_mod.indices.append(module.indices[n])
-								new_indel_mod.spacers.append(module.spacers[n])
-				else: # If we haven't found anything then if this was an indel then set the indel count to 1 and move on. If it was an acquisition then the count has already been added so just move on.
-					if module.type in ["indel_gap", "indel_mm"]:
-						indels = 1
-					elif module.type == "acquisition":
-						pass
-			if module.type == 'no_acquisition':
-				# None of the above will have run if this module is just gaps.
-				# In that case we need to check if the absence of those spacers in the child array represents simply not having acquired them or if it would require the loss and regain of the same spacers at different points in the tree.
-				# If the lost spacers are present in the children of this array then there has to have been a deletion and regain. That probably means this arrangement is wrong so I will assign a high parsimony cost in order to favour other topologies.
-				ancestor_children_spacers = [array_dict[array].spacers for array in ancestor_children_ids]
-				# Do a simple check to see if all the lost spacers are in any of the children
-				found = False
-				for array in ancestor_children_spacers:
-					if all([spacer in array for spacer in ancestor_module.spacers]):
-						found = True
-						break
-				if found: # If we found all the lost spacers in a child array then this is at least one repeated deletion. Add one event for now. May implement more detailed characterization in future if trees don't look right.
-					repeated_indels += 1
-				else: # If not then just add the cost of the acquisitions that must have occured between the child and ancestor (even though the direction of that change is opposite to normal comparisons.)
-					acquisition += len(module.indices)
-		else:
-			indels = 1
-	else:
+	if len(tree) <= 1:
 		if module.type == "acquisition":
-			acquisition += len(module.indices)
+			child.events['acquisition'] += len(module.indices)
 		else:
-			indels = 1
+			child.events['deletion'] += 1
+		return child
+
+
+	ancestor_node = tree.find_node_with_taxon_label(ancestor.id)
+	if not ancestor_node:
+		child.events['deletion'] += 1
+		return child
+
+
+	ancestor_children = (ancestor_node.leaf_nodes() 
+		+ [node for node in ancestor_node.levelorder_iter(
+			lambda x: x.is_internal())])
+	ancestor_children_ids = [node.taxon.label for node in ancestor_children]
+
+	non_ancestor_children = []
+	for node in tree:
+		if node.taxon:
+			if node.taxon.label not in ancestor_children_ids:
+				non_ancestor_children.append(node)
+
+	non_ancestor_children_ids = [node.taxon.label for node in non_ancestor_children]
+
+	non_ancestor_children_spacers = [array_dict[array].spacers for array in non_ancestor_children_ids]
+
+	child_node = tree.find_node_with_taxon_label(child.id)
+	# Store a list of the children that are not the child array
+	# being assessed. If the child is already set as the child
+	# of this ancestor then this will just be that child's
+	# sibling. Otherwise this is a comparison used to place the
+	# "child" array which is not yet in the tree and so all the
+	# children of the ancestor should be included.
+	other_child_children = [] 
+	if child_node:
+		if child_node.parent_node == ancestor_node:
+			other_child = child_node.sibling_nodes()[0]
+			other_child_children = other_child.leaf_nodes() + [node for node in other_child.levelorder_iter(lambda x: x.is_internal())]
+		else:
+			for n in ancestor_node.child_nodes():
+				other_child_children += n.leaf_nodes() + [node for node in n.levelorder_iter(lambda x: x.is_internal())]
+	else:
+		for n in ancestor_node.child_nodes():
+			other_child_children += n.leaf_nodes() + [node for node in n.levelorder_iter(lambda x: x.is_internal())]
+	other_child_children_ids = [node.taxon.label for node in other_child_children]
+	other_child_children_spacers = [array_dict[array].spacers for array in other_child_children_ids]
+
+	repeat_search = True
+	original_spacers_to_check = copy.deepcopy(module.spacers) 
+	spacers_to_check = copy.deepcopy(module.spacers) # Store which spacers to look for and an original copy to maintain index information
+	array_IDs_of_concern = non_ancestor_children_ids + other_child_children_ids
+	arrays_of_concern = non_ancestor_children_spacers + other_child_children_spacers
+	while repeat_search:
+		longest_match = 0
+		longest_indices = []
+		arrays_to_check = []
+		# If lost spacers are found in either of these two groups it indicates independent gain of the same spacers in different lineages.
+		for spacer in spacers_to_check:
+			for a, array in enumerate(arrays_of_concern):
+				if spacer in set(array):
+					arrays_to_check.append(a)
+		if len(arrays_to_check) == 0:
+			repeat_search = False 
+		else:
+			for a in set(arrays_to_check):
+				x = Array("x", spacers_to_check)
+				y = Array("y", arrays_of_concern[a])
+				x.aligned, y.aligned = sequence_operations.needle(x.spacers, y.spacers) # Find where the match is by aligning
+				x,y = find_modules(x,y) # Then identify any shared regions
+				for m in x.modules: # Pull out the shared modules
+					if m.type == "shared":
+						if len(m.indices) > longest_match:
+							longest_match = len(m.indices)
+							longest_indices = [original_spacers_to_check.index(s) for s in m.spacers if s in original_spacers_to_check]
+							longest_spacers = [s for s in spacers_to_check if s in m.spacers]
+							partner = [array_IDs_of_concern[a]]
+							partner_extant = array_dict[array_IDs_of_concern[a]].extant
+						elif len(m.indices) == longest_match and set(m.spacers) == set(longest_spacers):
+							# If the modules are equally long, prefer to keep extant arrays.
+							if not partner_extant and array_dict[array_IDs_of_concern[a]].extant:
+								longest_match = len(m.indices)
+								longest_indices = [original_spacers_to_check.index(s) for s in m.spacers if s in original_spacers_to_check]
+								longest_spacers = [s for s in spacers_to_check if s in m.spacers]
+								partner = [array_IDs_of_concern[a]]
+								partner_extant = array_dict[array_IDs_of_concern[a]].extant
+							else:
+								if array_dict[array_IDs_of_concern[a]].extant:
+									if array_IDs_of_concern[a] not in partner:
+										partner.append(array_IDs_of_concern[a])
+			new_rep_indel_mod = SpacerModule()
+			new_rep_indel_mod.spacers = longest_spacers
+			new_rep_indel_mod.indices = [module.indices[i] for i in longest_indices]
+			new_rep_indel_mod.type = "repeated_indel"
+			new_rep_indel_mod.partner = partner
+			new_modules.append(new_rep_indel_mod)
+			repeated_indels += 1
+			# Remove spacers that have been found from list and look again
+			spacers_to_check = [s for s in spacers_to_check if s not in longest_spacers]
+	if len(spacers_to_check) > 0:
+		# identify consecutive runs of spacers that are unique to this array
+		spacer_indices = [n for n, s in enumerate(module.spacers) if s in spacers_to_check]
+		if module.type == "acquisition":
+			expected_index = 0 # If this is an acquisition then the first spacer will still be present.
+			new_ac_mod = SpacerModule()
+			new_ac_mod.type = "acquisition"
+			while spacer_indices[0] == expected_index:
+				new_ac_mod.indices.append(module.indices[spacer_indices[0]])
+				new_ac_mod.spacers.append(module.spacers[spacer_indices[0]])
+				acquisition += 1 # If true then this spacer was acquired since ancestor.
+				expected_index = spacer_indices.pop(0)+1 # Update expected index to be the one higher. Remove the index from the list so it isn't later counted as an indel
+				if len(spacer_indices) == 0: # If we finish the list then break the while loop
+					break
+			if len(new_ac_mod.spacers) > 0: # If any acquisition was found then add the new acquisition module to the list of new modules
+				new_modules.append(new_ac_mod)
+		if spacers_to_check != module.spacers: # If we haven't found anything, no need to update the existing indel. This check is passed if we found something
+			if len(spacer_indices) > 0: # Then find consecutive runs of spacers. Each must be an indel
+				new_indel_mod = SpacerModule() # Make a new SpacerModule to store the indel.
+				new_indel_mod.type = "indel" # Call it just an idel as gap or mm relative to comparator is not assessed here.
+				last_n = False # Keep track of what the last index was to know if this is a consecutive run.
+				for n in spacer_indices:
+					if n == spacer_indices[-1]: # If the list is over then add the last indel and break
+						new_indel_mod.indices.append(module.indices[n])
+						new_indel_mod.spacers.append(module.spacers[n])
+						if all([s == '-' for s in new_indel_mod.spacers]):
+							new_indel_mod.type = 'indel_gap'
+							new_modules.append(new_indel_mod)
+							deletions += 1
+						else:
+							new_indel_mod.type = 'indel_mm'
+							new_modules.append(new_indel_mod)
+							inserts += 1
+						break
+					if last_n:
+						if n != last_n + 1: # If this number is not one more than the last then consecutive run is over
+							if all([s == '-' for s in new_indel_mod.spacers]):
+								new_indel_mod.type = 'indel_gap'
+								new_modules.append(new_indel_mod)
+								deletions += 1
+							else:
+								new_indel_mod.type = 'indel_mm'
+								new_modules.append(new_indel_mod)
+								inserts += 1
+							new_indel_mod = SpacerModule() # Make a new SpacerModule to store the next indel.
+							new_indel_mod.type = "indel"
+						last_n = n
+						new_indel_mod.indices.append(module.indices[n])
+						new_indel_mod.spacers.append(module.spacers[n])
+					else: # Otherwise move to the next number
+						last_n = n 
+						new_indel_mod.indices.append(module.indices[n])
+						new_indel_mod.spacers.append(module.spacers[n])
+		else: # If we haven't found anything then if this was an indel then set the indel count to 1 and move on. If it was an acquisition then the count has already been added so just move on.
+			if module.type == "indel_gap":
+				# If this is entirely a gap relative to ancestor then 
+				# it's a deletion. Else call it an insertion.
+				if all([s == '-' for s in module.spacers]):
+					deletions = 1
+				else:
+					inserts = 1
+			elif module.type == "indel_mm":
+				inserts = 1
+			elif module.type == "acquisition":
+				pass
+	if module.type == 'no_acquisition':
+		# None of the above will have run if this module is just gaps.
+		# In that case we need to check if the absence of those spacers in the child array represents simply not having acquired them or if it would require the loss and regain of the same spacers at different points in the tree.
+		# If the lost spacers are present in the children of this array then there has to have been a deletion and regain. That probably means this arrangement is wrong so I will assign a high parsimony cost in order to favour other topologies.
+		ancestor_children_spacers = [array_dict[array].spacers for array in ancestor_children_ids]
+		# Do a simple check to see if all the lost spacers are in any of the children
+		found = False
+		for array in ancestor_children_spacers:
+			if all([spacer in array for spacer in ancestor_module.spacers]):
+				found = True
+				break
+		if found: # If we found all the lost spacers in a child array then this is at least one repeated deletion. Add one event for now. May implement more detailed characterization in future if trees don't look right.
+			repeated_indels += 1
+		else: # If not then just add the cost of the acquisitions that must have occured between the child and ancestor (even though the direction of that change is opposite to normal comparisons.)
+			acquisition += len(module.indices)
 
 	child.events['acquisition'] += acquisition
-	child.events['indel'] += indels
+	child.events['deletion'] += deletions
+	child.events['insertion'] += inserts
 	child.events['repeated_indel'] += repeated_indels
 
 	if len(new_modules) > 0: # If modules have been found within the query module then it should be replaced in the .modules list with the newly found modules and the .module_lookup dict updated.
