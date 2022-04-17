@@ -121,9 +121,18 @@ class NodeBS(dendropy.Node):
 				if child is not f_child:
 					out.write(',')
 				child.write_newick_bs(out, **kwargs)
-			out.write(')')
+			if self.parent_node:
+				out.write(')%i' % self.node_support)
+			else:
+				out.write(')')
 
-		out.write(self._get_node_token(**kwargs))
+		if len(child_nodes) == 0:
+			out.write(self._get_node_token(**kwargs))
+		
+		if not self.parent_node:
+			out.write(";")
+			return out.getvalue()
+
 		if edge_lengths:
 			e = self.edge
 			if e:
@@ -141,8 +150,7 @@ class NodeBS(dendropy.Node):
 							s = str(sel)
 						if s:
 							out.write(":%s" % s)
-		if child_nodes and self.parent_node:
-			out.write('[%i]' % self.node_support)
+
 		return out.getvalue()
 
 
@@ -1019,7 +1027,7 @@ def main(args):
 					out = dendropy.utility.textprocessing.StringIO()
 					print(good_tree.seed_node.write_newick_bs(out))
 				else:
-					print(good_tree.as_string("newick"))
+					print(good_tree.as_string("newick", suppress_internal_taxon_labels=True))
 				if args.out_file:
 					# Reset events in root array
 					best_arrays[n] = reset_anc_mods(good_tree, best_arrays[n])
@@ -1058,7 +1066,7 @@ def main(args):
 				out = dendropy.utility.textprocessing.StringIO()
 				print(best_tree.seed_node.write_newick_bs(out))
 			else:
-				print(best_tree.as_string("newick"))
+				print(best_tree.as_string("newick", suppress_internal_taxon_labels=True))
 			if args.out_file:
 				# Reset events in root array
 				best_arrays = reset_anc_mods(best_tree, best_arrays)
