@@ -800,20 +800,20 @@ def main(args):
 		random.shuffle(array_choices)
 
 		if len(array_choices) > args.replicates:
-			sys.stderr.write("\nThere are {} possible trees to check. If you "
+			sys.stderr.write("\nThere are {} possible array orders to check. If you "
 				"want to check every possible tree then set -r {}\n".format(
 					len(array_choices), len(array_choices)))
 			array_choices = [array_choices[i] for i in range(args.replicates)]
 
 		elif len(array_choices) < args.replicates:
-			sys.stderr.write("\nThere are only {} possible trees to check. "
+			sys.stderr.write("\nThere are only {} possible array orders to check. "
 				"You specified a greater number of replicates than there are "
-				"possible trees. All possible trees will be checked.\n".format(
+				"possible orders. All possible orders will be checked.\n".format(
 					len(array_choices)))
 
 		else:
 			sys.stderr.write("\nYou specified a number of replicates equal to "
-				"the number of possible trees. All possible trees will be "
+				"the number of possible array orders. All possible orders will be "
 				"checked.\n")
 	else:
 		array_choices = [
