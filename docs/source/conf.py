@@ -22,7 +22,7 @@ copyright = '2022, Alan Collins'
 author = 'Alan Collins'
 
 # The full version, including alpha/beta/rc tags
-release = '0.6.5'
+release = '0.6.6'
 
 
 # -- General configuration ---------------------------------------------------
