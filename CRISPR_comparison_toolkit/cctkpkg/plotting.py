@@ -192,7 +192,7 @@ def add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict,
 						spacer_width, diff_type.partner,
 						rep_indel_report_count,	rep_indel_message_printed,
 						annot_text_size=annot_text_size)
-					if len(diff_type.partner) > 2:
+					if len(diff_type.partner) > 1:
 						rep_indel_report_count += 1
 					rep_indel_message_printed = True
 					
@@ -379,11 +379,10 @@ def plot_rep_indel_text(ax, nspacers, x, y, spacer_size, spacer_count,
 	else:
 		font_size = 6*font_scale
 
-	if len(partners) > 2:
-		vpad = 1.3
-		message = "\n".join(
-				[partners[0],
-				"event {}".format(rep_indel_report_count)])
+	vpad = 0.8
+
+	if len(partners) > 1:
+		message = "event {}".format(rep_indel_report_count)
 		
 		if not rep_indel_message_printed:
 			print("Repeated indels were identified with multiple possible "
@@ -395,12 +394,7 @@ def plot_rep_indel_text(ax, nspacers, x, y, spacer_size, spacer_count,
 			rep_indel_report_count,
 			" ".join(partners)))
 	else:
-		if len(partners) == 2:
-			vpad = 1.4
-			message = "\n".join(partners)
-		else:
-			vpad = 1
-			message = partners[0]
+		message = partners[0]
 
 	ax.text(x-spacer_size*(spacer_count+nspacers/2)-0.5,
 		y-spacer_width/2-vpad, message,
