@@ -196,6 +196,9 @@ def find_closest_array(array, array_dict, tree, event_costs):
 						while node.edge_length == 0 and node.parent_node is not tree.seed_node:
 							node = node.parent_node
 						best_match = copy.deepcopy(array_dict[node.taxon.label])
+						# need to repopulate alignment etc
+						best_match = array_parsimony.count_parsimony_events(
+							best_match, array, array_dict, tree, False)
 	if not best_match:
 		return "No_ID"
 
@@ -394,12 +397,10 @@ def build_tree_single(arrays, tree_namespace, score, all_arrays, node_ids,
 							node_array.distance += node_array.events[k] * v
 						node.edge_length = node_array.distance
 
-		
 			brlen = tree.length()
 			if brlen > score and not branch_support:
 				return (False, False, False)
 
-					
 			if a == arrays[-1]:
 				tree.reroot_at_node(tree.seed_node, update_bipartitions=False) # Need to reroot at the seed so that RF distance works
 				return (array_dict, tree, initial_arrays)
