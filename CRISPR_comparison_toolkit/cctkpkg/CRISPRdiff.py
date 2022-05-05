@@ -29,7 +29,7 @@ optional arguments:
 running parameters:
   control run behaviour
 
-  --iterations      number of iterations of order determination. Default = 10
+  --iterations      number of iterations of order determination. Default = 100
   --preordered      array order you provided is the one you want plotted
   --approx-ordered  array order you provided should be optimized slightly
   --seed            set seed for random processes
@@ -308,11 +308,11 @@ def build_parser(parser):
 	run_params.add_argument(
 		"--iterations",
 		required=False,
-		default=10,
+		default=100,
 		metavar=' ',
 		type=int,
 		help="Number of attempts to find the best order of arrays for \
-		plotting. Higher number can improve the array order. Default = 10"
+		plotting. Higher number can improve the array order. Default = 100"
 		)
 	run_params.add_argument(
 		"--preordered",
