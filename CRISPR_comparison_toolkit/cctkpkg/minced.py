@@ -250,6 +250,9 @@ def main(args):
 	if outdir[-1] != "/":
 		outdir+= "/"
 
+	if not os.path.isdir(outdir):
+		os.makedirs(outdir)
+
 	if args.append:
 		file_handling.check_append(outdir+"PROCESSED/")
 

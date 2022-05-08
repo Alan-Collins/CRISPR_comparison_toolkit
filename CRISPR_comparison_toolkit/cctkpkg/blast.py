@@ -2,6 +2,7 @@
 
 
 import sys
+import os
 import argparse
 import subprocess
 import multiprocessing
@@ -602,6 +603,9 @@ def build_parser(parser):
 def main(args):
 
     outdir = args.outdir + '/' if args.outdir[-1] != '/' else args.outdir
+
+    if not os.path.isdir(outdir):
+        os.makedirs(outdir)
 
     # Make sure repeats aren't similar enough to return overlapping hits
     check_repeat_similarity(args.repeats_file)
