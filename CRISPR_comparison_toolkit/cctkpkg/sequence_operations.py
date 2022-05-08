@@ -355,17 +355,15 @@ def non_redundant_CR(
 	):
 	""" Identify non-redundant spacers and arrays in AssemblyCRISPRs instances
 	"""
-	all_spacers_dict = defaultdict(list)
+	non_red_spacer_dict = defaultdict(list)
 	all_arrays_dict = defaultdict(list)
 	for strain in all_assemblies:
 		for k,v in strain.arrays.items():
 			CR_type = v.repeat_id
 			all_arrays_dict[CR_type].append(" ".join(v.spacers))
 			for s in v.spacers:
-				all_spacers_dict[CR_type].append(s)
-
-	# Sort arrays for reproducibility
-	non_red_spacer_dict = {k: sorted(list(set(v))) for k,v in all_spacers_dict.items()}
+				if s not in set(non_red_spacer_dict[CR_type]):
+					non_red_spacer_dict[CR_type].append(s)
 
 	cluster_reps_dict = {}
 	rev_cluster_reps_dict = defaultdict(dict)
@@ -375,7 +373,7 @@ def non_redundant_CR(
 		for CR_type, network in spacer_snp_network.items():
 			clusters = identify_network_clusters(network)
 			cluster_reps_dict[CR_type] = pick_cluster_rep(
-				clusters, all_spacers_dict[CR_type], prev_spacer_id_dict)
+				clusters, non_red_spacer_dict[CR_type], prev_spacer_id_dict)
 			# Add to the reverse dict to use for replacing instances of 
 			# cluster members with their rep later
 			for rep, cluster_members in cluster_reps_dict[CR_type].items():
