@@ -396,7 +396,7 @@ def main(args):
 		del array_dict[a]
 
 	node_ids = tree_operations.create_internal_node_ids(
-		len(genome_array_dict))
+		len(genome_array_dict), "Anc ")
 
 	tns = tree.taxon_namespace
 	for new_id in node_ids:
