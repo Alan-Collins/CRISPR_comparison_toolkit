@@ -1,38 +1,54 @@
+########
 Tutorial
-========
+########
+
+***************
+Before we begin
+***************
+
+This tutorial is intended to illustrate how one may use CCTK to perform an analysis of the CRISPR arrays present in a set of assemblies. This is done as two separate tutorial sections. The first is longer and includes a lot of discussion about the different CCTK command options that can be used as well as discussion of data interpretation. In addition, an abridged tutorial is included to simply illustrate an example of the commands that might be used with minimal discussion. The content in both tutorials will be the same.
+
+Throughout this tutorial, example commands are provided as well as the output produced by those commands. Commands are indicated by the presence of a $ symbol at the beginning of the line (representing the command prompt). Lines that do not begin with a $ symbol are part of the ouput produced by the previous command.
+
+In addition, some lines begin with # symbols. These are comments that are intended to clarify the purpose of surrounding code.
 
 Data retrieval
-^^^^^^^^^^^^^^
+==============
 
-For this tutorial we will work through and analyze part of the dataset used in the CCTK publication, which is itself a subset of the data presented by `England et al., 2018 <https://doi.org/10.1128/mSystems.00075-18>`_. The example data used here are hosted on the `CCTK github page <https://github.com/Alan-Collins/CRISPR_comparison_toolkit>`_ and can be downloaded and extracted as follows:
+For this tutorial we will work through and analyze part of the dataset used in the CCTK publication, which is itself a subset of the data presented by `Marvig et al., 2012 <https://doi.org/10.1038/ng.3148>`_. The example data used here are hosted on the `CCTK github page <https://github.com/Alan-Collins/CRISPR_comparison_toolkit>`_ and can be downloaded and extracted as follows:
 
 .. code-block:: shell
 
 	$ wget https://github.com/Alan-Collins/CRISPR_comparison_toolkit/raw/main/Example_data/Example_data.tar.gz -O - | tar -xz
 
-This should download and extract a directory containing 10 *Pseudomonas aeruginosa* assemblies and some files we will use later. Each assembly filename corresponds to the `ENA <https://www.ebi.ac.uk/ena/browser/home>`_ sequence accession for the corresponding sequencing run. These assemblies were produced using `SPAdes <https://github.com/ablab/spades>`_.
+This should download and extract a directory containing 14 *Pseudomonas aeruginosa* assemblies and some other files we will use later. Each assembly filename corresponds to the `ENA <https://www.ebi.ac.uk/ena/browser/home>`_ sequence accession for the corresponding sequencing run. These assemblies were produced using `SPAdes <https://github.com/ablab/spades>`_ with default settings.
 
 .. code-block:: shell
 
-	$ ls -1 Example_assemblies
-	ERR431075.fasta
-	ERR431089.fasta
-	ERR431110.fasta
-	ERR431125.fasta
+	$ ls -1 Example_Assemblies
+	ERR430992.fasta
+	ERR431128.fasta
+	ERR431165.fasta
+	ERR431211.fasta
+	ERR431227.fasta
+	ERR431272.fasta
 	ERR431274.fasta
-	ERR431323.fasta
-	ERR431333.fasta
+	ERR431311.fasta
+	ERR431314.fasta
+	ERR431319.fasta
+	ERR431324.fasta
 	ERR431387.fasta
 	ERR431415.fasta
 	ERR431427.fasta
 
-Identifying CRISPR arrays
-^^^^^^^^^^^^^^^^^^^^^^^^^
+Installing CCTK
+===============
 
-If you haven't already, install CCTK into a ``conda`` environment
+If you haven't already, `install <usage.html>`_ CCTK into a ``conda`` environment
 
 .. code-block:: shell
-
+	
+	# also requires bioconda and conda-forge channels
 	$ conda create -n cctk -c alan-collins cctk
 	$ conda activate cctk
 
@@ -40,15 +56,19 @@ For this example, we will use both of the CRISPR identification tools included i
 
 See the :ref:`minced-blast-comp` section for a discussion of how the output of ``cctk minced`` and ``cctk blast`` compare to get an idea of why you might choose one over the other.
 
+*************
+Long Tutorial
+*************
+
 Identifying CRISPR arrays using ``cctk minced``
-"""""""""""""""""""""""""""""""""""""""""""""""
+===============================================
 
 ``cctk minced`` is the easier to use of the two CRISPR identification tools included in CCTK and is a good choice to start with. 
 
 First, an important note: For many of the downstream analyses in CCTK, CRISPR array orientation is very important. It is therefore crucial that you know the sequence of CRISPR repeats in your assemblies in the correct orientation (i.e., leader end 5' of the repeat, trailer end 3'). If you do not yet know the correct orientation of your repeats, you can proceed with these analyses as ``cctk minced`` can identify CRISPR arrays with unknown repeats and will consistently orient them using a built-in database of repeats. However, you will want to come back and correctly orient your arrays before using the tools ``CRISPRtree`` or ``constrain``.
 
 Setting up and running MinCED
-#############################
+-----------------------------
 
 ``cctk minced`` uses `MinCED <https://github.com/ctSkennerton/minced>`_ to identify CRISPR arrays and then processes the output files produced by MinCED. ``cctk minced`` runs MinCED on all of the files in the input directory. In our case the directory is "Example_assemblies/". Before we run it, we'll make an directory to contain the output of ``cctk minced``, then we can run it. While `cctk minced` includes the three *P. aeruginosa* CRISPR types in its built-in database of repeats, we will provide them here to illustrate that step. They were included in the data you downloaded above: example_repeats.fna.
 
@@ -60,10 +80,10 @@ First let's just make a directory for the output and run the MinCED step. We cou
 	$ mkdir Minced_CRISPRs/
 
 	# Run cctk minced
-	$ cctk minced -i Example_assemblies/ -o Minced_CRISPRs/ -m
+	$ cctk minced -i Example_Assemblies/ -o Minced_CRISPRs/ -m
 
 Exploring MinCED output before processing using ``cctk minced``
-###############################################################
+---------------------------------------------------------------
 
 After a few seconds, you will see that a new directory has been created in the Minced_CRISPRs/ directory.
 
@@ -77,13 +97,17 @@ This new directory contains all of the output files produced by MinCED. Each of 
 .. code-block:: shell
 
 	$ ls -1 Minced_CRISPRs/MINCED_OUT/
-	ERR431075_minced_out.txt
-	ERR431089_minced_out.txt
-	ERR431110_minced_out.txt
-	ERR431125_minced_out.txt
+	ERR430992_minced_out.txt
+	ERR431128_minced_out.txt
+	ERR431165_minced_out.txt
+	ERR431211_minced_out.txt
+	ERR431227_minced_out.txt
+	ERR431272_minced_out.txt
 	ERR431274_minced_out.txt
-	ERR431323_minced_out.txt
-	ERR431333_minced_out.txt
+	ERR431311_minced_out.txt
+	ERR431314_minced_out.txt
+	ERR431319_minced_out.txt
+	ERR431324_minced_out.txt
 	ERR431387_minced_out.txt
 	ERR431415_minced_out.txt
 	ERR431427_minced_out.txt
@@ -94,48 +118,32 @@ If you are working with assemblies with unknown repeats, you can easily extract 
 
 .. code-block:: shell
 
-	$ cut -f3 Minced_CRISPRs/MINCED_OUT/* | grep -Po "[ATCG]{15,100}" | sort | uniq -c | sort -k1 -nr
-    127 GTTCACTGCCGTATAGGCAGCTAAGAAA
-    123 TTTCTTAGCTGCCTACACGGCAGTGAAC
-     99 TTTCTTAGCTGCCTATACGGCAGTGAAC
-     26 GTTCACTGCCGTGTAGGCAGCTAAGAAA
-     13 CGGTTCATCCCCACGCATGTGGGGAACAC
-      8 CGGTTCATCCCCACACCCGTGGGGAACAC
+	$ cut -f3 Minced_CRISPRs/MINCED_OUT/* | grep -Po "[ATCG]{15,100}" | sort | uniq -c | sort -k1 -nr | head
+    185 GTTCACTGCCGTATAGGCAGCTAAGAAA
+    168 TTTCTTAGCTGCCTATACGGCAGTGAAC
+    156 TTTCTTAGCTGCCTACACGGCAGTGAAC
+     50 GTTCACTGCCGTGTAGGCAGCTAAGAAA
+     27 GTCGCGCCCCGCACGGGCGCGTGGATTGAAAC
+      7 TTTCACTGCCACATAGGTCGTCAAGAAA
       5 TTTCTTAGCTGCCTGTACGGCAGTGAAC
-      5 TTTCACTGCCACATAGGTCGTCAAGAAA
       5 GTTCACTGCCGTACAGGCAGCTAAGAAA
-      3 TTTCTTAGCTACCTATACGGCAGTGAAC
-      3 GTTCACTGCCGTATAGGCAGCTAAAAAA
-      2 TTTCTTGACGACCTATGTGGCAGTGAAA
-      1 TTTTTTAGCTGCCTATACGGCAGTGAAC
-      1 TTTCTTAGCTGCCTATACGGCAGTGGAC
-      1 TTTCTTAGCGGCCTACACGGCAGTGAAC
-      1 TTTCTTAACTGCCTATACGGCAGTGAAC
-      1 TGGTTCATCCCCACGCATGTGGGGAACAC
-      1 GTTCACTGCCGTGTAGGCCGCTAAGAAA
-      1 GTTCACTGCCGTATCGGCAGCTAAGAAA
-      1 GTTCACTGCCGTATAGGTAGCTAAGAAA
-      1 GTTCACTGCCGTATAGGCAGCAAAAAAT
-      1 GTTCACTGCCGTATAGGCAGCAAAAAAA
-      1 GTCCACTGCCGTATAGGCAGCTAAGAAA
-      1 CAGGTTTATCCCACGCCTGTGGGGGAACA
-      1 CAGCTCATCCCCACGCCCGTGGGGAACAC
-      1 ATTTTTTGCTGCCTATACGGCAGTGAAC
+      3 TTTCTTGACGACCTATGTGGCAGTGAAA
+      3 TTTCTTAACTGCCTATACGGCAGTGAAC
 
 In the output returned by this command, the second column is the nucleotide sequence of each repeat found by MinCED, while the first column is the number of instances of that repeat that were found. Note that the first 2 lines are highly similar sequences that are in different orientations to one another. In fact the first 4 lines are minor variations on the same sequence. This highlights a weakness of MinCED that it is important to be aware of: it does not check the orientation of repeats so there is a roughly 50% chance that the repeat will be correctly oriented in any given sequence. 
 
 ``cctk minced`` attempts to consistently orient CRISPR arrays by comparing each query repeat to a built-in database of repeat sequences, or a user-provided database of repeats (reverse complement is also checked). If the query repeat matches best in the reverse complement then the entire corresponding array is reversed. Even if the specific repeat present in your assemblies is not in the built-in database, there is a good chance that all instances of that repeat (even with some SNPs) will match the same reference repeat, resulting in consistent (even if incorrect) orientation even for unknown repeats. We will discuss below what happens when repeats don't match well with any of the reference repeats used by ``cctk minced``
 
 Processing MinCED output files
-##############################
+------------------------------
 
 Now that we have briefly explored the output produced by MinCED, we will use ``cctk minced`` to process those output files. As we have already run MinCED, we don't need ``-m`` or to point ``cctk minced`` to our assemblies with ``-i``.
 
 .. code-block:: shell
 	
 	$ cctk minced -o Minced_CRISPRs/ -p
-	Total unique spacers: 244
-	Total unique arrays: 21
+	Total unique spacers: 334
+	Total unique arrays: 27
 
 ``cctk minced`` outputs a summary of the number of unique spacers and CRISPR arrays identified to stderr. Output files produced here are described in the ``cctk minced`` :ref:`minced-output` section.
 
@@ -147,12 +155,12 @@ Note that each spacer has its predicted CRISPR subtype included in its FASTA hea
 
 	$ head -4 Minced_CRISPRs/PROCESSED/CRISPR_spacers.fna
 	>1F_1
-	AAACTCATCAGGCACCGGCAGCGCAATCAACT
+	AGGTCGAAACGAAGGTGCTGATGGGTCGCCTT
 	>1F_2
-	AAAGCGGGCATGACGTTCAACCCCAACAGCCG
+	AATAATAATACTCAGCCCTAGCGCCCTGAGCA
 
 Specifying expected repeat sequences
-####################################
+------------------------------------
 
 Now let's process the MinCED output using the example_repeats.fna file that we downloaded earlier. This file contains sequences for the three CRISPR subtypes found in *P. aeruginosa*, but the FASTA headers for those sequences differ from the IDs used in the built-in CRISPR database (e.g. "1F" above vs "I-F" in the example file):
 
@@ -170,9 +178,10 @@ We run the processing steps again with these repeat sequences by providing them 
 
 .. code-block:: shell
 	
+	# Note running with a custom repeat file doesn't change the number of spacers and arrays identified
 	$ cctk minced -o Minced_CRISPRs/ -p -r example_repeats.fna
-	Total unique spacers: 244
-	Total unique arrays: 21
+	Total unique spacers: 334
+	Total unique arrays: 27
 
 Rerunning processing steps will overwrite the existing files in the Minced_CRISPRs/PROCESSED/ directory. If you ever want to preserve the output from a processing run, you will need to rename the PROCESSED folder to something else to prevent the data being overwritten.
 
@@ -182,13 +191,13 @@ When repeats are provided as an input file, the built-in database of CRISPR repe
 
 	$ head -4 Minced_CRISPRs/PROCESSED/CRISPR_spacers.fna
 	>I-F_1
-	AAACTCATCAGGCACCGGCAGCGCAATCAACT
+	AGGTCGAAACGAAGGTGCTGATGGGTCGCCTT
 	>I-F_2
-	AAAGCGGGCATGACGTTCAACCCCAACAGCCG
+	AATAATAATACTCAGCCCTAGCGCCCTGAGCA
 
 What about if the repeats in the built-in database or in the file provided using ``-r`` are not the repeats present in our assemblies? Let's see.
 
-The example assemblies we are working with here have mostly subtype I-F arrays and a few I-E arrays. Let's see what happens if we use a repeats file containing only the I-E repeat:
+The example assemblies we are working with here have only subtype I-F arrays. Let's see what happens if we use a repeats file containing only the I-E repeat:
 
 .. code-block:: shell
 	
@@ -200,8 +209,8 @@ The example assemblies we are working with here have mostly subtype I-F arrays a
 	
 	# Now use the new 1E_repeat.fna file as input to cctk minced with -r
 	$ cctk minced -o Minced_CRISPRs/ -p -r 1E_repeat.fna
-	Total unique spacers: 244
-	Total unique arrays: 21
+	Total unique spacers: 334
+	Total unique arrays: 27
 
 Now if we have a look at our CRISPR spacers we will see that the first couple of spacers in our file, which were previously identified as subtype I-F, have a different header
 
@@ -209,14 +218,16 @@ Now if we have a look at our CRISPR spacers we will see that the first couple of
 
 	$ head -4 Minced_CRISPRs/PROCESSED/CRISPR_spacers.fna
 	>unknown_CRISPR_type(I-E)_1
-	AAAAAGCCCAGCTCGAAGGCTGGGCTTTTTCT
+	GACCGGCAGCAAGCCAAGGTGCAGTCGCTGCA
 	>unknown_CRISPR_type(I-E)_2
-	AAAGCCGGCCTCGCGCACCGACTTGGCAGCCT
+	AGATCGTCCTGGGCGGCAGGTCCGGATTGTCT
 
 When ``cctk minced`` finds that a repeat differs at more than 5 bases from any repeat in the database being used, that repeat is classified as unknown. When a repeat is classified as unknown, the most similar repeat subtype is included in parentheses in the ID for all spacers in the arrays with that repeat. As we only provided a repeat associated with subtype I-E, that repeat is the best matching and is therefore included in the header for all spacers.
 
+**N.B.** Even if the best-matching repeat in the database used (built-in or from the file provided) differs by more than 5 mismatches, that repeat is still used to orient the array. This is done so that even though the resulting orientation may not be correct relative to the leader end, at least all the arrays with the same repeat will be oriented the same way. This is important as CCTK checks for identical spacers between arrays based on simply comparing their sequence (meaning two identical spacers that are the reverse complement of one another will not be identified as identical). In addition, consistently oritenting the arrays will allow you to visualize them later and hopefully easily spot whether they are the right way round or not.
+
 Grouping very similar spacers based on SNPs
-###########################################
+-------------------------------------------
 
 Sometimes, due to the acquisiton of mutations, or sequencing errors, CRISPR spacers may be identified that differ only by one or two bases. If you wish spacers that differ by a small amount to be considered the same by ``cctk`` tools, then you can use ``cctk minced`` to identify groups of highly similar spacers and to assign them the same ID. This is done by using ``-s`` and providing an integer threshold defining the number of SNPs that can exist between to spacers for those spacers to be considered the same. The deafault behaviour of ``cctk minced`` is to consider spacers that differ by a single base to be different.
 
@@ -225,28 +236,29 @@ This process is performed during the processing steps performed by ``cctk minced
 .. code-block:: shell
 
 	# Consider spacers with 2 or fewer SNPs to be the same
-
 	$ cctk minced -o Minced_CRISPRs/ -p -s 2
-	Total unique spacers: 240
-	Total unique arrays: 21
+	Total unique spacers: 327
+	Total unique arrays: 27
 
-Note that the number of unique spacers identified is now 240 instead of 244. 
+Note that the number of unique spacers identified is now 327 instead of 334. 
 
 The spacers that have now been reduced to a single representetive are described in an output file that was not produced by previous runs: :ref:`spacer-cluster-reps`
 
 .. code-block:: shell
 
 	$ cat Minced_CRISPRs/PROCESSED/Spacer_cluster_members.txt
-	1F_33   AGCCGATGGCCCGCAGTAGTACCCCGATTAGT
-	1F_116  GCCCAGGCACGTTTGCTCGCGCTTTGATCTCA
-	1F_192  GTCGCGAAGTTCATAAGCGGGCTTCGGGCGA TGTCCCGAAGTTCATAAGCGGGCTTCGGGCGA
+	1F_15   TGGAGAAAAGCAATTCGAGTGGTGCGAGGCCA
+	1F_19   TGCCCGAATACGACTTGCGCGAGGAAGACGGT
+	1F_36   AGCAGCGGCTCCAGAAAGAGGGGCGCTGCCTG
+	1F_45   TGTCCCGAAGTTCATAAGCGGGCTTAGGGCGA TGTCTCGAAGTTCATAAGCGGGCTTCGGGCGA TGTCCCGAAGTTCATAAGCGGGCTTCGGGCGA
+	1F_85   GCCCAGGCACGTTTGCTCGCGCTTTGATCTCA
 
 
 Identifying CRISPR arrays using ``cctk blast``
-""""""""""""""""""""""""""""""""""""""""""""""
+==============================================
 
 Setting up
-##########
+----------
 
 Before we can run ``cctk blast`` we must first perform a few steps to prepare our sequences. ``cctk blast`` requires that we provide out input in the form of a blast database. 
 
@@ -260,19 +272,27 @@ The example sequences we are working with here were assembled using Spades, whic
 
 .. code-block:: shell
 
-	$ head -1 Example_assemblies/* | head -5
-	==> Example_assemblies/ERR431075.fasta <==
-	>NODE_1_length_486033_cov_46.527666
+	$ head -1 Example_Assemblies/* | head -5
+	==> Example_Assemblies/ERR430992.fasta <==
+	>NODE_1_length_922990_cov_42.400140
 
-	==> Example_assemblies/ERR431089.fasta <==
-	>NODE_1_length_794353_cov_41.111729
+	==> Example_Assemblies/ERR431128.fasta <==
+	>NODE_1_length_703400_cov_61.868510
 
 If we were to combine these sequences into a single blast database, it would be laborious to later figure out which sequences came from which files. Instead, as each filename contains identifying information (the ERR accession number), we will add that accession to each fasta header in each file. This modification can be acheived with the following bash commands:
 
 
 .. code-block:: shell
 	
-	$ for file in Example_assemblies/*; do id=${file%.*}; id=${id##*/}; sed -i "s/>/>${id}_/" $file; done
+	$ for file in Example_Assemblies/*; do id=${file%.*}; id=${id#*/}; sed -i "s/>/>${id}_/" $file; done
+
+	# All fasta headers now contain the ERR accession number
+	$ head -1 Example_Assemblies/* | head -5
+	==> Example_Assemblies/ERR430992.fasta <==
+	>ERR430992_NODE_1_length_922990_cov_42.400140
+
+	==> Example_Assemblies/ERR431128.fasta <==
+	>ERR431128_NODE_1_length_703400_cov_61.868510
 
 Now all of the fasta headers in our assembly files can easily be related back to the assembly to which they belong.
 
@@ -281,13 +301,13 @@ Now let's make a directory to contain our blastdb, combine our sequences, and ma
 .. code-block:: shell
 
 	$ mkdir Blastdb
-	$ cat Example_assemblies/* > all_assemblies.fna
+	$ cat Example_Assemblies/* > all_assemblies.fna
 	$ makeblastdb -in all_assemblies.fna -out Blastdb/assembly_db -dbtype nucl -parse_seqids
 
 We are now ready to identify CRISPR arrays using ``cctk blast``.
 
 Running ``cctk blast``
-######################
+----------------------
 
 First, make a folder to contain the outputs produced by ``cctk blast``. Then we can run it. We need to provide a description of an identifier that is present in all the fasta headers for a given assembly as our assemblies are all in multiple contigs. In our case that identifier is the ERR accession we added above. We will provide it as a regex here, but see the :ref:`blast-contig-ids` section of the `cctk blast <blast.html>`_ documentation page for a description of other options for how you can specify this information.
 
@@ -301,14 +321,43 @@ First, make a folder to contain the outputs produced by ``cctk blast``. Then we 
 	Total unique spacers: 242
 	Total unique arrays: 22
 
-Note that ``cctk blast`` identifies a different number of spacers and a different number of arrays than ``cctk minced`` did. (242 vs 244 and 22 vs 21 when run without using ``-s``). A description of the differences between the two approaches that lead to these different outputs can be found in the :ref:`minced-blast-comp` section below.
+Note that ``cctk blast`` identifies a different number of spacers and a different number of arrays than ``cctk minced`` did. (326 vs 327 and 28 vs 27 when run without using ``-s``). A description of the differences between the two approaches that lead to these different outputs can be found in the :ref:`minced-blast-comp` section below.
 
 ``cctk blast`` can also use a SNP threshold to consider slightly different spacers to be the same, just like with ``cctk minced``. In addition, as most of the running time of ``cctk minced`` is spent running ``blastn`` using a BLASTdb followed by lots of ``blastdbcmd``, we can improve running time by using multiple threads for those two steps with ``-t``
 
 .. code-block:: shell
 	
-	# Omit -t if you are on a computer with only 1 thread
-	$ cctk blast -d Blastdb/assembly_db -r example_repeats.fna -o Blast_CRISPRs/ -p "ERR\d+" -s 2 -t 2
+	# Won't work if you are on a computer with only 1 thread
+	# We're including the time command to get running time information
+
+	# 1 thread as we did above
+	$ time cctk blast -d Blastdb/assembly_db -r example_repeats.fna -o Blast_CRISPRs/ -p "ERR\d+" -s 2 -t 1
+	Total unique spacers: 326
+	Total unique arrays: 28
+
+	real    0m23.217s
+	user    0m3.917s
+	sys     0m1.190s
+
+	# 2 threads
+	$ time cctk blast -d Blastdb/assembly_db -r example_repeats.fna -o Blast_CRISPRs/ -p "ERR\d+" -s 2 -t 2
+	Total unique spacers: 326
+	Total unique arrays: 28
+
+	real    0m15.294s
+	user    0m3.720s
+	sys     0m1.232s
+
+	# 4 threads
+	$ time cctk blast -d Blastdb/assembly_db -r example_repeats.fna -o Blast_CRISPRs/ -p "ERR\d+" -s 2 -t 4
+	Total unique spacers: 326
+	Total unique arrays: 28
+
+	real    0m9.694s
+	user    0m3.395s
+	sys     0m1.261s
+
+As you can see in the example above showing run times on my computer ("real" is the actual running time), increasing the number of threads used can improve runtimes and is especially helpful if you are running ``cctk blast`` on a large number of assemblies
 
 ``cctk blast`` produces the same kind of outputs as ``cctk minced``. We can see the list of output files produced by each tool as a sort of table, with the ``cctk minced`` output in the left column and ``cctk blast`` output in the right column. The following command lists the contents of each output directory in separate columns with the name of the ``cctk`` tool that produced them as column headers:
 
@@ -329,7 +378,7 @@ Note that ``cctk blast`` identifies a different number of spacers and a differen
 .. _network-tutorial:
 
 Exploring CRISPR array relationships using a network representation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+===================================================================
 
 Now that we have predicted CRISPR arrays in the example assemblies, we can begin to explore the relationships between these arrays. We will first visualize array relationships as a network to see how arrays in this dataset are related on a broad scale, and then we will explore more closely the relationships between a small number of arrays. In the following example, we will use `Cytoscape <https://cytoscape.org/>`_ to visualize our array relationship network and will work with the data we generated using ``cctk minced``. We will refer to arrays within the network representation as "nodes" and the relationship between two arrays as an "edge".
 
@@ -341,62 +390,127 @@ After importing the data, we can use styles to colour edges according to the num
 
 .. image:: images/eg_network_tutorial.png
 
-In this network representation of array relationships, it is clear that there are three distinct clusters of arrays. The left-most cluster containing arrays 2, 4, 7, 12, and 17 all have low similarity with one another, while the other two clusters contain some arrays that have a high similarity to one another. Any arrays that do not share any spacers with any other arrays in the dataset are not shown in this network. We will now look more closely at these three clusters using other CCTK tools.
+In this network representation of array relationships, it is clear that there are five distinct clusters of arrays. Any arrays that do not share any spacers with any other arrays in the dataset are not shown in this network. We will now look more closely at the two largest clusters using other CCTK tools. Note that the largest cluster here is the same as "Cluster 2" which was analyzed in the CCTK publication. However, the array IDs do not correspond between this network and the dataset presented in the publication because we are only working with a subset of the dataset here.
 
 .. _diffplot-tutorial:
 
 Using CRISPRdiff to visualize array relationships
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+=================================================
 
 Introduction
-""""""""""""
+------------
 
-`CRISPRdiff <crisprdiff.html>`_ can be used to quickly and easily identify the spacers that are shared and distinct between CRISPR arrays. Here we will use it to visualise the three clusters of arrays that we saw in the :ref:`network-tutorial`. For this example we will create a directory within our Minced_CRISPRs/ directory and save plots at that location.
+`CRISPRdiff <crisprdiff.html>`_ can be used to quickly and easily identify the spacers that are shared and distinct between CRISPR arrays. Here we will use it to visualise the two largest clusters of arrays that we saw in the :ref:`network-tutorial`. For this example we will create a directory within our Minced_CRISPRs/ directory and save plots at that location.
 
 **N.B.** In the following sections, the spacers within arrays will be referred to using their index within the array and their colour. e.g. the leader-most (i.e., left-most) spacer in a given array is spacer 1, while the next spacer (2nd spacer) is spacer 2. From the trailer end, spacers will be numbered using negative numbers. E.g. the trailer-most (i.e., right-most) spacer is spacer -1, while the next spacer from the trailer end is -2 etc.
 
 .. code-block:: shell
 
+	$ cd Minced_CRISPRs
 	Minced_CRISPRs$ mkdir Plots
 
-Left cluster
-""""""""""""
+Largest cluster
+---------------
 
-First let's look at the left-most cluster in which all arrays have a low level of similarity to one another.
+First let's look at the largest cluster.
 
 .. code-block:: shell
 
-	Minced_CRISPRs$ cctk CRISPRdiff -a PROCESSED/Array_IDs.txt -o Plots/left_cluster.png 2 6 11 17 18
+	Minced_CRISPRs$ cctk CRISPRdiff -a PROCESSED/Array_IDs.txt -o Plots/largest_cluster_diff.png 3 13 14 15 16 17 27
+	Identified 28 spacers present in more than one array. 
 
-That produces a plot similar to that shown below (the below plot was generated using the additional option ``--plot-height 1.5`` to reduce vertical spacing).
+That command produces the plot shown below. The components of this plot are described in the :ref:`diff-output` section of the `CRISPRdiff <crisprdiff.html>`_ documentation page.
 
-.. image:: images/diff_tutorial_left.png
+.. image:: images/largest_cluster_diff.png
 
-In the above image, it is clear that most spacers are not shared between arrays as they are depicted as thin, black rectangles. This is consistent with the network representation in which all the edges in this cluster have a light colour. In fact, all of the arrays in this cluster share their trailer-most spacer (spacer -1, cyan), but other spacers are either unique or only shared by a subset of arrays. This pattern may indicate that these arrays come from a common ancestral array that diverged long ago as only the presumably oldest spacer (trailer-most) is shared. 
+The plot produced by CRISPRdiff shows spacers that are unique to each array (thin black rectangles) and present in more than one array (coloured rectangles - fill and outline colour combination is unique to each spacer). In addition, to further highlight spacers found in more than one array, lines are drawn between identical spacers in adjacently plotted arrays. The colour of these lines is the same as the fill colour of the corresponding spacer (you can also add an outline to the lines corresponding to the outline of the spacer using ``--connection-outline``).
 
-Other interesting relationships are also clear. For example, Arrays 2 and 17 share a black spacer (-5 in array 7, -4 in array 4), which is surrounded on both sides by spacers that are not shared between these two arrays. Some possible explanations for this pattern of spacer sharing will be discussed below in the :ref:`tree-tutorial` section.
+Choosing array order
+^^^^^^^^^^^^^^^^^^^^
 
-Middle cluster
-""""""""""""""
+The default behaviour of CRISPRdiff is to plot arrays in an order that maximizes the number of spacers shared between adjacently plotted arrays (seen as lines between arrays). However, depending on which regions of the arrays you are more interested in, you may wish to manually set the order to better highlight certain relationships. In the above image, the three spacers near the middle of array 3 are shared with another array (indicated by the presence of fill and outline colour rather than being thin black rectangles). However, no lines are drawn to indicate where in another array those spacers are also seen. If we were interested in displaying how these spacers in particular are shared between arrays then we may want to change the array order to acheive that. These three spacers can also be seen in the middle of array 27 (next to the same blue and yellow spacer they are adjacent to in array 3)
+
+.. code-block:: shell
+
+	# Array order is specified from top to bottom of the output plot
+	Minced_CRISPRs$ cctk CRISPRdiff -a PROCESSED/Array_IDs.txt -o Plots/largest_cluster_diff_reorder.png --preordered 15 17 16 13 14 27 3
+	Identified 28 spacers present in more than one array. 
+
+This produces the below plot that better highlights the presence of the spacers in arrays 3 and 27. 
+
+.. image:: images/largest_cluster_diff_reorder.png
+
+Investigating individual spacers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The CRISPRdiff plot of the larger cluster arrays shows that the spacer at position 2 in array 17 has been duplicated. This spacer is present at both position 2 and near the middle of array 17 (position 12). This plot was generated using CRISPR spacers identified using ``cctk minced`` with the option ``-s 2``. This means that spacers differing by two or fewer mismatches have been considered the same. In the case of this spacer, we might want to check if this spacer at position 12 in array 17 is indeed identical to the spacer at position 2 to help us assess whether this is likely a real duplication. 
+
+The first step in assessing this is to find the identity of the spacer. We extract that information from the Array_IDs.txt file using the following command:
+
+.. code-block:: shell
+
+	# awk to find line of array 17 extract relevant column
+	# First column is array ID so need the 3rd or 13th column. We'll check column 3 first
+	Minced_CRISPRs$ awk '$1==17 {print $3}' PROCESSED/Array_IDs.txt
+	1F_19
+
+	# Extract column 13 as well just to check. It should be the same spacer ID
+	Minced_CRISPRs$ awk '$1==17 {print $13}' PROCESSED/Array_IDs.txt
+	1F_19
+
+Now that we know the ID of the duplicated spacer, we can check if that spacer ID corresponds to a group of spacers that were deduplicated due to fewer than two mismatches. That information is in the Spacer_cluster_members.txt file in the PROCESSED/ directory.
+
+.. code-block:: shell
+
+	Minced_CRISPRs$ grep -w 1F_19 PROCESSED/Spacer_cluster_members.txt
+	1F_19   TGCCCGAATACGACTTGCGCGAGGAAGACGGT
+
+This line of the Spacer_cluster_members.txt file means that this spacer ID does indeed represent 2 spacers that have been deduplicated. The sequence in the Spacer_cluster_members.txt is the variant of spacer 1F_19 that was removed from the dataset. CCTK chooses the most numerous variant to be the representative when deduplicating spacers. That means that the representative sequence is likely the one at position 2 in arrays 15, 17, 16 etc., while the minor variant is likely the suspect duplication we are assessing. However we can check. 
+
+To check which of the spacers in array 17 is the variant we can either rerun ``cctk minced`` using ``-s 0`` and plot the corresponding arrays to see which spacer is different between the two plots, or we can look at the MinCED output files. We'll check the MinCED output files here.
+
+First, which assembly contains array 17? That information is in the Array_representatives.txt file.
+
+.. code-block:: shell
+
+	Minced_CRISPRs$ grep -w 17 PROCESSED/Array_representatives.txt
+	17      ERR431272
+
+So we're expecting that the variant spacer sequence will only be present in the assembly ERR431272 and therefore only present in the corresponding MinCED output file. Let's check them all and make sure it's only in the one file. As spacers in the MinCED output files have the same orientation they did in the assembly we need to check for the reverse complement of the spacer sequence as well.
+
+.. code-block:: shell
+	
+	# First check the oriented version of the spacer
+	Minced_CRISPRs$ grep -w TGCCCGAATACGACTTGCGCGAGGAAGACGGT MINCED_OUT/ERR431272_minced_out.txt
+
+	# No results. How about the reverse complement?
+	Minced_CRISPRs$ grep -w ACCGTCTTCCTCGCGCAAGTCGTATTCGGGCA MINCED_OUT/ERR431272_minced_out.txt
+	MINCED_OUT/ERR431272_minced_out.txt:411725          TTTCTTAGCTGCCTATACGGCAGTGAAC    ACCGTCTTCCTCGCGCAAGTCGTATTCGGGCA        [ 28, 32 ]
+
+This shows (as expected) that this variant of the spacer is only present in the MinCED output file associated with ERR431272 (the assembly with array 17). Looking at that MinCED output file by eye confirms that the spacer at position 12 in the array is the variant.
+
+In general, it may be worthwhile to run ``cctk minced`` or ``cctk blast`` with different spacer mismatch settings. You can then visualize the array relationship network and CRISPRdiff plots to see the effect of deduplicating spacers on array relationships in your dataset. The above example simply illustrates how one can use the information in CCTK output files to related CRISPRdiff plots back to the underlying data.
+
+
+Smaller cluster
+---------------
 
 .. code-block:: shell
 
 	Minced_CRISPRs$ cctk CRISPRdiff -a PROCESSED/Array_IDs.txt -o Plots/middle_cluster.png 5 12 20 21
 
-.. image:: images/diff_tutorial_middle.png
 
 The middle cluster of arrays have darker edges in the network representation, indicating more shared spacers between arrays. The diffplot shown about makes this relationship clear. Many spacers are shared between all four arrays, with unique spacers only found in a single array (12). 
 
 The lines drawn between shared spacers in adjacently plotted arrays help to identify spacers that are shared between arrays, but they also help to highlight spacers that are present in one array and missing in another. For example, arrays 12 and 21 share several spacers, but multiple regions in each array is missing in the other. This can be readily picked out by scanning across the lines between them and noticing regions where lines are missing or the angle of the lines changes. 
 
 Right cluster
-"""""""""""""
+-------------
 
 .. code-block:: shell
 
 	Minced_CRISPRs$ cctk CRISPRdiff -a PROCESSED/Array_IDs.txt -o Plots/right_cluster.png 7 8 9 15
 
-.. image:: images/diff_tutorial_right.png
 
 The arrays in the right cluster are also highly related. Of note in this cluster is the presence of a duplicated spacer in array 15. This is readily identified in the diffplot as the corresponding spacer in the two adjacently plotted arrays are connected to both copies of the spacer in array 15, leading to a V or A shape formed by the lines connecting shared spacers between arrays.
 
@@ -404,7 +518,7 @@ The arrays in the right cluster are also highly related. Of note in this cluster
 .. _tree-tutorial:
 
 Using CRISPRtree to create hypotheses of array histories
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+========================================================
 
 Representing array relationships as a network allows you to quickly assess how similar a group of arrays are. Visualizing a cluster of arrays using ``cctk CRISPRdiff`` allows you to further assess which spacers are shared or different, and where the differences between arrays are located. However, it
 
@@ -415,12 +529,15 @@ To analyse the left cluster using ``cctk CRISPRtree`` we will use the following 
 	Minced_CRISPRs$ cctk CRISPRtree -a PROCESSED/Array_IDs.txt -o Plots/tree_left_cluster --branch-support 2 6 11 17 18 2>tree_left_cluster.log
 	(((2:16.0,17:83.0)Anc_d:3.0[32],6:56.0)Anc_c:1.0[96],18:15.0,11:14.0)Anc_b:0.0
 
-.. image:: images/tutorial_tree_left_cluster.png
 
 
 .. _minced-blast-comp:
 
 ``cctk minced`` vs ``cctk blast`` output comparison
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+===================================================
 
 TO ADD
+
+**************
+Short Tutorial
+**************
