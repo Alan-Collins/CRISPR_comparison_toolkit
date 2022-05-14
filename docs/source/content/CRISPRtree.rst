@@ -98,7 +98,7 @@ stderr
 
 Descriptive log information is written to the stderr. This information includes that command that was used to execute ``cctk CRISPRtree``, the weighted parsimony score of the most parsimonious tree identified, and the order in which arrays were processed to create each most parsimonious tree. Array order information can be used to recreate the same tree with different graphical settings without needing to repeat a search across many trees (as described in the :ref:`tree-fix-order` section.) 
 
-If redundant acquisition events were found involving more than 2 arrays, the Evvent number and corresponding arrays will be written to stderr.
+If redundant acquisition events were found involving more than 2 arrays, the Event number and corresponding arrays will be written to stderr.
 
 .. _tree-advanced:
 
