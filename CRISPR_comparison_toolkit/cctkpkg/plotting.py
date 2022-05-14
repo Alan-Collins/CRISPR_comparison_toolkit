@@ -1,6 +1,7 @@
 from math import ceil, log, sin, pi
 from copy import copy
 import itertools
+import sys
 
 import matplotlib.pyplot as plt
 from matplotlib.transforms import Bbox
@@ -10,7 +11,7 @@ from . import (
 	tree_operations,
 	sequence_operations)
 
-def draw_branches(tree, node_locs, ax, branch_lengths=True, brlen_scale=0.5,
+def draw_branches(tree, node_locs, ax, branch_lengths=True, brlen_scale=1,
 	font_scale=1, line_scale=1, label_text_size=False, annot_text_size=False,
 	branch_support=False):
 
@@ -53,12 +54,12 @@ def draw_branches(tree, node_locs, ax, branch_lengths=True, brlen_scale=0.5,
 
 def add_labels(tree, node_locs, ax, branch_lengths=True,font_scale=1,
 	line_scale=1, label_text_size=False, annot_text_size=False,
-	no_align_labels=False, brlen_scale=0.5, no_fade_ancestral=False):
+	no_align_labels=False, brlen_scale=1, no_fade_ancestral=False):
 
 	if annot_text_size:
 		brlen_font_size = annot_text_size
 	else:
-		brlen_font_size = 8*font_scale
+		brlen_font_size = 6*font_scale
 
 	leaves = [i.taxon.label for i in tree.leaf_nodes()]
 	
@@ -385,12 +386,12 @@ def plot_rep_indel_text(ax, nspacers, x, y, spacer_size, spacer_count,
 		message = "event {}".format(rep_indel_report_count)
 		
 		if not rep_indel_message_printed:
-			print("Repeated indels were identified with multiple possible "
+			sys.stderr.write("Repeated indels were identified with multiple possible "
 				"partners. Those cases will be annotated in the tree png "
 				"file with the one of the arrays identified as a partner "
 				"followed by an event number corresponding to one of the "
 				"lists of partner arrays below:\n\n")
-		print("Event {}: {}\n\n".format(
+		sys.stderr.write("Event {}: {}\n\n".format(
 			rep_indel_report_count,
 			" ".join(partners)))
 	else:
@@ -434,6 +435,50 @@ def calc_vh_ratio_and_label_pad_tree(tree, array_dict, spacing, spacer_size,
 	v_scaling_factor = max_v/new_max_h
 
 	return v_scaling_factor, label_pad
+
+
+def calc_font_scale(array_dict, fig_w, fig_h, text_size):
+	# find longest label
+
+	longest_label = ""
+	longest_len = 0
+
+	for label in array_dict.keys():
+		f,ax = plt.subplots(figsize=(fig_w,fig_h))
+		plt.ylim(100)
+		plt.xlim(100)
+		r = f.canvas.get_renderer()
+		t = plt.text(1, 1, label, fontsize=text_size, ha='right',
+			va='bottom')
+
+		bb = t.get_window_extent(renderer=r)
+		width = abs(Bbox(ax.transData.inverted().transform(bb)).width)
+		plt.close()
+
+		if width > longest_len:
+			longest_len = width
+			longest_label = label
+	scale = 1
+
+	# if needed, shrink text until smaller than 1/4 of plot axes
+
+	width = longest_len
+	while width > 25:
+		scale*=0.9
+		scaled_text = text_size*scale
+
+		f,ax = plt.subplots(figsize=(fig_w,fig_h))
+		plt.ylim(100)
+		plt.xlim(100)
+		r = f.canvas.get_renderer()
+		t = plt.text(1, 1, longest_label, fontsize=scaled_text, ha='right',
+			va='bottom')
+
+		bb = t.get_window_extent(renderer=r)
+		width = abs(Bbox(ax.transData.inverted().transform(bb)).width)
+		plt.close()
+
+	return scale	
 
 
 def calc_vh_ratio_and_label_pad_diffplot(array_dict, spacer_size,
@@ -529,10 +574,16 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict,
 	outline = 0.3 # Thickness of lines
 	spacing = 0.5
 	spacer_size = 2
-	brlen_scale*=0.5
+
+	# scale branches to take up 25% of x axis
+	brlen_scale *= 25/tree.length()
 
 	if not label_text_size:
+		font_scale = calc_font_scale(array_dict, fig_w, fig_h, 10)
 		label_text_size = 10 * font_scale
+
+	if not annot_text_size:
+		annot_text_size = 6 * font_scale
 
 	node_locs = tree_operations.find_node_locs(tree, branch_spacing=branch_spacing,
 		brlen_scale=brlen_scale)
@@ -588,8 +639,10 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict,
 			label="Branch support (%)",
 			shrink=0.5)
 	plt.tight_layout()
+	plt.margins(0,0)
+	fig.set_size_inches(fig_w,fig_h)
 
-	plt.savefig(filename, dpi=dpi, bbox_inches='tight')
+	plt.savefig(filename, dpi=dpi)
 
 
 def plot_diffplot(array_dict, array_order, imp_spacers, spacer_colours,
