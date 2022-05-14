@@ -497,7 +497,8 @@ Smaller cluster
 
 .. code-block:: shell
 
-	Minced_CRISPRs$ cctk CRISPRdiff -a PROCESSED/Array_IDs.txt -o Plots/middle_cluster.png 5 12 20 21
+	Minced_CRISPRs$ cctk CRISPRdiff -a PROCESSED/Array_IDs.txt -o Plots/smaller_cluster.png 7 8 11 21
+	Identified 22 spacers present in more than one array.
 
 
 The middle cluster of arrays have darker edges in the network representation, indicating more shared spacers between arrays. The diffplot shown about makes this relationship clear. Many spacers are shared between all four arrays, with unique spacers only found in a single array (12). 
