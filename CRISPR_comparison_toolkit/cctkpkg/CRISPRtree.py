@@ -1052,7 +1052,7 @@ def main(args):
 
 				if args.output_arrays:
 					filename = "{}_{}.txt".format(args.output_arrays[:-4], n+1)
-					print("Saving details of arrays to {}\n".format(filename))
+					sys.stderr.write("Saving details of arrays to {}\n".format(filename))
 					with open(filename, 'w') as fout:
 						fout.write('\n'.join(["{}\t{}".format(k," ".join(v.spacers)) for k,v in best_arrays[n].items()]))
 		else:
