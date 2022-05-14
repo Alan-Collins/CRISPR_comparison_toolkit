@@ -67,6 +67,7 @@ plotting parameters:
                     draw array cartoons next to leaf node
   --no-align-labels
                     draw leaf labels next to leaf node
+  --replace-brlens  replace input tree branch lengths with array parsimony costs
   --no-fade-anc     do not apply transparency to ancestral array depiction
   --plot-width      width of plot in inches. Default = 3
   --plot-height     height of plot in inches. Default = 3
@@ -270,6 +271,12 @@ def build_parser(parser):
 		help="Should node labels be placed at the corresponding internal node or leaf. By default they are all aligned. N.B. For this setting to work, cartoons must also placed at nodes using the -g option."
 		)
 	plot_params.add_argument(
+		"--replace-brlens",
+		action='store_true',
+		default=False,
+		help="Should branch lengths in the tree be replaced by array parsimony costs?"
+		)
+	plot_params.add_argument(
 		"--dpi",
 		type=int,
 		required=False,
@@ -355,7 +362,10 @@ def main(args):
 	spacer_cols_dict = colour_schemes.process_colour_args(
 		args, non_singleton_spacers)
 
-	tree = dendropy.Tree.get(path=args.input_tree, schema="newick")
+	tree = dendropy.Tree.get(
+		path=args.input_tree,
+		schema="newick"
+		)
 
 	if args.unrooted:
 		# If tree not rooted, use outgroup node to root it
@@ -464,11 +474,12 @@ def main(args):
 			for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
 				d = array_dict[n_id].events[k]*v
 				array_dict[n_id].distance += d
-			# n.edge_length = array_dict[n_id].distance
+				
 
 		array_dict[ancestor.id] = ancestor
 		node.parent_node.taxon = tns.get_taxon(ancestor.id)
-		# node.parent_node.edge_length = 0 # Start the ancestor with 0 branch length
+		if args.replace_brlens:
+			node.parent_node.edge_length = 0 # Start the ancestor with 0 branch length
 
 	# Repeat iteration now that tree is built to add repeat indels.
 	for node in tree.seed_node.postorder_iter():
@@ -486,9 +497,14 @@ def main(args):
 			for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
 				d = array_dict[node.taxon.label].events[k]*v
 				array_dict[node.taxon.label].distance += d
-				# node.edge_length = array_dict[node.taxon.label].distance
+				if args.replace_brlens:
+					node.edge_length = array_dict[node.taxon.label].distance
 
-	print(tree.as_string("newick"))
+	print(tree.as_string(
+		"newick",
+		suppress_internal_node_labels=True,
+		suppress_rooting=True
+		))
 
 	print(tree.as_ascii_plot(plot_metric='length', show_internal_node_labels=True))
 
