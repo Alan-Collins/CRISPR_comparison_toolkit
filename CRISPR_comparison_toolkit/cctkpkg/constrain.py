@@ -482,6 +482,8 @@ def main(args):
 			node.parent_node.edge_length = 0 # Start the ancestor with 0 branch length
 
 	# Repeat iteration now that tree is built to add repeat indels.
+	# and calculate tree score
+	score = 0
 	for node in tree.seed_node.postorder_iter():
 		if node.level() != 0:
 			parent = node.parent_node				
@@ -497,8 +499,11 @@ def main(args):
 			for k,v in event_costs.items(): # Get weighted distance based on each event's cost.
 				d = array_dict[node.taxon.label].events[k]*v
 				array_dict[node.taxon.label].distance += d
+				score += d
 				if args.replace_brlens:
 					node.edge_length = array_dict[node.taxon.label].distance
+
+	sys.stderr.write("Total tree score is {}\n\n".format(score))
 
 	print(tree.as_string(
 		"newick",
