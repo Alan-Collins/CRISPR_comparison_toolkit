@@ -511,7 +511,8 @@ def main(args):
 		suppress_rooting=True
 		))
 
-	print(tree.as_ascii_plot(plot_metric='length', show_internal_node_labels=True))
+	if args.print_tree:
+		print(tree.as_ascii_plot(plot_metric='length', show_internal_node_labels=True))
 
 	plotting.plot_tree(
 		tree=tree,
