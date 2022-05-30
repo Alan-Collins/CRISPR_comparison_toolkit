@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = "0.7.1"
+__version__ = "0.7.2"
 __author__ = "Alan Collins"
 
 import sys
@@ -30,8 +30,8 @@ Find CRISPR arrays in assemblies:
   minced       find CRISPR arrays using minced
 
 Analyze the differences between CRISPR arrays:
-  CRISPRdiff   produce a CRISPRdiff plot comparing CRISPR arrays
-  CRISPRtree   perform a maximum parsimony analysis on CRISPR arrays
+  crisprdiff   produce a CRISPRdiff plot comparing CRISPR arrays
+  crisprtree   perform a maximum parsimony analysis on CRISPR arrays
   constrain    predict array relationships constrained by a tree
   network      produce a network representation of spacer sharing among arrays
 
@@ -49,9 +49,9 @@ class MyArgumentParser(argparse.ArgumentParser):
 			message = blast.description
 		elif self.prog == "cctk minced":
 			message = minced.description
-		elif self.prog == "cctk CRISPRdiff":
+		elif self.prog == "cctk crisprdiff":
 			message = CRISPRdiff.description
-		elif self.prog == "cctk CRISPRtree":
+		elif self.prog == "cctk crisprtree":
 			message = CRISPRtree.description
 		elif self.prog == "cctk constrain":
 			message = constrain.description
@@ -95,13 +95,13 @@ def parse_args(args=None):
 	
 	# CRISPRtree.py CLI options
 	treecli = subparsers.add_parser(
-		'CRISPRtree',
+		'crisprtree',
 		help="Perform a maximum parsimony analysis on CRISPR arrays.")
 	treecli = CRISPRtree.build_parser(treecli)
 
 	# CRISPRdiff.py CLI options
 	diffcli = subparsers.add_parser(
-		'CRISPRdiff',
+		'crisprdiff',
 		help="Produce a CRISPRdiff plot comparing CRISPR arrays.")
 	diffcli = CRISPRdiff.build_parser(diffcli)
 
@@ -149,9 +149,9 @@ def main():
 
 	if args.command == "evolve":
 		evolve.main(args)
-	elif args.command == "CRISPRtree":
+	elif args.command == "crisprtree":
 		CRISPRtree.main(args)
-	elif args.command == "CRISPRdiff":
+	elif args.command == "crisprdiff":
 		CRISPRdiff.main(args)
 	elif args.command == "blast":
 		blast.main(args)
