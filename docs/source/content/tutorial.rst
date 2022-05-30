@@ -416,7 +416,7 @@ First let's look at the largest cluster.
 
 .. code-block:: shell
 
-	Minced_CRISPRs$ cctk CRISPRdiff -a PROCESSED/Array_IDs.txt -o Plots/largest_cluster_diff.png 3 13 14 15 16 17 27
+	Minced_CRISPRs$ cctk crisprdiff -a PROCESSED/Array_IDs.txt -o Plots/largest_cluster_diff.png 3 13 14 15 16 17 27
 	Identified 28 spacers present in more than one array. 
 
 That command produces the plot shown below. The components of this plot are described in the :ref:`diff-output` section of the `CRISPRdiff <crisprdiff.html>`_ documentation page.
@@ -433,7 +433,7 @@ The default behaviour of CRISPRdiff is to plot arrays in an order that maximizes
 .. code-block:: shell
 
 	# Array order is specified from top to bottom of the output plot
-	Minced_CRISPRs$ cctk CRISPRdiff -a PROCESSED/Array_IDs.txt -o Plots/largest_cluster_diff_reorder.png --preordered 15 17 16 13 14 27 3
+	Minced_CRISPRs$ cctk crisprdiff -a PROCESSED/Array_IDs.txt -o Plots/largest_cluster_diff_reorder.png --preordered 15 17 16 13 14 27 3
 	Identified 28 spacers present in more than one array. 
 
 This produces the below plot that better highlights the presence of the spacers in arrays 3 and 27. 
@@ -497,7 +497,7 @@ Smaller cluster
 
 .. code-block:: shell
 
-	Minced_CRISPRs$ cctk CRISPRdiff -a PROCESSED/Array_IDs.txt -o Plots/smaller_cluster.png 7 8 11 21
+	Minced_CRISPRs$ cctk crisprdiff -a PROCESSED/Array_IDs.txt -o Plots/smaller_cluster.png 7 8 11 21
 	Identified 22 spacers present in more than one array.
 
 
@@ -510,7 +510,7 @@ Right cluster
 
 .. code-block:: shell
 
-	Minced_CRISPRs$ cctk CRISPRdiff -a PROCESSED/Array_IDs.txt -o Plots/right_cluster.png 7 8 9 15
+	Minced_CRISPRs$ cctk crisprdiff -a PROCESSED/Array_IDs.txt -o Plots/right_cluster.png 7 8 9 15
 
 
 The arrays in the right cluster are also highly related. Of note in this cluster is the presence of a duplicated spacer in array 15. This is readily identified in the diffplot as the corresponding spacer in the two adjacently plotted arrays are connected to both copies of the spacer in array 15, leading to a V or A shape formed by the lines connecting shared spacers between arrays.
@@ -521,13 +521,13 @@ The arrays in the right cluster are also highly related. Of note in this cluster
 Using CRISPRtree to create hypotheses of array histories
 ========================================================
 
-Representing array relationships as a network allows you to quickly assess how similar a group of arrays are. Visualizing a cluster of arrays using ``cctk CRISPRdiff`` allows you to further assess which spacers are shared or different, and where the differences between arrays are located. However, it
+Representing array relationships as a network allows you to quickly assess how similar a group of arrays are. Visualizing a cluster of arrays using ``cctk crisprdiff`` allows you to further assess which spacers are shared or different, and where the differences between arrays are located. However, it
 
-To analyse the left cluster using ``cctk CRISPRtree`` we will use the following command. Logging outputs are sent to stderr which we will direct to to a file for now . 
+To analyse the left cluster using ``cctk crisprtree`` we will use the following command. Logging outputs are sent to stderr which we will direct to to a file for now . 
 
 .. code-block:: shell
 
-	Minced_CRISPRs$ cctk CRISPRtree -a PROCESSED/Array_IDs.txt -o Plots/tree_left_cluster --branch-support 2 6 11 17 18 2>tree_left_cluster.log
+	Minced_CRISPRs$ cctk crisprtree -a PROCESSED/Array_IDs.txt -o Plots/tree_left_cluster --branch-support 2 6 11 17 18 2>tree_left_cluster.log
 	(((2:16.0,17:83.0)Anc_d:3.0[32],6:56.0)Anc_c:1.0[96],18:15.0,11:14.0)Anc_b:0.0
 
 

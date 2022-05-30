@@ -83,8 +83,8 @@ All tools available in CCTK can be accessed through the ``cctk`` executable. Eac
        minced       find CRISPR arrays using minced
 
      Analyze the differences between CRISPR arrays:
-       CRISPRdiff   produce a CRISPRdiff plot comparing CRISPR arrays
-       CRISPRtree   perform a maximum parsimony analysis on CRISPR arrays
+       crisprdiff   produce a CRISPRdiff plot comparing CRISPR arrays
+       crisprtree   perform a maximum parsimony analysis on CRISPR arrays
        constrain    predict array relationships constrained by a tree ## TO ADD ##
        network      produce a network representation of spacer sharing among arrays
 

@@ -4,14 +4,14 @@ CRISPRtree
 Introduction
 ------------
 
-``cctk CRISPRtree`` uses a maximum parsimony approach to create a tree representation of the relationship between a set of arrays. It produces a visualization of this hypothesis that indicates how arrays are related to one another and which events may have occurred in each array since an ancestral state. Branch lengths in the tree correspond to the weighted parsimony cost between an array and its hypothetical ancestor. All arrays (both input, extant arrays, and hypothetical ancestral arrays) are depicted in the same style as ``cctk CRISPRdiff``. In addition, any events that are hypothesized to have occurred in an array since its ancestor are indicated using symbols corresponding to the :ref:`tree-key`. The process by which ``cctk CRISPRtree`` constructs trees is discussed in the :ref:`tree-process` section.
+``cctk crisprtree`` uses a maximum parsimony approach to create a tree representation of the relationship between a set of arrays. It produces a visualization of this hypothesis that indicates how arrays are related to one another and which events may have occurred in each array since an ancestral state. Branch lengths in the tree correspond to the weighted parsimony cost between an array and its hypothetical ancestor. All arrays (both input, extant arrays, and hypothetical ancestral arrays) are depicted in the same style as ``cctk crisprdiff``. In addition, any events that are hypothesized to have occurred in an array since its ancestor are indicated using symbols corresponding to the :ref:`tree-key`. The process by which ``cctk crisprtree`` constructs trees is discussed in the :ref:`tree-process` section.
 
 .. _tree-before-you-run:
 
 Before you run
 --------------
 
-``cctk CRISPRtree`` requirs only an :ref:`array-ids` or :ref:`array-seqs` file as input. By default, all arrays present in the input file will be analyzed. However, ``cctk CRISPRtree`` requires that all input arrays are related to one another (i.e., all arrays are part of a single cluster in a network representation of their relationships) if not all of the arrays are related to one another the resulting plot will be harder to interpret (busy plot, harder to assign visually distinct colours to spacers). It is therefore recommended that you run ``cctk CRISPRtree`` only on smaller batches of your arrays that share spacers.
+``cctk crisprtree`` requirs only an :ref:`array-ids` or :ref:`array-seqs` file as input. By default, all arrays present in the input file will be analyzed. However, ``cctk crisprtree`` requires that all input arrays are related to one another (i.e., all arrays are part of a single cluster in a network representation of their relationships) if not all of the arrays are related to one another the resulting plot will be harder to interpret (busy plot, harder to assign visually distinct colours to spacers). It is therefore recommended that you run ``cctk crisprtree`` only on smaller batches of your arrays that share spacers.
 
 If you identified CRISPR arrays using ``cctk minced`` or ``cctk blast``, you will have a :ref:`array-network` file among the output of those tools. This file can be visualized using a network visualization tool such as `cytoscape <https://cytoscape.org/download.html>`_ and clusters of related arrays can be selected easily. See the section :ref:`network-tutorial` for an example of how this workflow may look.
 
@@ -20,31 +20,31 @@ If you identified CRISPR arrays using ``cctk minced`` or ``cctk blast``, you wil
 Basic Usage
 -----------
 
-``cctk CRISPRtree`` requires two command line inputs: an :ref:`array-ids` (or :ref:`array-seqs`) file using ``-a``.
+``cctk crisprtree`` requires two command line inputs: an :ref:`array-ids` (or :ref:`array-seqs`) file using ``-a``.
 
 .. code-block:: shell
 	
-	cctk CRISPRtree -a <Array_IDs.txt>
+	cctk crisprtree -a <Array_IDs.txt>
 
 The above command will produce a newick string for the most parsimonious tree(s), but will not produce a graphical represenation of the tree. To save a graphical representation of the most parsimonious tree(s) to a file, you must provide a destination filename using ``-o``. e.g.
 
 .. code-block:: shell
 
-	cctk CRISPRtree -a <Array_IDs.txt> -o <output plot with desired extension>
+	cctk crisprtree -a <Array_IDs.txt> -o <output plot with desired extension>
 
-**N.B.** ``cctk CRISPRtree`` uses `matplotlib <https://matplotlib.org/>`_ to perform all plotting functions. You can specify the format of the output file by providing a filename with an extension corresponding to the desired file format. E.g., out_file.png will produce a PNG format file, while out_file.svg will produce an SVG format file. Any file format compatible with `matplotlib.pyplot.savefig() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.savefig.html>`_ should work.
+**N.B.** ``cctk crisprtree`` uses `matplotlib <https://matplotlib.org/>`_ to perform all plotting functions. You can specify the format of the output file by providing a filename with an extension corresponding to the desired file format. E.g., out_file.png will produce a PNG format file, while out_file.svg will produce an SVG format file. Any file format compatible with `matplotlib.pyplot.savefig() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.savefig.html>`_ should work.
 
 Outputs
 -------
 
-``cctk CRISPRtree`` produces outputs both to specified file locations (depending on command line options specified) and to the ``stdout`` and ``stderr`` as described below.
+``cctk crisprtree`` produces outputs both to specified file locations (depending on command line options specified) and to the ``stdout`` and ``stderr`` as described below.
 
 .. _tree-plot:
 
 Tree plot
 ^^^^^^^^^
 
-If ``cctk CRISPRtree`` is run with ``-o``, a graphical representation of the most parsimonious tree(s) will be saved to the specified file path. If more than one equally parsimonious tree is found to have the best parsimony score, then they will be saved to separate files which are derived from the specified filename through the addition of '_1', '_2' etc before the file extension. E.g., given the output file 'output/tree_image.png', two equally parsimonious trees would be saved to 'output/tree_image_1.png' and 'output/tree_image_2.png'.
+If ``cctk crisprtree`` is run with ``-o``, a graphical representation of the most parsimonious tree(s) will be saved to the specified file path. If more than one equally parsimonious tree is found to have the best parsimony score, then they will be saved to separate files which are derived from the specified filename through the addition of '_1', '_2' etc before the file extension. E.g., given the output file 'output/tree_image.png', two equally parsimonious trees would be saved to 'output/tree_image_1.png' and 'output/tree_image_2.png'.
 
 An example tree plot is show below. This tree was generated using the same arrays as were used for the :ref:`diff-output` example plots. i.e.,
 
@@ -70,9 +70,9 @@ The tree topology on the right of the plot indicates the hypothetical relationsh
 
 5. The relationships between the arrays being analyzed is represented as a tree. Branch lengths correspond to the weighted parsimony cost of all events that are predicted to have occurred between each array and its hypothetical ancestral array.
 
-6. The root of the tree corresponds to the array that ``cctk CRISPRtree`` hypothesizes is the last common ancestor of all the arrays being considered. The spacers shown in this array are not necessarily all the spacers that would have been present in this array, but are all the spacers for which ``cctk CRISPRtree`` has evidence.
+6. The root of the tree corresponds to the array that ``cctk crisprtree`` hypothesizes is the last common ancestor of all the arrays being considered. The spacers shown in this array are not necessarily all the spacers that would have been present in this array, but are all the spacers for which ``cctk crisprtree`` has evidence.
 
-7. Events that ``cctk CRISPRtree`` hypothesizes may have occurred between each array and its hypothetical ancestor are indicated using symbols that correspond to the :ref:`tree-key`. Acquisition and duplication events are indicated with symbols that are placed below the acquired or duplicated spacers. Deletions and trailer loss events are indicated with symbols in-place of the lost spacers. insertions, no identity, and redundant gain events are indicated with a box that surrounds all spacers that are hypothesized to have been involved in the inicated event.
+7. Events that ``cctk crisprtree`` hypothesizes may have occurred between each array and its hypothetical ancestor are indicated using symbols that correspond to the :ref:`tree-key`. Acquisition and duplication events are indicated with symbols that are placed below the acquired or duplicated spacers. Deletions and trailer loss events are indicated with symbols in-place of the lost spacers. insertions, no identity, and redundant gain events are indicated with a box that surrounds all spacers that are hypothesized to have been involved in the inicated event.
 
 
 .. _tree-key:
@@ -96,7 +96,7 @@ If an ascii representation of the tree is requested, this will be written to the
 stderr
 ^^^^^^
 
-Descriptive log information is written to the stderr. This information includes that command that was used to execute ``cctk CRISPRtree``, the weighted parsimony score of the most parsimonious tree identified, and the order in which arrays were processed to create each most parsimonious tree. Array order information can be used to recreate the same tree with different graphical settings without needing to repeat a search across many trees (as described in the :ref:`tree-fix-order` section.) 
+Descriptive log information is written to the stderr. This information includes that command that was used to execute ``cctk crisprtree``, the weighted parsimony score of the most parsimonious tree identified, and the order in which arrays were processed to create each most parsimonious tree. Array order information can be used to recreate the same tree with different graphical settings without needing to repeat a search across many trees (as described in the :ref:`tree-fix-order` section.) 
 
 If redundant acquisition events were found involving more than 2 arrays, the Event number and corresponding arrays will be written to stderr.
 
@@ -112,7 +112,7 @@ If you do not wish to analyze all arrays in your input file, you can specify the
 
 .. code-block:: shell
 
-	cctk CRISPRtree -a <Array_IDs.txt> -o <output plot> 15 20 7 16 19
+	cctk crisprtree -a <Array_IDs.txt> -o <output plot> 15 20 7 16 19
 
 
 .. _tree-fix-order:
@@ -120,7 +120,7 @@ If you do not wish to analyze all arrays in your input file, you can specify the
 Specifying array order
 ^^^^^^^^^^^^^^^^^^^^^^
 
-As described in the :ref:`tree-process` section, ``cctk CRISPRtree`` adds arrays to a growing tree one by one in a deterministic way such that a given array order will allways result in the same tree if the same parsimony weights are used. It is therefore possible to recreate the same tree in multiple executions of the ``cctk CRISPRtree`` program by specifying the order in which to add arrays. This can be done by using the ``-x`` flag and providing the desired array order at the end of the command. The ordered arrays do not need to immediately follow the ``-x`` flag as this flag simply activates the fixed order running mode.
+As described in the :ref:`tree-process` section, ``cctk crisprtree`` adds arrays to a growing tree one by one in a deterministic way such that a given array order will allways result in the same tree if the same parsimony weights are used. It is therefore possible to recreate the same tree in multiple executions of the ``cctk crisprtree`` program by specifying the order in which to add arrays. This can be done by using the ``-x`` flag and providing the desired array order at the end of the command. The ordered arrays do not need to immediately follow the ``-x`` flag as this flag simply activates the fixed order running mode.
 
 **N.B.** Fixing array order using ``-x`` overrides the ``-r`` setting. If you specify a number of replicates using ``-r`` this will be ignored and only a single tree will be made.
 
@@ -146,7 +146,7 @@ Tree topologies can be assessed quickly in the terminal using the ``--print-tree
 Saving hypothetical ancestral arrays
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-``cctk CRISPRtree`` produces hypothetical ancestral arrays that that contain a subset of the spacers present in the input arrays. These arrays can be saved to an output file using ``--output-arrays <filename>``.
+``cctk crisprtree`` produces hypothetical ancestral arrays that that contain a subset of the spacers present in the input arrays. These arrays can be saved to an output file using ``--output-arrays <filename>``.
 
 Calculating branch support
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -154,7 +154,7 @@ Calculating branch support
 Branch support calculation approach
 """""""""""""""""""""""""""""""""""
 
-``cctk CRISPRtree`` finds the most parsimonious tree by constructing many trees and comparing their parsimony cost. Each tree is the result of adding arrays to a growing tree in different orders as described in the :ref:`tree-process` section. The order in which arrays are added determines the final topology in large part by determining the ancestral arrays that are inferred (as ancestral arrays are not changed once created). However, while overall topologies may differ between each replicate of the tree-building process, highly similar arrays may still be consistently placed together. ``cctk CRISPRtree`` therefore assesses the frequency with which a given node is seen in all of the trees produced during the tree-building process.
+``cctk crisprtree`` finds the most parsimonious tree by constructing many trees and comparing their parsimony cost. Each tree is the result of adding arrays to a growing tree in different orders as described in the :ref:`tree-process` section. The order in which arrays are added determines the final topology in large part by determining the ancestral arrays that are inferred (as ancestral arrays are not changed once created). However, while overall topologies may differ between each replicate of the tree-building process, highly similar arrays may still be consistently placed together. ``cctk crisprtree`` therefore assesses the frequency with which a given node is seen in all of the trees produced during the tree-building process.
 
 In order to score the presence or absence of nodes, each node is assigned a binary identifier that describes the leaves that descend from it. For example, given the following most parsimonious tree:
 
@@ -200,9 +200,9 @@ branch support calculation is activated by the inclusion of ``--branch-support``
 
 .. code-block:: shell
 
-	cctk CRISPRtree -a <Array_IDs.txt> -o <output plot> -r <num replicates> --branch-support
+	cctk crisprtree -a <Array_IDs.txt> -o <output plot> -r <num replicates> --branch-support
 
-Adding branch support to the tree shown in the :ref:`tree-plot` section with 100 replicates produces the below image. Branch support is indicated at each internal node (except the root) using a coloured circle. ``cctk CRISPRtree`` uses the colour map `cividis <https://doi.org/10.1371/journal.pone.0199239>`_ for which a colour key is added to the bottom of the image.
+Adding branch support to the tree shown in the :ref:`tree-plot` section with 100 replicates produces the below image. Branch support is indicated at each internal node (except the root) using a coloured circle. ``cctk crisprtree`` uses the colour map `cividis <https://doi.org/10.1371/journal.pone.0199239>`_ for which a colour key is added to the bottom of the image.
 
 .. image:: images/treeplot_branch_support.png
 
@@ -263,28 +263,28 @@ Controlling plot elements and size
 Plot element control
 """"""""""""""""""""
 
-Several visual elements of the plot produced by ``cctk CRISPRtree`` can be controlled using command line options. An illustration of the effect of these options is shown in the image below.
+Several visual elements of the plot produced by ``cctk crisprtree`` can be controlled using command line options. An illustration of the effect of these options is shown in the image below.
 
-The default behaviour of ``cctk CRISPRtree`` is to de-emphasize ancestral arrays by applying transparency to their node labels and array cartoons. This can be disabled using the ``--no-fade-anc`` option.
+The default behaviour of ``cctk crisprtree`` is to de-emphasize ancestral arrays by applying transparency to their node labels and array cartoons. This can be disabled using the ``--no-fade-anc`` option.
 
-The default behaviour of ``cctk CRISPRtree`` is to annotate hypothetical events onto arrays. This can be disabled using the ``--no-emphasize-diffs`` option.
+The default behaviour of ``cctk crisprtree`` is to annotate hypothetical events onto arrays. This can be disabled using the ``--no-emphasize-diffs`` option.
 
 The inclusion of branch length annotations can be controlled using ``-b``. Branch lengths correspond to the weighted parsimony cost of events between an array and its ancestor. Branch length labels are added at the midpoint of the corresponding branch.
 
 Branch lengths can be scaled by a (floating point number) factor provided using ``--brlen-scale``. This can be used to increase or decrease all branch lengths. Horizontal space taken up by branches in the tree reduces the space available for CRISPR array cartoons so this option can be used to control the amount of space in the plot used by those two components.
 
-The default behaviour of ``cctk CRISPRtree`` is to align node labels and array cartoons. Label alignment can be deactivated using ``--no-align-labels``. The alignment of both cartoons and labels can be deactivated using ``--no-align-cartoons``. Note that it is not possible to deactivate the alignment of array cartoons without also deactivating the alignment of labels.
+The default behaviour of ``cctk crisprtree`` is to align node labels and array cartoons. Label alignment can be deactivated using ``--no-align-labels``. The alignment of both cartoons and labels can be deactivated using ``--no-align-cartoons``. Note that it is not possible to deactivate the alignment of array cartoons without also deactivating the alignment of labels.
 
 .. image:: images/treeplot_plotting_params_comparison.png
 
 Plot size and resolution
 """"""""""""""""""""""""
 
-The size and resolution of plots produced by ``cctk CRISPRtree`` can be controlled using command line options. These options can be used to generate images of the exact specification required for a figure, or may be necessary to create a sensibly scaled image (see :ref:`tree-limitations`).
+The size and resolution of plots produced by ``cctk crisprtree`` can be controlled using command line options. These options can be used to generate images of the exact specification required for a figure, or may be necessary to create a sensibly scaled image (see :ref:`tree-limitations`).
 
 Plot height and width can be set using the options ``--plot-width`` and ``--plot-height`` and providing the desired size in inches.
 
-pixel density (DPI) can be set using ``--dpi``. The images on this page were generated at 600 DPI. **N.B.** DPI settings are only relevant for images generated by ``cctk CRISPRtree`` in raster formats such as PNG. SVG outputs are unaffected by DPI settings.
+pixel density (DPI) can be set using ``--dpi``. The images on this page were generated at 600 DPI. **N.B.** DPI settings are only relevant for images generated by ``cctk crisprtree`` in raster formats such as PNG. SVG outputs are unaffected by DPI settings.
 
 ``--font-size`` can be used to control the size of text in the plot (default value is 10pt).
 
@@ -293,9 +293,9 @@ pixel density (DPI) can be set using ``--dpi``. The images on this page were gen
 CRISPRtree tree-making process
 ------------------------------
 
-Briefly, ``cctk CRISPRtree`` constructs a tree of CRISPR array relationships by adding arrays into a growing bifurcating tree one by one, and generating hypothetical ancestors at internal nodes. Tree topology is determined by a combination of the relationships between arrays and the order in which they are added to the tree. The order in which arrays are added to the tree are shuffled in order to generate different topologies and the topology with the lowest weighted parsimony cost is considered the best.
+Briefly, ``cctk crisprtree`` constructs a tree of CRISPR array relationships by adding arrays into a growing bifurcating tree one by one, and generating hypothetical ancestors at internal nodes. Tree topology is determined by a combination of the relationships between arrays and the order in which they are added to the tree. The order in which arrays are added to the tree are shuffled in order to generate different topologies and the topology with the lowest weighted parsimony cost is considered the best.
 
-The process used by ``cctk CRISPRtree`` to construct a tree of CRISPR array relationships and generate hypothetical ancestors is as follows for a given ordered list of arrays to be analyzed:
+The process used by ``cctk crisprtree`` to construct a tree of CRISPR array relationships and generate hypothetical ancestors is as follows for a given ordered list of arrays to be analyzed:
 
 1. Identify stretches of spacers (called "modules" here) that are shared and distinct between the first two arrays in the list:
 
@@ -338,17 +338,17 @@ Limitations and considerations
 Sequence blindness
 ^^^^^^^^^^^^^^^^^^
 
-``cctk CRISPRtree`` pays no attention to similarities in the sequences of spacers being plotted. All spacers are treated as characters that are either identical or different. If you would like spacers to be assigned the same colour based on some level of similarity (e.g., if they differ at fewer than 2 bases), then you need to adjust your input files accordingly. A single base difference in the sequence of two spacers will result in ``cctk CRISPRtree`` considering those two spacers as distinct.
+``cctk crisprtree`` pays no attention to similarities in the sequences of spacers being plotted. All spacers are treated as characters that are either identical or different. If you would like spacers to be assigned the same colour based on some level of similarity (e.g., if they differ at fewer than 2 bases), then you need to adjust your input files accordingly. A single base difference in the sequence of two spacers will result in ``cctk crisprtree`` considering those two spacers as distinct.
 
 Plot scaling for tall or wide plots
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-``cctk CRISPRtree`` was designed with the creation of figures of defined dimensions and resolution in mind. The produced plot is therefore scaled to fill the provided dimensions. The default plot size works well for a small number (5-8) of arrays of moderate length (5-20 spacers). However, for large number of arrays or for very long arrays, plot elements may appear squashed or small as an attempt is made to keep spacer shape dimensions roughly proportional. If you are plotting a large number of arrays or very long arrays, you will need to adjust the plot dimensions accordingly or output an SVG plot and scale plot elements in a graphical editor software.
+``cctk crisprtree`` was designed with the creation of figures of defined dimensions and resolution in mind. The produced plot is therefore scaled to fill the provided dimensions. The default plot size works well for a small number (5-8) of arrays of moderate length (5-20 spacers). However, for large number of arrays or for very long arrays, plot elements may appear squashed or small as an attempt is made to keep spacer shape dimensions roughly proportional. If you are plotting a large number of arrays or very long arrays, you will need to adjust the plot dimensions accordingly or output an SVG plot and scale plot elements in a graphical editor software.
 
 Arrays with large numbers of deletions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-All tree making methods are sensetive to the level of information loss in the underlying data. Treese generated for sufficiently diverged genes are unreliable. The same is true for CRISPR array trees generated by ``cctk CRISPRtree``. ``cctk CRISPRtree`` is sensetive to deletions in CRISPR arrays. Few deletions provide information about the relationships between arrays, while many deletions can remove evidence of those relationships. As described in the manuscript associated with CCTK (link to be added after publication), ``cctk CRISPRtree`` is able to accurately reproduce the true tree when the frequency of deletions in CRISPR arrays is low. For higher levels of deletions, the true tree can still be produced frequently, depending on the extent of information loss.  `cctk evolve <evolve.html>`_ was developed to test the ability of ``cctk CRISPRtree`` to recreate the true relationships between CRISPR arrays given different rates of acquisitions, deletions, and trailer loss, as described in the manuscript associated with CCTK. `cctk evolve <evolve.html>`_ is distributed as part of CCTK and can be used to explore the ability of ``cctk CRISPRtree`` to accurately recreate CRISPR array relationships given different parameters.
+All tree making methods are sensetive to the level of information loss in the underlying data. Treese generated for sufficiently diverged genes are unreliable. The same is true for CRISPR array trees generated by ``cctk crisprtree``. ``cctk crisprtree`` is sensetive to deletions in CRISPR arrays. Few deletions provide information about the relationships between arrays, while many deletions can remove evidence of those relationships. As described in the manuscript associated with CCTK (link to be added after publication), ``cctk crisprtree`` is able to accurately reproduce the true tree when the frequency of deletions in CRISPR arrays is low. For higher levels of deletions, the true tree can still be produced frequently, depending on the extent of information loss.  `cctk evolve <evolve.html>`_ was developed to test the ability of ``cctk crisprtree`` to recreate the true relationships between CRISPR arrays given different rates of acquisitions, deletions, and trailer loss, as described in the manuscript associated with CCTK. `cctk evolve <evolve.html>`_ is distributed as part of CCTK and can be used to explore the ability of ``cctk crisprtree`` to accurately recreate CRISPR array relationships given different parameters.
 
 Colour blindness and colour schemes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

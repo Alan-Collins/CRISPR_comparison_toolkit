@@ -8,7 +8,7 @@ Introduction
 
 ``cctk constrain`` can be used to assess how CRISPR arrays may have evolved given a certain tree topology (i.e., how would CRISPR arrays have changed if their evolution were "constrained" by a certain topology).
 
-This analysis can be useful when ``cctk CRISPRtree`` produces a topology that differs from that produced using other genomic data. In such a case, ``cctk constrain`` can provide information about whether a tree is still a reasonable explanation of CRISPR array relationships, but simply a less parsimonious topology than that inferred by ``cctk CRISPRtree``.
+This analysis can be useful when ``cctk crisprtree`` produces a topology that differs from that produced using other genomic data. In such a case, ``cctk constrain`` can provide information about whether a tree is still a reasonable explanation of CRISPR array relationships, but simply a less parsimonious topology than that inferred by ``cctk crisprtree``.
 
 ``cctk constrain`` can also indicate that horizontal gene transfer may have occurred. ``cctk constrain`` can hypothesize when a topology would require that arrays at different points in the tree independently acquire the same spacers (either by insertion or by leader-end acquisition). Such an event is highlighted in the produced plot and information concerning the event is sent to the ``stderr``.
 
@@ -60,7 +60,7 @@ Output files
 Tree plot
 ---------
 
-The tree plot produced by ``cctk constrain`` is much like that produced by ``cctk CRISPRtree`` (see :ref:`tree-plot`). However, there are some differences which will be discussed below using this example image (generated using the dataset provided in the `tutorial <tutorial.html>`_).
+The tree plot produced by ``cctk constrain`` is much like that produced by ``cctk crisprtree`` (see :ref:`tree-plot`). However, there are some differences which will be discussed below using this example image (generated using the dataset provided in the `tutorial <tutorial.html>`_).
 
 .. image:: images/large_cluster_constrain.png
 

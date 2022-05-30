@@ -4,7 +4,7 @@ CRISPRdiff
 Introduction
 ------------
 
-``cctk CRISPRdiff`` is a visualization tool to explore the relationships between CRISPR arrays. It draws arrays as a sequence of rectangles where spacers that are unique to a single array are represented by small, black rectangles, while spacers present in multiple arrays are represented by larger rectangles with a fill and outline colour combination that is unique to that spacer. Spacers that are present in two arrays drawn next to each other are connected by a line to highlight this relationship. The colour of the line connecting spacers present in two arrays is the same as the fill colour of the spacers.
+``cctk crisprdiff`` is a visualization tool to explore the relationships between CRISPR arrays. It draws arrays as a sequence of rectangles where spacers that are unique to a single array are represented by small, black rectangles, while spacers present in multiple arrays are represented by larger rectangles with a fill and outline colour combination that is unique to that spacer. Spacers that are present in two arrays drawn next to each other are connected by a line to highlight this relationship. The colour of the line connecting spacers present in two arrays is the same as the fill colour of the spacers.
 
 This representation is intended to highlight where and what the similarities are between a group of arrays, and is therefore best suited to sets of related arrays.
 
@@ -13,7 +13,7 @@ This representation is intended to highlight where and what the similarities are
 Before you run
 --------------
 
-``cctk CRISPRdiff`` requirs only an :ref:`array-ids` or :ref:`array-seqs` file as input. By default, all arrays present in the input file will be drawn. However, if not all of the arrays are related to one another the resulting plot will be harder to interpret (busy plot, harder to assign visually distinct colours to spacers). It is therefore recommended that you run ``cctk CRISPRdiff`` only on smaller batches of your arrays that share spacers.
+``cctk crisprdiff`` requirs only an :ref:`array-ids` or :ref:`array-seqs` file as input. By default, all arrays present in the input file will be drawn. However, if not all of the arrays are related to one another the resulting plot will be harder to interpret (busy plot, harder to assign visually distinct colours to spacers). It is therefore recommended that you run ``cctk crisprdiff`` only on smaller batches of your arrays that share spacers.
 
 If you identified CRISPR arrays using ``cctk minced`` or ``cctk blast``, you will have a :ref:`array-network` file among the output of those tools. This file can be visualized using a network visualization tool such as `cytoscape <https://cytoscape.org/download.html>`_ and clusters of related arrays can be selected easily. See the section :ref:`network-tutorial` for an example of how this workflow may look.
 
@@ -22,13 +22,13 @@ If you identified CRISPR arrays using ``cctk minced`` or ``cctk blast``, you wil
 Basic Usage
 -----------
 
-``cctk CRISPRdiff`` requires two command line inputs: an :ref:`array-ids` (or :ref:`array-seqs`) file using ``-a``, and the name of the desired output file using ``-o``.
+``cctk crisprdiff`` requires two command line inputs: an :ref:`array-ids` (or :ref:`array-seqs`) file using ``-a``, and the name of the desired output file using ``-o``.
 
 .. code-block:: shell
 	
-	cctk CRISPRdiff -a <Array_IDs.txt> -o <output plot with desired extension>
+	cctk crisprdiff -a <Array_IDs.txt> -o <output plot with desired extension>
 
-**N.B.** ``cctk CRISPRdiff`` uses `matplotlib <https://matplotlib.org/>`_ to perform all plotting functions. You can specify the format of the output file by providing a filename with an extension corresponding to the desired file format. E.g. out_file.png will produce a PNG format file, while out_file.svg will produce an SVG format file. Any file format compatible with `matplotlib.pyplot.savefig() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.savefig.html>`_ should work.
+**N.B.** ``cctk crisprdiff`` uses `matplotlib <https://matplotlib.org/>`_ to perform all plotting functions. You can specify the format of the output file by providing a filename with an extension corresponding to the desired file format. E.g. out_file.png will produce a PNG format file, while out_file.svg will produce an SVG format file. Any file format compatible with `matplotlib.pyplot.savefig() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.savefig.html>`_ should work.
 
 Output files
 ------------
@@ -38,7 +38,7 @@ Output files
 CRISPRdiff plot
 ^^^^^^^^^^^^^^^
 
-``cctk CRISPRdiff``'s main output is a plot representing the relationships of a set of arrays. An example of this plot is shown below and the main visual elements are highlighted.
+``cctk crisprdiff``'s main output is a plot representing the relationships of a set of arrays. An example of this plot is shown below and the main visual elements are highlighted.
 
 .. image:: images/diffplot_eg.png
 
@@ -65,7 +65,7 @@ The above example plot was produced using the following data generated using ``c
 Colour scheme file
 ^^^^^^^^^^^^^^^^^^
 
-``cctk CRISPRdiff`` can optionally output a JSON format file detailing the colours asigned to each spacer. This file can be provided to ``cctk CRISPRdiff``, ``cctk CRISPRtree``, and ``cctk constrain`` to ensure that spacers are coloured consistently between plots.
+``cctk crisprdiff`` can optionally output a JSON format file detailing the colours asigned to each spacer. This file can be provided to ``cctk crisprdiff``, ``cctk crisprtree``, and ``cctk constrain`` to ensure that spacers are coloured consistently between plots.
 
 See :ref:`CRISPRdiff-json` for details.
 
@@ -81,7 +81,7 @@ If you do not wish to plot all arrays in your input file, you can specify the su
 
 .. code-block:: shell
 
-	cctk CRISPRdiff -a <Array_IDs.txt> -o <output plot> 1 2 5 8 20 7
+	cctk crisprdiff -a <Array_IDs.txt> -o <output plot> 1 2 5 8 20 7
 
 Specifying array order in plot
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -89,7 +89,7 @@ Specifying array order in plot
 Automatic ordering
 """"""""""""""""""
 
-``cctk CRISPRdiff`` attempts to find the best order for displaying a set of arrays by maximizing the number of spacers shared between adjacently plotted arrays. for 8 or fewer arrays, all orders will be tried and the best chosen. For 9 or more arrays, a search will be conducted to find a good order.
+``cctk crisprdiff`` attempts to find the best order for displaying a set of arrays by maximizing the number of spacers shared between adjacently plotted arrays. for 8 or fewer arrays, all orders will be tried and the best chosen. For 9 or more arrays, a search will be conducted to find a good order.
 
 The number of orders that are tried during the search for a good plotting order can be controlled with ``--iterations`` (default: 10). More iterations will increase run time, but may result in a better ordering. 
 

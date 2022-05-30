@@ -73,7 +73,7 @@ The minimal command to run ``cctk blast`` requires 3 inputs: a BLASTdb, a fasta-
 
 	cctk blast -d <BLASTdb> -r <repeats file> -o <output dir>
 
-**N.B.** The orientation of the CRISPR repeats in your input file will be used to orient the CRISPR spacers output by ``cctk blast``. If spacer and array orientation are important for the downstream analysis of your data (for example if you intend to use ``cctk CRISPRtree`` or ``cctk spacerblast``), please ensure that your repeats are oriented such that the leader end of the array will be 5' of your repeat and the trailer end will be 3'.
+**N.B.** The orientation of the CRISPR repeats in your input file will be used to orient the CRISPR spacers output by ``cctk blast``. If spacer and array orientation are important for the downstream analysis of your data (for example if you intend to use ``cctk crisprtree`` or ``cctk spacerblast``), please ensure that your repeats are oriented such that the leader end of the array will be 5' of your repeat and the trailer end will be 3'.
 
 **N.B.2** ``cctk blast`` is able to perform both ``blastn`` and processing steps using multiple threads to reduce running time. You can specify the number of threads to use with ``-t``
 

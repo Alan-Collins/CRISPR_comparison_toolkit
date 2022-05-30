@@ -265,7 +265,7 @@ The usage of ``cctk minced`` described in the :ref:`minced-basic` is sufficient 
 	
 	``cctk minced`` comes with 3 hard-coded CRISPR repeats: I-C, I-E, and I-F. These repeats repeats were selected based on my usage while developing CCTK and may be added to in the future. (Please send characterized CRISPR repeats with known orientation to Alan via email or as an issue on the `CCTK github <https://github.com/Alan-Collins/CRISPR_comparison_toolkit>`_ and I will be happy to add them. If you have a citable reference for the repeat and it's correct orientation all the better!)
 
-	``cctk minced`` uses repeats to add CRISPR type information to spacer fasta headers, but also (and more importantly) to figure out the correct orientation of CRISPR arrays with regards to their leader and trailer ends as minced does not check array orientation itself. This information is essential if you wish to analyze your CRISPR arrays using ``cctk CRISPRtree``.
+	``cctk minced`` uses repeats to add CRISPR type information to spacer fasta headers, but also (and more importantly) to figure out the correct orientation of CRISPR arrays with regards to their leader and trailer ends as minced does not check array orientation itself. This information is essential if you wish to analyze your CRISPR arrays using ``cctk crisprtree``.
 
 	Relying on the built-in repeat sequences will result in consistent orientation of CRISPR arrays with the same repeat sequence. However, there is a roughly 50% chance your arrays will be output in the reverse orientation.
 
