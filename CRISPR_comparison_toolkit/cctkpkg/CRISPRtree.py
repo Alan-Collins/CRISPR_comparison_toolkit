@@ -30,7 +30,7 @@ from . import (
 	plotting)
 
 description = """
-usage: cctk CRISPRtree [-h] -a [-o] [--output-arrays] [--print-tree] [-x] \
+usage: cctk crisprtree [-h] -a [-o] [--output-arrays] [--print-tree] [-x] \
 [-r] [--acquisition] [--deletion] [--insertion] [--rep-indel] \
 [--duplication] [--trailer-loss] [--no-ident] [-t] [--seed] \
 [--colour-file] [--colour-scheme-outfile] [--colour-scheme-infile] [-e] \

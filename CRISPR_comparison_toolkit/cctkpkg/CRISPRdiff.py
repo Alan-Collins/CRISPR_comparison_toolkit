@@ -13,7 +13,7 @@ from . import (colour_schemes,
 	plotting)
 
 description = """
-usage: cctk CRISPRdiff [-h] -a -o [--iterations] [--preordered] \
+usage: cctk crisprdiff [-h] -a -o [--iterations] [--preordered] \
 [--approx-ordered] [--seed] [--colour-file] [--colour-scheme-outfile] \
 [--colour-scheme-infile] [--line-width] [--dpi] [--connection-outline] \
 [--plot-width] [--plot-height] [--font-size] [arrays_to_align]
