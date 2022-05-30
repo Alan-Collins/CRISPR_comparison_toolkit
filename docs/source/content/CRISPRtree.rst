@@ -249,7 +249,7 @@ That colour scheme, used to visualize the same arrays as the plot in the :ref:`t
 Consistent colour schemes between ``cctk`` tools
 """"""""""""""""""""""""""""""""""""""""""""""""
 
-The ``cctk`` tools ``CRISPRdiff``, ``CRISPRtree``, and ``contrain`` have the option to save and load spacer colour assignments to allow consistent colour schemes between different visual representations of the same arrays. This feature can be used for any plots containing at least 1 of the same spacers, even if the set of spacers in each plot is not entirely the same (**N.B** When colours are set this way, any colour combinations assigned to a spacer that is not present in the analysis are still reserved and will not be used for other spacers.)
+The ``cctk`` tools ``crisprdiff``, ``crisprtree``, and ``constrain`` have the option to save and load spacer colour assignments to allow consistent colour schemes between different visual representations of the same arrays. This feature can be used for any plots containing at least 1 of the same spacers, even if the set of spacers in each plot is not entirely the same (**N.B** When colours are set this way, any colour combinations assigned to a spacer that is not present in the analysis are still reserved and will not be used for other spacers.)
 
 To save the colour scheme used in a plot by any of these tools, use ``--colour-scheme-outfile`` and provide the path (and filename) to which the file should be written. A saved colour scheme file can then be provided for use in future plots using ``--colour-scheme-infile``.
 
