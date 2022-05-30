@@ -32,11 +32,11 @@ output control:
   -o, --out-plot    output plot file name
   --output-arrays   file to store analyzed arrays and hypothetical ancestors
   --print-tree      print an ascii symbol representation of the tree
-  -u, --unrooted    input tree is unrooted
 
 running parameters:
   control run behaviour.
 
+  -u, --unrooted    input tree is unrooted
   --acquisition     parsimony cost of a spacer acquisition event. Default: 1
   --deletion        parsimony cost of a deletion event. Default: 10
   --insertion       parsimony cost of an insertion event. Default: 30
