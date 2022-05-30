@@ -68,6 +68,7 @@ plotting parameters:
   --no-align-labels
                     draw leaf labels next to leaf node
   --replace-brlens  replace input tree branch lengths with array parsimony costs
+  --dpi             resolution of the output image. Default = 600
   --no-fade-anc     do not apply transparency to ancestral array depiction
   --plot-width      width of plot in inches. Default = 3
   --plot-height     height of plot in inches. Default = 3
