@@ -48,12 +48,6 @@ Further description of the required arguments:
 	array2	leaf3
 	...
 
-.. _constrain-advanced:
-
-Advanced Usage
-==============
-
-
 Output files
 ============
 
@@ -93,6 +87,10 @@ stderr
 
 If redundant acquisition events were found involving more than 2 arrays, the Event number and corresponding arrays will be written to stderr.
 
+.. _constrain-advanced:
+
+Advanced Usage
+==============
 
 Plotting ascii representation of tree
 -------------------------------------
