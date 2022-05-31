@@ -1028,7 +1028,9 @@ def main(args):
 					out = dendropy.utility.textprocessing.StringIO()
 					print(good_tree.seed_node.write_newick_bs(out))
 				else:
-					print(good_tree.as_string("newick", suppress_internal_taxon_labels=True))
+					print(good_tree.as_string("newick",
+						suppress_internal_taxon_labels=True,
+						suppress_rooting=True))
 				if args.out_file:
 					# Reset events in root array
 					best_arrays[n] = reset_anc_mods(good_tree, best_arrays[n])
@@ -1067,7 +1069,9 @@ def main(args):
 				out = dendropy.utility.textprocessing.StringIO()
 				print(best_tree.seed_node.write_newick_bs(out))
 			else:
-				print(best_tree.as_string("newick", suppress_internal_taxon_labels=True))
+				print(best_tree.as_string("newick",
+					suppress_internal_taxon_labels=True,
+					suppress_rooting=True))
 			if args.out_file:
 				# Reset events in root array
 				best_arrays = reset_anc_mods(best_tree, best_arrays)

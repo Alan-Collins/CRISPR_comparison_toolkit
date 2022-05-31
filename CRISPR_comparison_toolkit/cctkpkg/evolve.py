@@ -518,7 +518,7 @@ def main(args):
 
 	# Save tree newick string
 	with open(outdir+f"evolved_tree_file_{run_name}.nwk", 'w') as fout:
-		fout.write(tree.as_string(schema='newick'))
+		fout.write(tree.as_string(schema='newick', suppress_rooting=True))
 
 	tree_name = f"evolved_tree_{run_name}.png"
 
