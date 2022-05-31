@@ -17,20 +17,22 @@ from . import (array_parsimony,
 	plotting)
 
 description = """
-usage: cctk evolve [-h] [-s] [-n] [-o] [-i] [-a] [-t] [-d] [-l] [-f] \
+usage: cctk evolve [-h] -n [-s] [-o] [-i] [-a] [-t] [-d] [-l] [-f] \
 [--font-override-labels] [--font-override-annotations] [-b] [--dpi] \
 [--tree-width] [--tree-height] [--branch-weight] [--branch-spacing] \
-[--brlen-scale] [--no-align] [--no-fade-ancestral]
+[--brlen-scale] [--no-align] [--no-fade-anc] [--no-emphasize-diffs]
+
+required arguments
+  -n, --num-events      events to run the simulation
 
 optional arguments:
   -h, --help            show this help message and exit
-  -s, --seed            set seed for random processes
-  -n, --num-events      events to run the simulation. Default = 20
   -o, --outdir          output directory. Default ./
 
 evolution parameters:
   specify parameters of simulation
 
+  -s, --seed            set seed for random processes
   -i, --initial-length  length of the starting array. Default = 5
   -a, --acquisition     relative frequency of spacer acquisitions. Default = 75
   -t, --trailer-loss    relative frequency of trailer spacer decay. Default = 15
@@ -41,9 +43,9 @@ plotting parameters:
   set parameters for plotting the tree to file
 
   --font-override-labels
-                    set label font size in pts
+                        set label font size in pts
   --font-override-annotations
-                    set annotation font size in pts
+                        set annotation font size in pts
   -b, --brlen-labels    include branch lengths in tree plot
   --dpi                 resolution of the output image. Default = 300
   --tree-width          width of plot in inches. Default = 3
@@ -52,25 +54,25 @@ plotting parameters:
   --branch-spacing      vertical space between branches scaling
   --brlen-scale         factor to scale branch length
   --no-align            draw array labels and cartoons at leaf nodes
-  --no-fade-ancestral   do not apply transparency to ancestral array depiction
+  --no-fade-anc         do not apply transparency to ancestral array depiction
+  --no-emphasize-diffs  don't emphasize events in each array since its ancestor
+
 """
 
 def build_parser(parser):
 
-	
+	parser.add_argument(
+		"-n", "--num-events",
+		type=int,
+		required=True,
+		help="How many events should be allowed to occur before the \
+		simulation ends?"
+		)	
 	parser.add_argument(
 		"-s", "--seed",
 		type=int,
 		metavar="",
 		help="Set seed for consistency")
-	parser.add_argument(
-		"-n", "--num-events",
-		type=int,
-		default=20,
-		metavar="",
-		help="How many events should be allowed to occur before the \
-		simulation ends? Default = 20"
-		)
 	parser.add_argument(
 		"-o", "--outdir",
 		type=str,
@@ -178,11 +180,18 @@ def build_parser(parser):
 		help="Align array labels and cartoons rather than drawing them at \
 		leaf tips and intenal nodes.")
 	plotting.add_argument(
-		"--no-fade-ancestral",
+		"--no-fade-anc",
 		action="store_true",
 		default=False,
 		help="Remove transparency from the spacer cartoons of ancestral \
 		arrays.")
+	plotting.add_argument(
+		"--no-emphasize-diffs",
+		dest="emphasize_diffs",
+		action='store_false',  
+		help="When plotting a representation of the tree with cartooned arrays, \
+		don't emphasize locations where arrays differ from their hypothetical ancestor."
+		)
 
 
 	return parser
@@ -519,8 +528,8 @@ def main(args):
 		dpi=dpi, line_scale=line_scale, branch_lengths=args.brlen_labels,
 		branch_spacing=branch_spacing, brlen_scale=brlen_scale,
 		label_text_size=label_text_size, annot_text_size=annot_text_size,
-		no_align_labels=args.no_align, emphasize_diffs=True,
-		no_fade_ancestral=args.no_fade_ancestral)
+		no_align_labels=args.no_align, emphasize_diffs=args.emphasize_diffs,
+		no_fade_ancestral=args.no_fade_anc)
 
 if __name__ == '__main__':
 
