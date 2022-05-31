@@ -24,8 +24,9 @@ In addition to files produced by other CCTK tools such as ``cctk minced`` or ``c
 
 .. _constrain-basic:
 
+***********
 Basic Usage
-===========
+***********
 
 The basic command to run ``cctk constrain`` requires three input files and the path to an output file:
 
@@ -48,13 +49,14 @@ Further description of the required arguments:
 	array2	leaf3
 	...
 
+************
 Output files
-============
+************
 
 .. _constrain-treeplot:
 
 Tree plot
----------
+=========
 
 The tree plot produced by ``cctk constrain`` is much like that produced by ``cctk crisprtree`` (see :ref:`tree-plot`). However, there are some differences which will be discussed below using this example image (generated using the dataset provided in the `tutorial <tutorial.html>`_).
 
@@ -69,7 +71,7 @@ There are two differences between the plot produced by ``cctk constrain`` and ``
 .. _constrain-tree-key:
 
 Constrain event key
--------------------
+===================
 
 Events that Constrain can hypothesize are shown in the below key. They are the same as those for the :ref:`tree-key`
 
@@ -77,23 +79,24 @@ Events that Constrain can hypothesize are shown in the below key. They are the s
 
 
 stdout
-------
+======
 
 Newick format tree strings and ascii representation of the tree are written to the stdout.
 
 
 stderr
-------
+======
 
 If redundant acquisition events were found involving more than 2 arrays, the Event number and corresponding arrays will be written to stderr.
 
 .. _constrain-advanced:
 
+**************
 Advanced Usage
-==============
+**************
 
 Plotting ascii representation of tree
--------------------------------------
+=====================================
 
 Tree topologies can be assessed quickly in the terminal using the ``--print-tree`` flag. For example, the tree shown in the :ref:`tree-plot` section is represented as shown below:
 
@@ -118,35 +121,35 @@ Tree topologies can be assessed quickly in the terminal using the ``--print-tree
 	\------- ERR431311.14
 
 Saving hypothetical ancestral arrays
-------------------------------------
+====================================
 
 ``cctk crisprtree`` produces hypothetical ancestral arrays that that contain a subset of the spacers present in the input arrays. These arrays can be saved to an output file using ``--output-arrays <filename>``.
 
 Controlling plot colours
-------------------------
+========================
 
 Controlling random assignment of colours
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+----------------------------------------
 
 When using a built-in or user-provided colour scheme, and when assigning random colour combinations to large numbers of spacers, the ``random`` module for python is used. You can exert some control over the assignment of colours by setting the ``--seed`` that controls random processes. And example of when this is useful is if you do not need specific spacers to have specific colours, but would like to shuffle colours around to avoid similar colours being close together.
 
 Providing your own colour scheme
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+--------------------------------
 
 ``cctk`` uses a single built-in colour scheme, described by `Wong, 2011 <https://www.nature.com/articles/nmeth.1618>`_ that is colour blind-friendly and has high visual contrast between colours. However, you can use custom colours as well using ``--colour-file``.
 
 Consistent colour schemes between ``cctk`` tools
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------------------------
 
 The ``cctk`` tools ``crisprdiff``, ``crisprtree``, and ``constrain`` have the option to save and load spacer colour assignments to allow consistent colour schemes between different visual representations of the same arrays. This feature can be used for any plots containing at least 1 of the same spacers, even if the set of spacers in each plot is not entirely the same (**N.B** When colours are set this way, any colour combinations assigned to a spacer that is not present in the analysis are still reserved and will not be used for other spacers.)
 
 To save the colour scheme used in a plot by any of these tools, use ``--colour-scheme-outfile`` and provide the path (and filename) to which the file should be written. A saved colour scheme file can then be provided for use in future plots using ``--colour-scheme-infile``.
 
 Controlling plot elements and size
-----------------------------------
+==================================
 
 Plot element control
-^^^^^^^^^^^^^^^^^^^^
+--------------------
 
 Several visual elements of the plot produced by ``cctk constrain`` can be controlled using command line options. An illustration of the effect of these options is shown in the image below.
 
@@ -162,7 +165,7 @@ The default behaviour of ``cctk constrain`` is to align node labels and array ca
 
 
 Plot size and resolution
-^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------
 
 The size and resolution of plots produced by ``cctk constrain`` can be controlled using command line options. These options can be used to generate images of the exact specification required for a figure, or may be necessary to create a sensibly scaled image (see :ref:`tree-limitations`).
 
