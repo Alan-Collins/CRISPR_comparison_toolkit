@@ -1,5 +1,6 @@
+################################
 CRISPR Comparison Toolkit (CCTK)
-================================
+################################
 
 **CCTK** is a Python toolkit for the identification and comparison of CRISPR arrays.
 It includes tools to go from assemblies to publication-quality images and is built around simple file formats to allow users to easily fit CCTK tools into existing workflows.
@@ -9,8 +10,9 @@ See the :doc:`usage` section for further information, including
 
 .. _tools:
 
-Tools
------
+**********
+CCTK Tools
+**********
 
 * `blast <content/blast.html>`_ - Find CRISPR arrays in assemblies using BLASTn
 * `minced <content/minced.html>`_ - Find CRISPR arrays in assemblies using minced 
@@ -22,21 +24,12 @@ Tools
 * `spacerblast <content/spacerblast.html>`_ - BLAST spacers against a BLASTdb, process output & check for PAMs
 
 
-Contents
---------
-
 .. toctree::
    :caption: Contents:
    :glob:
    :maxdepth: 2
 
    usage
+   Contact Us <contact>
+
    content/*
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

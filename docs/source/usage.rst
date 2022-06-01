@@ -49,13 +49,13 @@ You can find the ``cctk`` executable at CRISPR_comparison_toolkit/cctk
 Dependencies
 ^^^^^^^^^^^^
 
-* `python3 <https://www.python.org/downloads/>`_ (Tested with Python >= 3.8)
-   * `Matplotlib <https://matplotlib.org/3.1.1/users/installing.html>`_
-   * `DendroPy <https://dendropy.org/downloading.html>`_
-   * `NumPy <https://numpy.org/install/>`_
+* `python3 <https://www.python.org/downloads/>`_ (Tested with version >= 3.8)
+   * `Matplotlib <https://matplotlib.org/3.1.1/users/installing.html>`_ (Tested with version 3.5.0)
+   * `DendroPy <https://dendropy.org/downloading.html>`_ (Tested with version 4.5.2)
+   * `NumPy <https://numpy.org/install/>`_ (Tested with version 1.21.2)
 
 * `MinCED <https://github.com/ctSkennerton/minced>`_
-* `BLAST+ <https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/>`_ (tested with BLAST 2.9.0)
+* `BLAST+ <https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/>`_ (tested with version >= 2.9.0)
 
 
 Usage Help
