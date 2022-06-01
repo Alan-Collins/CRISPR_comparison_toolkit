@@ -19,7 +19,7 @@ from . import (array_parsimony,
 description = """
 usage: cctk evolve [-h] -n [-s] [-o] [-i] [-a] [-t] [-d] [-l] [-f] \
 [--font-override-labels] [--font-override-annotations] [-b] [--dpi] \
-[--tree-width] [--tree-height] [--branch-weight] [--branch-spacing] \
+[--plot-width] [--plot-height] [--branch-weight] [--branch-spacing] \
 [--brlen-scale] [--no-align] [--no-fade-anc] [--no-emphasize-diffs]
 
 required arguments
@@ -48,8 +48,8 @@ plotting parameters:
                         set annotation font size in pts
   -b, --brlen-labels    include branch lengths in tree plot
   --dpi                 resolution of the output image. Default = 300
-  --tree-width          width of plot in inches. Default = 3
-  --tree-height         height of plot in inches. Default = 3
+  --plot-width          width of plot in inches. Default = 3
+  --plot-height         height of plot in inches. Default = 3
   --branch-weight       thickness of branch lines. Default = 1
   --branch-spacing      vertical space between branches scaling
   --brlen-scale         factor to scale branch length
@@ -143,13 +143,13 @@ def build_parser(parser):
 		metavar="",
 		help="Pixel density in pixels per inch (Default = 300")
 	plotting.add_argument(
-		"--tree-width",
+		"--plot-width",
 		type=float,
 		default=3,
 		metavar="",
 		help="Width of plot in inches. Default = 3")
 	plotting.add_argument(
-		"--tree-height",
+		"--plot-height",
 		type=float,
 		default=3,
 		metavar="",
@@ -480,8 +480,8 @@ def main(args):
 
 
 	# Plot tree
-	fig_h = args.tree_height
-	fig_w = args.tree_width
+	fig_h = args.plot_height
+	fig_w = args.plot_width
 	dpi = args.dpi
 	line_scale = args.branch_weight
 	label_text_size = args.font_override_labels
