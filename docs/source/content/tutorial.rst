@@ -56,9 +56,9 @@ For this example, we will use both of the CRISPR identification tools included i
 
 See the :ref:`minced-blast-comp` section for a discussion of how the output of ``cctk minced`` and ``cctk blast`` compare to get an idea of why you might choose one over the other.
 
-*************
-Long Tutorial
-*************
+*************************
+Analyzing example dataset
+*************************
 
 Identifying CRISPR arrays using ``cctk minced``
 ===============================================
@@ -497,48 +497,67 @@ Smaller cluster
 
 .. code-block:: shell
 
-	Minced_CRISPRs$ cctk crisprdiff -a PROCESSED/Array_IDs.txt -o Plots/smaller_cluster.png 7 8 11 21
+	Minced_CRISPRs$ cctk crisprdiff -a PROCESSED/Array_IDs.txt -o Plots/smaller_cluster_diff.png 7 8 11 21
 	Identified 22 spacers present in more than one array.
 
+That command produces the below image
 
-The middle cluster of arrays have darker edges in the network representation, indicating more shared spacers between arrays. The diffplot shown about makes this relationship clear. Many spacers are shared between all four arrays, with unique spacers only found in a single array (12). 
+.. image:: images/smaller_cluster_diff.png
 
-The lines drawn between shared spacers in adjacently plotted arrays help to identify spacers that are shared between arrays, but they also help to highlight spacers that are present in one array and missing in another. For example, arrays 12 and 21 share several spacers, but multiple regions in each array is missing in the other. This can be readily picked out by scanning across the lines between them and noticing regions where lines are missing or the angle of the lines changes. 
+These arrays have much simpler relationships than the larger cluster arrays. First, none of the arrays have differences in their trailer ends. Furthermore there are no unique spacers in the middle of any of the arrays.
 
-Right cluster
--------------
-
-.. code-block:: shell
-
-	Minced_CRISPRs$ cctk crisprdiff -a PROCESSED/Array_IDs.txt -o Plots/right_cluster.png 7 8 9 15
-
-
-The arrays in the right cluster are also highly related. Of note in this cluster is the presence of a duplicated spacer in array 15. This is readily identified in the diffplot as the corresponding spacer in the two adjacently plotted arrays are connected to both copies of the spacer in array 15, leading to a V or A shape formed by the lines connecting shared spacers between arrays.
-
+Next we will use `CRISPRtree <CRISPRtree.html>`_ to predict the historical relationship between these two clusters of arrays.
 
 .. _tree-tutorial:
 
 Using CRISPRtree to create hypotheses of array histories
 ========================================================
 
-Representing array relationships as a network allows you to quickly assess how similar a group of arrays are. Visualizing a cluster of arrays using ``cctk crisprdiff`` allows you to further assess which spacers are shared or different, and where the differences between arrays are located. However, it
+Representing array relationships as a network allows you to quickly assess how similar a group of arrays are. Visualizing a cluster of arrays using ``cctk crisprdiff`` allows you to further assess which spacers are shared or different, and where the differences between arrays are located. However, the recoinstruction of the historical relationships among arrays from the plots produced by CRISPRdiff is laborious. CRISPRtree automates that process.
 
-To analyse the left cluster using ``cctk crisprtree`` we will use the following command. Logging outputs are sent to stderr which we will direct to to a file for now . 
+To analyse the larger cluster using ``cctk crisprtree`` we will use the following command. Logging outputs are sent to stderr which we will direct to to a file for now (i.e., ``2> larger_cluster_tree.log``). 
 
 .. code-block:: shell
 
-	Minced_CRISPRs$ cctk crisprtree -a PROCESSED/Array_IDs.txt -o Plots/tree_left_cluster --branch-support 2 6 11 17 18 2>tree_left_cluster.log
-	(((2:16.0,17:83.0)Anc_d:3.0[32],6:56.0)Anc_c:1.0[96],18:15.0,11:14.0)Anc_b:0.0
+	Minced_CRISPRs$ cctk crisprtree -a PROCESSED/Array_IDs.txt -o Plots/larger_cluster_tree.png --branch-support 3 13 14 15 16 17 27 2> larger_cluster_tree.log
+	(((27:1.0,14:12.0)100:10.0,3:38.0)86:4.0,(((16:0.0,15:10.0)66:20.0,17:1.0)48:1.0,13:22.0)84:21.0);
+
+This command produces a newick string of the inferred tree including branch support values, which is printed to the stdout. This tree corresponds to the one plotted in the file Plots/larger_cluster_tree.png which is shown below.
+
+.. image:: images/larger_cluster_tree.png
+
+The components of the plot produced by CRISPRtree are described in detail in the :ref:`tree-plot` and :ref:`crisprtree-support` sections of the `CRISPRtree <CRISPRtree.html>`_ documentation page.
+
+Example reconstruction of events based on CRISPRtree plot
+---------------------------------------------------------
+
+The above tree can be read as a story of the events that CRISPRtree hypothesizes have occured in the history of the analyzed arrays. The array, Anc_c is hypothesized to be the last common ancestor of all analyzed arrays. (**N.B** underscores are using in ancestral array names here, but not in the plot, to improve readability.)
+
+From Anc_c, two arrays arose: Anc_a and Anc_f. The events in the upper clade, starting with Anc_a, will be described here to illustrate how the visualization produced by CRISPRtree can be interpreted. Anc_a differs from its ancestor Anc_c by the deletion of two spacers and the acquisition of several. From Anc_a, the extant array 13 arose by the deletion of two sets of spacers and the acquisition of two spacers, and Anc_b arose through the acquisition of a single spacer. From Anc_b, the extant array 17 arose through the duplication of an existing spacer, and Anc_e arose through two deletions. The extant array 16 has no annotated events, indicating that it is identical to Anc_e, while array 15 differs from Anc_e by a single deletion. As array 16 and Anc_e are identical, array 16 can be considered to be the ancestor of array 15.
+
+Interestingly, array 3 has an annotated insertion event. These events indicate the possible occurence of ectopic spacer acquisition or the insertion of multiple spacers via a recombination event. However, the alternative hypothesis that these spacers were instead lost from other arrays must also be considered. In this case, it is possible that the two spacers were present in arrays Anc_f and Anc_c, but lost in Anc_d.
+
+Branch support
+--------------
+
+``cctk crisprtree`` can optionally calculate a measure of branch support for all internal nodes. The process by which that is done is described in the ref:`crisprtree-support` section of the `CRISPRtree <CRISPRtree.html>`_ documentation page.
+
+The above command included ``--branch-support`` and so the resulting image and newick string included branch support values. The plot only includes colour indications of what the support is at each internal node. The newick string includes the percent support values. 
+
+**N.B.** Branch support is calculated using the replicates of the CRISPRtree search for the most parsimonious tree. The default number of replicates (``-r``) is 100. However, if you use a lower value for ``-r``, the branch support calculation will be limited to that number of replicates. If you use ``-r 1`` then branch support for all nodes will be 100% as only a single tree was tried. Therefore, be sure to consider the number of replicates used when interpreting branch support values.
+
+.. _constrain-tutorial:
+
+Using Constrain to test phylogenetic hypotheses
+===============================================
 
 
 
 .. _minced-blast-comp:
 
+***************************************************
 ``cctk minced`` vs ``cctk blast`` output comparison
-===================================================
+***************************************************
 
 TO ADD
 
-**************
-Short Tutorial
-**************
