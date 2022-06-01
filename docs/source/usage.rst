@@ -54,7 +54,7 @@ Dependencies
    * `DendroPy <https://dendropy.org/downloading.html>`_
    * `NumPy <https://numpy.org/install/>`_
 
-* `minced <https://github.com/ctSkennerton/minced>`_
+* `MinCED <https://github.com/ctSkennerton/minced>`_
 * `BLAST+ <https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/>`_ (tested with BLAST 2.9.0)
 
 
