@@ -515,6 +515,9 @@ Using CRISPRtree to create hypotheses of array histories
 
 Representing array relationships as a network allows you to quickly assess how similar a group of arrays are. Visualizing a cluster of arrays using ``cctk crisprdiff`` allows you to further assess which spacers are shared or different, and where the differences between arrays are located. However, the recoinstruction of the historical relationships among arrays from the plots produced by CRISPRdiff is laborious. CRISPRtree automates that process.
 
+Large cluster CRISPRtree
+------------------------
+
 To analyse the larger cluster using ``cctk crisprtree`` we will use the following command. Logging outputs are sent to stderr which we will direct to to a file for now (i.e., ``2> larger_cluster_tree.log``). 
 
 .. code-block:: shell
@@ -522,11 +525,13 @@ To analyse the larger cluster using ``cctk crisprtree`` we will use the followin
 	Minced_CRISPRs$ cctk crisprtree -a PROCESSED/Array_IDs.txt -o Plots/larger_cluster_tree.png --branch-support 3 13 14 15 16 17 27 2> larger_cluster_tree.log
 	(((27:1.0,14:12.0)100:10.0,3:38.0)86:4.0,(((16:0.0,15:10.0)66:20.0,17:1.0)48:1.0,13:22.0)84:21.0);
 
-This command produces a newick string of the inferred tree including branch support values, which is printed to the stdout. This tree corresponds to the one plotted in the file Plots/larger_cluster_tree.png which is shown below.
+This command produces a Newick string of the inferred tree including branch support values, which is printed to the stdout. This tree corresponds to the one plotted in the file Plots/larger_cluster_tree.png which is shown below.
 
 .. image:: images/larger_cluster_tree.png
 
 The components of the plot produced by CRISPRtree are described in detail in the :ref:`tree-plot` and :ref:`crisprtree-support` sections of the `CRISPRtree <CRISPRtree.html>`_ documentation page.
+
+We won't discuss the contents of the log file here except to note that it includes the parsimony score of the tree. In this case the parsimony score is 140. We will come back to this later.
 
 Example reconstruction of events based on CRISPRtree plot
 ---------------------------------------------------------
@@ -535,23 +540,115 @@ The above tree can be read as a story of the events that CRISPRtree hypothesizes
 
 From Anc_c, two arrays arose: Anc_a and Anc_f. The events in the upper clade, starting with Anc_a, will be described here to illustrate how the visualization produced by CRISPRtree can be interpreted. Anc_a differs from its ancestor Anc_c by the deletion of two spacers and the acquisition of several. From Anc_a, the extant array 13 arose by the deletion of two sets of spacers and the acquisition of two spacers, and Anc_b arose through the acquisition of a single spacer. From Anc_b, the extant array 17 arose through the duplication of an existing spacer, and Anc_e arose through two deletions. The extant array 16 has no annotated events, indicating that it is identical to Anc_e, while array 15 differs from Anc_e by a single deletion. As array 16 and Anc_e are identical, array 16 can be considered to be the ancestor of array 15.
 
-Interestingly, array 3 has an annotated insertion event. These events indicate the possible occurence of ectopic spacer acquisition or the insertion of multiple spacers via a recombination event. However, the alternative hypothesis that these spacers were instead lost from other arrays must also be considered. In this case, it is possible that the two spacers were present in arrays Anc_f and Anc_c, but lost in Anc_d.
+Interestingly, array 3 has an annotated insertion event. These events indicate the possible occurence of ectopic spacer acquisition or the insertion of multiple spacers via a recombination event. However, an alternative hypothesis that these spacers were instead lost from other arrays must also be considered. In this case, it is possible that the two spacers were present in arrays Anc_f and Anc_c, but lost in Anc_d.
 
 Branch support
 --------------
 
 ``cctk crisprtree`` can optionally calculate a measure of branch support for all internal nodes. The process by which that is done is described in the ref:`crisprtree-support` section of the `CRISPRtree <CRISPRtree.html>`_ documentation page.
 
-The above command included ``--branch-support`` and so the resulting image and newick string included branch support values. The plot only includes colour indications of what the support is at each internal node. The newick string includes the percent support values. 
+The above command included ``--branch-support`` and so the resulting image and Newick string included branch support values. The plot only includes colour indications of what the support is at each internal node. The Newick string includes the percent support values. 
 
 **N.B.** Branch support is calculated using the replicates of the CRISPRtree search for the most parsimonious tree. The default number of replicates (``-r``) is 100. However, if you use a lower value for ``-r``, the branch support calculation will be limited to that number of replicates. If you use ``-r 1`` then branch support for all nodes will be 100% as only a single tree was tried. Therefore, be sure to consider the number of replicates used when interpreting branch support values.
+
+Small cluster CRISPRtree
+------------------------
+
+Next, let's have a look at the smaller cluster.
+
+.. code-block:: shell
+
+	Minced_CRISPRs$ cctk crisprtree -a PROCESSED/Array_IDs.txt -o Plots/smaller_cluster_tree.png --branch-support 7 8 11 21 2> smaller_cluster_tree.log
+	((8:0.0,21:2.0,7:10.0)83:7.0,11:32.0);
+
+.. image:: images/smaller_cluster_tree.png
+
+This tree is not well resolved. Arrays 7, 8, and 21 are part of a polytomy and are all predicted to descend from a common acestor, Anc_c (or array 8, which is identical to Anc_c). When there is less information present (i.e., fewer differences between arrays), the resulting tree is less informative.
+
+Again, let's note the parsimony score of this tree which was written to the log file: 51
 
 .. _constrain-tutorial:
 
 Using Constrain to test phylogenetic hypotheses
 ===============================================
 
+CRISPRtree produces what it considers to be the most parsimonious tree to explain the relationships between CRISPR arrays. However, you may have other phylogenetic data for the genomes in which the CRISPR arrays being analyzed were found. Constrain allows you to evaluate whether the CRISPR array relationships are consistent with other phylogenetic data.
 
+Example dataset
+---------------
+
+Included in the folder you downloaded at the beginning of this tutorial are two tree files in Newick format: small_cluster_mid_root.nwk and large_cluster_mid_root.nwk. Those files are trees of the isolates encoding the arrays in the smaller and larger cluster examined above. The trees are maximum liklihood trees inferred by `IQTREE2 <http://www.iqtree.org/>`_ using a core genome alignment generated using `Spine <https://github.com/egonozer/Spine>`_, `Nucmer <http://mummer.sourceforge.net/>`_, and `some scripts published in the CCTK paper <https://github.com/Alan-Collins/Spine-Nucmer-SNPs>`_.
+
+Here we are going to use ``cctk constrain`` to assess whether the CRISPR array relationships in the two clusters are consistent with these trees. However, before we do, we need to generate another file that is required by ``cctk constrain`` (referred to in the help message as a "genome-array-file". That file simply indicates which leaves in the tree we are analyzing correspond to which arrays (i.e., which arrays each assembly encodes). That information is contained in the :ref:`array-reps` output file produced by ``cctk minced`` and ``cctk blast``
+
+Constructing the genome-array file
+----------------------------------
+
+The genome-array file needs to be a two column, whitespace-delimited file in which the first column is the array ID and the second column is a single assembly in which it was found. If an array is present in multiple assemblies, each of those are indicated on a separate line. For example, for the larger cluster, the genome-array file looks like this:
+
+.. code-block:: shell
+
+	3 ERR431311
+	15 ERR430992
+	13 ERR431165
+	16 ERR431324
+	16 ERR431211
+	16 ERR431314
+	27 ERR431319
+	14 ERR431128
+	17 ERR431272
+
+Note in the above file that array 16 is in three assemblies.
+
+You can make the above file manually in a text editor, or you can use ``grep`` to extract the relevant lines from the :ref:`array-reps` from ``cctk minced`` and ``cctk blast`` and then use a loop to process the lines of that file. For example, the above was generated using this command:
+
+.. code-block:: shell
+	
+	# To make the same file for the small cluster, replace the list of array IDs being echo-ed
+	Minced_CRISPRs$ grep -w -f <( echo "3 13 14 15 16 17 27" | sed 's/ /\n/g' ) PROCESSED/Array_representatives.txt | while read array assembly_list; do for assembly in $assembly_list; do echo $array $assembly; done; done > large_cluster_genome_array_file.txt
+
+The genome-array file for the small cluster is
+
+.. code-block:: shell
+
+	21 ERR431387
+	11 ERR431427
+	7 ERR431274
+	8 ERR431415
+
+
+Running ``cctk constrain``
+--------------------------
+
+Smaller cluster
+^^^^^^^^^^^^^^^
+
+We'll start with the small cluster. We can run ``cctk constrain`` as follows (We'll use ``--replace-brlens`` to keep the topology from the input tree, but with branch lengths based on the parsimony cost of inferred events):
+
+.. code-block:: shell
+
+	Minced_CRISPRs$ cctk constrain -a PROCESSED/Array_IDs.txt -g small_cluster_genome_array_file.txt -t ../small_cluster_mid_root.nwk -o Plots/smaller_cluster_constrain.png --replace-brlens
+	Total tree score is 51
+
+	(ERR431427.11:32,((ERR431274.7:10,ERR431387.21:1)Anc_a:1,ERR431415.8:0)Anc_b:7)Anc_c:0;
+
+Constrain produces the below tree and reports that the score of this tree is 51. That is the same as the score we took note of for the CRISPRtree tree. Equal parsimony scores for these two trees indicate that the two trees are equally good explanations of the array relationships. 
+
+**N.B.** When CRISPRtree finds multiple, equally parsimonious trees, it reports all of them to the user. CRISPRtree only identified a single most parsimonious tree. In fact, CRISPRtree would not have found this topology due to the method it uses to search. This highlights that CRISPRtree will not sample every possible topology; it is possible that in some cases a more parsimonious tree can exist than the best tree CRISPRtree can find. However, the search used by CRISPRtree is much faster than sampling all possible topologies and was therefore chosen in spite of that limitation.
+
+An examination of the plot produced by ``cctk constrain`` shows how the evolution of the arrays would have to differ given this topology, compared to the CRISPRtree topology.
+
+.. image:: images/smaller_cluster_constrain.png
+
+If you compare the above image to that produced by CRISPRtree you will notice a single difference in the topologies. Namely, that the polytomy of arrays 7, 8, and 21 in the CRISPRtree tree is resolved here (as it was resolved in the input tree based on core genome alignments).
+
+However, in spite of this difference in topology, as indicated by the scores, the parsimony cost of events predicted to have occurred is the same.
+
+There is a single difference between the location of events in the two trees. In the CRISPRtree tree, array 21 has a duplication since its ancestor, while in the Constrain tree that duplication occurred in the ancestral array of array 21 (Anc_a). The reason for this difference is that CRISPRtree (and Constrain which uses the same model to infer events) processes duplicated spacers differently depending on whether the sibling array has a copy of the spacer. If the sibling array has a copy of the spacer, then a duplication is inferred to have occurred since the ancestor. However, if the sibling array does not contain the spacer, then all copies of that spacer (and possibly more spacers) are inferred to have been deleted. When a deletion event is identified, all spacers present in one array but missing in the sibling are added to the ancestor. The difference in how these two scenarios are processed causes the observed difference here.
+
+
+Larger cluster
+^^^^^^^^^^^^^^
 
 .. _minced-blast-comp:
 
