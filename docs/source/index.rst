@@ -14,8 +14,8 @@ Tools
 
 * `blast <content/blast.html>`_ - Find CRISPR arrays in assemblies using BLASTn
 * `minced <content/minced.html>`_ - Find CRISPR arrays in assemblies using minced 
-* `CRISPRdiff <content/CRISPRdiff.html>`_ - Produce a CRISPRdiff plot comparing CRISPR arrays
-* `CRISPRtree <content/CRISPRtree.html>`_ - Perform a maximum parsimony analysis on CRISPR arrays
+* `crisprdiff <content/CRISPRdiff.html>`_ - Produce a CRISPRdiff plot comparing CRISPR arrays
+* `crisprtree <content/CRISPRtree.html>`_ - Perform a maximum parsimony analysis on CRISPR arrays
 * `constrain <content/constrain.html>`_ - Predict array relationships constrained by a tree
 * `network <content/network.html>`_ - Produce a network representation of spacer sharing among arrays
 * `evolve <content/evolve.html>`_ - Perform in silico evolution of CRISPR arrays
