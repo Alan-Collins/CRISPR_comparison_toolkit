@@ -635,7 +635,7 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict,
 				cmap="cividis_r"),
 			ax=ax,
 			location = "bottom",
-			pad=0,
+			pad=0.02,
 			label="Branch support (%)",
 			shrink=0.5)
 	plt.tight_layout()
