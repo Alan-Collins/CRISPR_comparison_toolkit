@@ -130,6 +130,31 @@ N.B. when viewing this file in a text editor, the headings and column contents w
 	Assembly1_contig6	19991	20559	7	0	+
 	Assembly2_contig1	29424	30050	11	0	-
 
+.. _array-reps:
+
+Array_representatives.txt
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Summary**
+
+This file indicates which assemblies each array was found in. e.g.,
+
+**format**
+
+2 columns, tab-delimited.
+
+Column 1: ID of array
+Column 2: Space-delimited list of sequences in which this array was identified
+
+**Example**
+
+.. code-block:: shell
+
+	array1	assembly1
+	array2	assembly2 assembly3
+	...
+
+
 .. _array-network:
 
 Array_network.txt
