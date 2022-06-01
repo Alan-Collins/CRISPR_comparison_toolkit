@@ -33,3 +33,9 @@ See the :doc:`usage` section for further information, including
    content/network
    content/evolve
    content/spacerblast
+
+.. Indices and tables
+.. ==================
+
+.. * :ref:`genindex`
+.. * :ref:`search`
