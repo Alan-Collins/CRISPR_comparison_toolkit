@@ -556,13 +556,15 @@ def find_dupes(child, ancestor):
 		(list) list of indices of duplicated spacers if found. Empty list if none found
 	"""
 
-	spacer_counts = Counter(child.aligned)
+	child_counts = Counter(child.aligned)
+	ancestor_counts = Counter(ancestor.aligned)
 
 	dupe_indices = []
 
-	for k,v in spacer_counts.items():
+	for k,v in child_counts.items():
 		if k != '-' and k in ancestor.aligned:
-			if v > 1:
+			if (v > 1) and (v != ancestor_counts[k]):
+				# If duplicated in child but not in ancestor
 				indices = [idx for idx, el in enumerate(child.aligned) if el == k]
 				dupe_indices.append(indices)
 
