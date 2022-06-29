@@ -21,10 +21,12 @@ usage: cctk crisprdiff [-h] -a -o [--iterations] [--preordered] \
 positional arguments:
   arrays_to_align    IDs of the arrays you want to analyse. Default: all
 
-optional arguments:
-  -h, --help         show this help message and exit
+required arguments:
   -a, --array-file   Array_IDs.txt or Array_seqs.txt
   -o, --out-file     output plot file name
+
+optional arguments:
+  -h, --help         show this help message and exit
 
 running parameters:
   control run behaviour
