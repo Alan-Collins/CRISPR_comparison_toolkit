@@ -486,7 +486,7 @@ def main(args):
 		spacer_colours, text_size=args.font_size,
 		plot_width=args.plot_width, plot_height=args.plot_height,
 		dpi=args.dpi, outfile=args.out_file, line_width=args.line_width,
-		 connection_outline=args.connection_outline)
+		connection_outline=args.connection_outline)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(
