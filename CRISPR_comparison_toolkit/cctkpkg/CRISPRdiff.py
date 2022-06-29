@@ -15,8 +15,9 @@ from . import (colour_schemes,
 description = """
 usage: cctk crisprdiff [-h] -a -o [--iterations] [--preordered] \
 [--approx-ordered] [--seed] [--colour-file] [--colour-scheme-outfile] \
-[--colour-scheme-infile] [--line-width] [--dpi] [--connection-outline] \
-[--plot-width] [--plot-height] [--font-size] [arrays_to_align]
+[--colour-scheme-infile] [--force-include] [--line-width] [--dpi] \
+[--connection-outline] [--plot-width] [--plot-height] [--font-size] \
+[arrays_to_align]
 
 positional arguments:
   arrays_to_align    IDs of the arrays you want to analyse. Default: all
@@ -44,6 +45,8 @@ colour scheme files:
                     output file to store json format colour schemes
   --colour-scheme-infile
                     input file json format colour scheme
+  --force-include   override black colour of unique spacers. Instead \
+use specified colour scheme
 
 plotting parameters:
   control elements of the produced plot
@@ -370,6 +373,13 @@ def build_parser(parser):
 		spacers not in the input file will be coloured according to \
 		the normal process."
 		)
+	cs_files.add_argument(
+		"--force-include",
+		required=False,
+		action='store_true',
+		help="override black colour of unique spacers. Instead use \
+		specified colour scheme"
+		)
 
 	plot_params = parser.add_argument_group('Plotting parameters', 
 		"Control elements of the produced plot.")
@@ -480,7 +490,7 @@ def main(args):
 
 	# Process colour file related args
 	spacer_colours = colour_schemes.process_colour_args(
-		args, imp_spacers)
+		args, imp_spacers, args.force_include)
 
 	plotting.plot_diffplot(arrays_of_interest_dict, array_order, imp_spacers,
 		spacer_colours, text_size=args.font_size,

@@ -51,7 +51,6 @@ def draw_branches(tree, node_locs, ax, branch_lengths=True, brlen_scale=1,
 					vmin=0, vmax=100)
 
 
-
 def add_labels(tree, node_locs, ax, branch_lengths=True,font_scale=1,
 	line_scale=1, label_text_size=False, annot_text_size=False,
 	no_align_labels=False, brlen_scale=1, no_fade_ancestral=False):
@@ -95,8 +94,8 @@ def add_labels(tree, node_locs, ax, branch_lengths=True,font_scale=1,
 			ha='center', va='top', fontsize=brlen_font_size)
 
 
-def add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict,
-	spacer_width=0.3, spacer_outline=3, spacer_spacing=0.45, spacer_size=2.5,
+def add_cartoons(tree, node_locs, ax, array_dict, non_singleton_spacers, spacer_cols_dict,
+	spacer_width=0.3, spacer_outline=0.3, spacer_spacing=0.45, spacer_size=2.5,
 	label_pad=5, no_fade_ancestral=False, no_align_cartoons=False,
 	emphasize_diffs=False, v_scaling_factor=1, annot_text_size=False,
 	label_pad_dict={}):
@@ -256,15 +255,20 @@ def add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict,
 			# Plot spacer cartoon
 			if spacer == '-':
 				continue
-			if spacer in spacer_cols_dict.keys():
+			if spacer in non_singleton_spacers:
 				spacer_colour = spacer_cols_dict[spacer]
 				sp_width = spacer_width
 			else:
-				spacer_colour = ("#000000", "#000000") #black
+				if spacer in spacer_cols_dict:
+					spacer_colour = spacer_cols_dict[spacer]
+					spacer_outline = 0.2
+				else:
+					spacer_colour = ("#000000", "#000000") #black
 				sp_width = 0.25*spacer_width
 			plot_spacer(ax, start_pos_x, y, spacer_size, sp_width,
 				spacer_colour, spacer_outline, spacer_count, spacer_spacing,
 				v_scaling_factor)
+			spacer_outline = 0.3
 			if not no_fade_ancestral and ancestral:
 				# Plot translucent box over spacers to fade them
 				ax.fill_between(
@@ -565,7 +569,7 @@ def draw_diffplot_lines(ax, y, array_order, array_dict, spacer_colours,
 				)
 
 
-def plot_tree(tree, array_dict, filename, spacer_cols_dict, 
+def plot_tree(tree, array_dict, filename, non_singleton_spacers, spacer_cols_dict, 
 	branch_lengths=False, emphasize_diffs=False, dpi=600, line_scale=1,
 	brlen_scale=1, branch_spacing=2, font_scale=1, fig_h=1, fig_w=1,
 	no_align_cartoons=False, no_align_labels=False, no_fade_ancestral=False,
@@ -617,7 +621,7 @@ def plot_tree(tree, array_dict, filename, spacer_cols_dict,
 		annot_text_size=annot_text_size, no_align_labels=no_align_labels,
 		brlen_scale=brlen_scale, no_fade_ancestral=no_fade_ancestral)
 
-	add_cartoons(tree, node_locs, ax, array_dict, spacer_cols_dict,
+	add_cartoons(tree, node_locs, ax, array_dict, non_singleton_spacers, spacer_cols_dict,
 		label_pad=label_pad, spacer_size=spacer_size, spacer_outline=outline,
 		spacer_spacing=spacing, spacer_width=spacer_width,
 		no_align_cartoons=no_align_cartoons, emphasize_diffs=emphasize_diffs,
@@ -674,12 +678,17 @@ def plot_diffplot(array_dict, array_order, imp_spacers, spacer_colours,
 			if spacer in imp_spacers:
 				spacer_w = spacer_width
 				spcolour = spacer_colours[spacer]
-			else: 
-				spcolour = ("#000000", "#000000") #black
+			else:
+				if spacer in spacer_colours:
+					spcolour = spacer_colours[spacer]
+				else:	
+					spcolour = ("#000000", "#000000") #black
 				spacer_w = 0.25*spacer_width
+				outline = 0.2
 
 			plot_spacer(ax, 0, y+1, spacer_size, spacer_w,
 				spcolour, outline, n, spacer_spacing, vh_ratio)
+			outline = 0.3
 		if array != array_order[-1]:
 			# plot lines between shared spacers
 			draw_diffplot_lines(ax, y, array_order, array_dict, spacer_colours,

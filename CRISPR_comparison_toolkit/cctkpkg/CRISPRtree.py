@@ -33,10 +33,11 @@ description = """
 usage: cctk crisprtree [-h] -a [-o] [--output-arrays] [--print-tree] [-x] \
 [-r] [--acquisition] [--deletion] [--insertion] [--rep-indel] \
 [--duplication] [--trailer-loss] [--no-ident] [-t] [--seed] \
-[--colour-file] [--colour-scheme-outfile] [--colour-scheme-infile] [-e] \
-[-b] [--brlen-scale] [--no-align-cartoons] [--no-align-labels] [--dpi] \
-[--no-fade-anc] [--plot-width] [--plot-height] [--font-override-labels] \
-[--font-override-annotations] [arrays_to_join]
+[--colour-file] [--colour-scheme-outfile] [--colour-scheme-infile] \
+[--force-include] [-e] [-b] [--brlen-scale] [--no-align-cartoons] \
+[--no-align-labels] [--dpi] [--no-fade-anc] [--plot-width] \
+[--plot-height] [--font-override-labels] [--font-override-annotations] \
+[arrays_to_join]
 
 optional arguments:
   -h, --help        show this help message and exit
@@ -80,6 +81,8 @@ colour scheme files:
                     output file to store json format colour schemes
   --colour-scheme-infile
                     input file json format colour scheme
+  --force-include   override black colour of unique spacers. Instead \
+use specified colour scheme
 
 plotting parameters:
   control elements of the produced plot
@@ -659,6 +662,13 @@ def build_parser(parser):
 		required=False, 
 		help="Specify input file containing json format dictionary of the colour scheme to be used for spacers in this run. Any spacers not in the input file will be coloured according to the normal process."
 		)
+	cs_files.add_argument(
+		"--force-include",
+		required=False,
+		action='store_true',
+		help="override black colour of unique spacers. Instead use \
+		specified colour scheme"
+		)
 	
 	plot_params = parser.add_argument_group('Plotting parameters', 
 		"Control elements of the produced plot.")
@@ -1008,7 +1018,7 @@ def main(args):
 		
 	# Process colour file related args
 	spacer_cols_dict = colour_schemes.process_colour_args(
-		args, non_singleton_spacers)
+		args, non_singleton_spacers, args.force_include)
 
 	try:
 		if isinstance(best_tree, list):
@@ -1040,6 +1050,7 @@ def main(args):
 						"{}\n".format(filename))
 					plotting.plot_tree(tree=good_tree,
 						array_dict=best_arrays[n], filename=filename,
+						non_singleton_spacers=non_singleton_spacers,
 						spacer_cols_dict=spacer_cols_dict,
 						branch_lengths=args.branch_lengths,
 						emphasize_diffs=args.emphasize_diffs, dpi=args.dpi,
@@ -1080,6 +1091,7 @@ def main(args):
 					"{}\n".format(args.out_file))
 				plotting.plot_tree(tree=best_tree,
 					array_dict=best_arrays, filename=args.out_file,
+					non_singleton_spacers=non_singleton_spacers,
 					spacer_cols_dict=spacer_cols_dict,
 					branch_lengths=args.branch_lengths,
 					emphasize_diffs=args.emphasize_diffs, dpi=args.dpi,

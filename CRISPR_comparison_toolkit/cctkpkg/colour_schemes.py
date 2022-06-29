@@ -123,10 +123,15 @@ def fill_col_scheme_gaps(col_scheme, spacers, seed):
 	return col_scheme
 
 
-def process_colour_args(args, non_singleton_spacers):
+def process_colour_args(args, non_singleton_spacers, force_include=False):
 	if args.colour_scheme_infile:
 		spacer_cols_dict = file_handling.read_colour_scheme(
 			args.colour_scheme_infile)
+
+		if force_include: # leave colour scheme as it is
+			return spacer_cols_dict
+
+
 		# If any colours correspond to spacers not in our list, remove
 		to_del = []
 		for spacer in spacer_cols_dict:
