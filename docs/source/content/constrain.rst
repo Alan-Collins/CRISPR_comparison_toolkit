@@ -145,6 +145,8 @@ The ``cctk`` tools ``crisprdiff``, ``crisprtree``, and ``constrain`` have the op
 
 To save the colour scheme used in a plot by any of these tools, use ``--colour-scheme-outfile`` and provide the path (and filename) to which the file should be written. A saved colour scheme file can then be provided for use in future plots using ``--colour-scheme-infile``.
 
+**N.B.** When using ``--colour-scheme-infile``, if you wish to assign colours to spacers that are only present in a single extant array in your plot, you must include the ``--force-colour-unique`` option to override the default behaviour of colouring those spacers black.
+
 Controlling plot elements and size
 ==================================
 

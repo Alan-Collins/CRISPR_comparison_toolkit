@@ -141,6 +141,8 @@ To save the colour scheme used in a plot by any of these tools, use ``--colour-s
 
 To illustrate the functionality of these options, three CRISPRdiff plots are shown below. The first is the same set of arrays shown in the plot in the :ref:`diff-output` section. The colour scheme used to generate this plot was saved using ``--colour-scheme-outfile``. The other two plots represent a subset of those arrays that does not include the two arrays (19 and 16) which contain the cyan and orange spacers on the left of the plot (Also note that the pink spacer present in arrays 19, 16, and 7 is no longer coloured as it is now only present in array 7.) The second plot was generated using ``--colour-scheme-infile`` resulting in spacer colours that correspond to the first plot. The third plot was generated without providing a colour scheme file and so spacer colour assignments do not correspond to those in the other two plots.
 
+**N.B.** When using ``--colour-scheme-infile``, if you wish to assign colours to spacers that are only present in a single array in your plot, you must include the ``--force-colour-unique`` option to override the default behaviour of colouring those spacers black.
+
 .. image:: images/diffplot_colscheme_comparison.png
 
 Controlling plot elements and size
