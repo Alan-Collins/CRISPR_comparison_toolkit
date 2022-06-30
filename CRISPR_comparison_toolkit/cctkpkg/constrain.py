@@ -13,9 +13,10 @@ description = """
 usage: cctk constrain [-h] -a -t -g -o [--output-arrays] [--print-tree] [-u] \
 [--acquisition] [--deletion] [--insertion] [--rep-indel] [--duplication] \
 [--trailer-loss] [--no-ident] [--seed] [--colour-file] [--colour-scheme-outfile] \
-[--colour-scheme-infile] [-e] [-b] [--brlen-scale] [--no-align-cartoons] \
-[--no-align-labels] [--dpi] [--no-fade-anc] [--plot-width] [--plot-height] \
-[--font-override-labels] [--font-override-annotations]
+[--force-colour-unique] [--colour-scheme-infile] [-e] [-b] [--brlen-scale] \
+[--no-align-cartoons] [--no-align-labels] [--dpi] [--no-fade-anc] \
+[--plot-width] [--plot-height] [--font-override-labels] \
+[--font-override-annotations]
 
 optional arguments:
   -h, --help        show this help message and exit
@@ -55,6 +56,9 @@ colour scheme files:
                     output file to store json format colour schemes
   --colour-scheme-infile
                     input file json format colour scheme
+  --force-colour-unique
+                    override black colour of unique spacers. Instead \
+use specified colour scheme
 
 plotting parameters:
   control elements of the produced plot.
@@ -236,6 +240,13 @@ def build_parser(parser):
 		spacers not in the input file will be coloured according to \
 		the normal process."
 		)
+	cs_files.add_argument(
+		"--force-colour-unique",
+		required=False,
+		action='store_true',
+		help="override black colour of unique spacers. Instead use \
+		specified colour scheme"
+		)
 
 	plot_params = parser.add_argument_group('Plotting parameters', 
 		"Control elements of the produced plot.")
@@ -361,7 +372,7 @@ def main(args):
 		spacer for spacer, count in Counter(all_spacers).items() if count >1]
 
 	spacer_cols_dict = colour_schemes.process_colour_args(
-		args, non_singleton_spacers)
+		args, non_singleton_spacers, args.force_colour_unique)
 
 	tree = dendropy.Tree.get(
 		path=args.input_tree,
@@ -519,6 +530,7 @@ def main(args):
 		tree=tree,
 		array_dict=array_dict,
 		filename=args.out_plot,
+		non_singleton_spacers=non_singleton_spacers,
 		spacer_cols_dict=spacer_cols_dict,
 		branch_lengths=args.branch_lengths,
 		emphasize_diffs=args.emphasize_diffs,

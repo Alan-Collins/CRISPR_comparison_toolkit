@@ -34,7 +34,7 @@ usage: cctk crisprtree [-h] -a [-o] [--output-arrays] [--print-tree] [-x] \
 [-r] [--acquisition] [--deletion] [--insertion] [--rep-indel] \
 [--duplication] [--trailer-loss] [--no-ident] [-t] [--seed] \
 [--colour-file] [--colour-scheme-outfile] [--colour-scheme-infile] \
-[--force-include] [-e] [-b] [--brlen-scale] [--no-align-cartoons] \
+[--force-colour-unique] [-e] [-b] [--brlen-scale] [--no-align-cartoons] \
 [--no-align-labels] [--dpi] [--no-fade-anc] [--plot-width] \
 [--plot-height] [--font-override-labels] [--font-override-annotations] \
 [arrays_to_join]
@@ -81,7 +81,8 @@ colour scheme files:
                     output file to store json format colour schemes
   --colour-scheme-infile
                     input file json format colour scheme
-  --force-include   override black colour of unique spacers. Instead \
+  --force-colour-unique
+                    override black colour of unique spacers. Instead \
 use specified colour scheme
 
 plotting parameters:
@@ -663,7 +664,7 @@ def build_parser(parser):
 		help="Specify input file containing json format dictionary of the colour scheme to be used for spacers in this run. Any spacers not in the input file will be coloured according to the normal process."
 		)
 	cs_files.add_argument(
-		"--force-include",
+		"--force-colour-unique",
 		required=False,
 		action='store_true',
 		help="override black colour of unique spacers. Instead use \
@@ -1018,7 +1019,7 @@ def main(args):
 		
 	# Process colour file related args
 	spacer_cols_dict = colour_schemes.process_colour_args(
-		args, non_singleton_spacers, args.force_include)
+		args, non_singleton_spacers, args.force_colour_unique)
 
 	try:
 		if isinstance(best_tree, list):

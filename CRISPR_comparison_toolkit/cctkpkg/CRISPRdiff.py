@@ -15,7 +15,7 @@ from . import (colour_schemes,
 description = """
 usage: cctk crisprdiff [-h] -a -o [--iterations] [--preordered] \
 [--approx-ordered] [--seed] [--colour-file] [--colour-scheme-outfile] \
-[--colour-scheme-infile] [--force-include] [--line-width] [--dpi] \
+[--colour-scheme-infile] [--force-colour-unique] [--line-width] [--dpi] \
 [--connection-outline] [--plot-width] [--plot-height] [--font-size] \
 [arrays_to_align]
 
@@ -45,7 +45,8 @@ colour scheme files:
                     output file to store json format colour schemes
   --colour-scheme-infile
                     input file json format colour scheme
-  --force-include   override black colour of unique spacers. Instead \
+  --force-colour-unique
+                    override black colour of unique spacers. Instead \
 use specified colour scheme
 
 plotting parameters:
@@ -374,7 +375,7 @@ def build_parser(parser):
 		the normal process."
 		)
 	cs_files.add_argument(
-		"--force-include",
+		"--force-colour-unique",
 		required=False,
 		action='store_true',
 		help="override black colour of unique spacers. Instead use \
@@ -490,7 +491,7 @@ def main(args):
 
 	# Process colour file related args
 	spacer_colours = colour_schemes.process_colour_args(
-		args, imp_spacers, args.force_include)
+		args, imp_spacers, args.force_colour_unique)
 
 	plotting.plot_diffplot(arrays_of_interest_dict, array_order, imp_spacers,
 		spacer_colours, text_size=args.font_size,
