@@ -1,5 +1,5 @@
-[![Project Status: WIP - Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](http://www.repostatus.org/#wip)
-[![Conda](https://anaconda.org/alan-collins/cctk/badges/installer/conda.svg)](https://anaconda.org/Alan-Collins/cctk)
+[![Project Status: WIP - Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![Conda](https://anaconda.org/alan-collins/cctk/badges/installer/conda.svg)](https://https://anaconda.org/bioconda/cctk)
 [![Documentation Status](https://readthedocs.org/projects/crispr-comparison-toolkit/badge/?version=latest)](https://crispr-comparison-toolkit.readthedocs.io/en/latest/?badge=latest)
 
 
@@ -31,7 +31,7 @@ Conda can be used to install CCTK and all of its dependencies easily.
 
 The latest version of CCTK can be installed from Anaconda using:
 
-`conda install -c alan-collins cctk`
+`conda install -c bioconda cctk`
 
 ### Git clone
 
