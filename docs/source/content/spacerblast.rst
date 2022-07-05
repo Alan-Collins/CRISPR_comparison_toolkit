@@ -1,6 +1,7 @@
 spacerblast
 ===========
 
+.. _spacerblast-intro:
 Introduction
 ------------
 
@@ -57,11 +58,11 @@ Not specifying an output file results in the output being directed to the stdout
 Checking flanking sequence for PAM
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You can also retrieve just the hits that have an adjacent PAM sequence. For example, to check for the *Pseudomonas aeruginosa* type I-F PAM, GG, which occurs 5' (or upstream) of the protospacer:
+You can also retrieve just the hits that have an adjacent PAM sequence. For example, to check for the *Pseudomonas aeruginosa* type I-F PAM, CC, which occurs 5' (or upstream) of the protospacer:
 
 .. code-block:: shell
 
-	cctk spacerblast -d <blastdb path> -s <query sequence file> -P GG -l up
+	cctk spacerblast -d <blastdb path> -s <query sequence file> -P CC -l up
 
 You can specify your PAM in this way using any characters in the `IUPAC nucleotide alphabet <https://www.bioinformatics.org/sms/iupac.html>`_.
 
@@ -71,8 +72,8 @@ The above command returns something like the following output:
 	
 	Your specified PAM is at least 2 bases, but you only requested 0 upstream bases. 2 bases will now be retrieved on the upstream side.
 	Spacer_ID	Target_contig	Protospacer_start	Protospacer_end	Percent_identity	mismatches	protospacer_sequence	upstream_bases	target_strand
-	1F_1	Assembly1_contig1	66234	66265	100.0	0	GGTACGTGGTTTCGACCAACAGCACTGCCCAA	GG	minus
-	1F_1	Assembly6_contig1	15636	15667	59.375	13	TGGTGCACGTTTCGACCAACAGCCTAGCGCCC	GG	plus
+	1F_1	Assembly1_contig1	66234	66265	100.0	0	GGTACGTGGTTTCGACCAACAGCACTGCCCAA	CC	minus
+	1F_1	Assembly6_contig1	15636	15667	59.375	13	TGGTGCACGTTTCGACCAACAGCCTAGCGCCC	CC	plus
 
 There are two differences to note here between the first output and the output when specifying a PAM sequence:
 
