@@ -100,4 +100,4 @@ Details of the specific usage for each tool in CCTK can be found in the :ref:`To
 Example Workflow
 ----------------
 
-An example workflow of using all of the tools in CCTK is given in the `tutorial <tutorial.html>`_ page.
+An example workflow of using all of the tools in CCTK is given in the `tutorial <content/tutorial.html>`_ page.
