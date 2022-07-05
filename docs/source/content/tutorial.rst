@@ -800,4 +800,4 @@ Conclusion
 
 The above represents a complete guide of how to use CCTK to build a complete a picture of how CRISPR arrays are related to one another and what their spacers may target. I hope that this tutorial has been clear and helpful in showing how CCTK may be used in analyzing your own data. 
 
-If you have any thoughts or comments on these documentation pages and tutorial please get in touch at the email address on our `Contact <contact.html>`_ page. I would be delighted to clarify any confusing sections and add more information about parts that could use more discussion!
+If you have any thoughts or comments on these documentation pages and tutorial please get in touch at the email address on our `Contact <../contact.html>`_ page. I would be delighted to clarify any confusing sections and add more information about parts that could use more discussion!
