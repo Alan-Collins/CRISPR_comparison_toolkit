@@ -12,7 +12,7 @@ Introduction
 
 3. Identifies the presence of user-defined sequence motifs in sequence flanking the match and sorts blast hits based on the presence or absence of the motif.
 
-3. Masks user-specified regions in the subject sequence and ignores blast hits in those regions.
+4. Masks user-specified regions in the subject sequence and ignores blast hits in those regions.
 
 Before you run
 --------------
