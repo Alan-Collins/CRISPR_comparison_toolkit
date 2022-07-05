@@ -54,8 +54,6 @@ If you haven't already, `install <usage.html>`_ CCTK into a ``conda`` environmen
 
 For this example, we will use both of the CRISPR identification tools included in CCTK to illustrate how they both work with the same input data. However, for simplicity, output from ``cctk minced`` will be used in subsequent analysis sections.
 
-See the :ref:`minced-blast-comp` section for a discussion of how the output of ``cctk minced`` and ``cctk blast`` compare to get an idea of why you might choose one over the other.
-
 *************************
 Analyzing example dataset
 *************************
@@ -253,6 +251,7 @@ The spacers that have now been reduced to a single representetive are described 
 	1F_45   TGTCCCGAAGTTCATAAGCGGGCTTAGGGCGA TGTCTCGAAGTTCATAAGCGGGCTTCGGGCGA TGTCCCGAAGTTCATAAGCGGGCTTCGGGCGA
 	1F_85   GCCCAGGCACGTTTGCTCGCGCTTTGATCTCA
 
+.. _blast-tutorial:
 
 Identifying CRISPR arrays using ``cctk blast``
 ==============================================
@@ -321,7 +320,7 @@ First, make a folder to contain the outputs produced by ``cctk blast``. Then we 
 	Total unique spacers: 242
 	Total unique arrays: 22
 
-Note that ``cctk blast`` identifies a different number of spacers and a different number of arrays than ``cctk minced`` did. (326 vs 327 and 28 vs 27 when run without using ``-s``). A description of the differences between the two approaches that lead to these different outputs can be found in the :ref:`minced-blast-comp` section below.
+Note that ``cctk blast`` identifies a different number of spacers and a different number of arrays than ``cctk minced`` did. (326 vs 327 and 28 vs 27 when run without using ``-s``). This difference reflects the different behaviours of MinCED and BLAST and their tolerance of differences in the repeat sequences in these arrays.
 
 ``cctk blast`` can also use a SNP threshold to consider slightly different spacers to be the same, just like with ``cctk minced``. In addition, as most of the running time of ``cctk minced`` is spent running ``blastn`` using a BLASTdb followed by lots of ``blastdbcmd``, we can improve running time by using multiple threads for those two steps with ``-t``
 
@@ -650,11 +649,155 @@ There is a single difference between the location of events in the two trees. In
 Larger cluster
 ^^^^^^^^^^^^^^
 
-.. _minced-blast-comp:
+Next, let's look at the larger cluster:
 
-***************************************************
-``cctk minced`` vs ``cctk blast`` output comparison
-***************************************************
+.. code-block:: shell
 
-TO ADD
+	Minced_CRISPRs$ cctk constrain -a PROCESSED/Array_IDs.txt -g large_cluster_genome_array_file.txt -t ../large_cluster_mid_root.nwk -o Plots/larger_cluster_constrain.png --replace-brlens
+	Total tree score is 781
 
+	(ERR431311.3:88,((((ERR430992.15:10,(ERR431211.16:0,(ERR431314.16:0,ERR431324.16:0)Anc_a:0)Anc_b:0)Anc_c:10,ERR431319.27:160)Anc_d:110,(ERR431128.14:0,ERR431272.17:230)Anc_e:52)Anc_f:57,ERR431165.13:62)Anc_g:2)Anc_h:0;
+
+	Event 1: ERR430992.15 ERR431211.16 ERR431314.16 ERR431324.16 ERR431165.13
+
+	Event 2: ERR430992.15 ERR431211.16 ERR431314.16 ERR431324.16 ERR431165.13
+
+	Event 3: ERR430992.15 ERR431211.16 ERR431314.16 ERR431324.16
+
+	Event 4: ERR430992.15 ERR431211.16 ERR431314.16 ERR431324.16
+
+The score of this tree is much worse than the smaller tree. In addition, some "Events" have been printed to the terminal. These events correspond to hypothesized independent acquisition events and are annotated using red boxes in the produced tree (see below). These boxes have a label drawn beneath them that is either the ID of another array in the tree, or is an event number that corresponds to the events printed to the terminal. These labels indicate the other arrays in which the same set of spacers are hypothesized to have independently acquired.
+
+Independent acquisition events are hypothesized when one or more spacers would need to have been independently acquired in two separate clades in the tree for the presented topology to be correct. Alternatively, the spacers could have been independently deleted in other clades. It is important to assess for yourself which of those two possibilities (independent gain, or deletion) is more likely.
+
+.. image:: images/larger_cluster_constrain.png
+
+In the above tree, there are many hypothetical independent acquisition events. This indicates that the relationships between these CRISPR arrays so not support the provided topology. As the provided topology is based on core genome SNPs, the disagreement between the core genome and the CRISPR array tree could indicate that horizontal gene transfer of CRISPR arrays has occurred in these isolates.
+
+.. _spacerblast-tutorial:
+
+Using Spacerblast to identify CRISPR spacer targets (protospacers)
+==================================================================
+
+Having performed an analysis of the CRISPR arrays present in the example dataset, we may next wish to further investigate CRISPR spacers of interest. For example, the spacers that were predicted by Constrain to have been horizontally transferred. As the most common function of CRISPR spacers is to provide immunity against mobile genetic elements such as phages in a sequence-specific manner, an obvious next step is to search for targets of these spacers.
+
+Because CRISPR spacer targets (protospacers) must have the same (or very similar) sequence to the spacer in order for CRISPR immunity to function, the identification of protospacers is simple: just identify sequences similar to the spacers in some database of interest. BLASTn can be used for this. However, while BLASTn can be effectively used to identify sequence matches in a database, the basic functionality of BLASTn is limited in a couple of ways for this application:
+
+1. If you are searching for imperfect matches (e.g. you tolerate 2-3 mismatches) and those mismatches are close to the end of the sequence, the BLASTn may not extend the match to cover the whole sequence and will return a match that is not aligned along the full length of the spacer. 
+
+2. In many cases, a protospacer-adjacent-motif (a short sequence motif adjacent to the protospacer; PAM) is required for CRISPR immunity. Additional steps are required to retrieve the sequence flanking BLASTn hits.
+
+`CCTK spacerblast <spacerblast.html>`_ is a utility included in CCTK that uses BLASTn to identify sequence matches and performs additional steps to address the above issues. See the Spacerblast :ref:`spacerblast-intro` section for a description of the additional functionality that Spacerblast offers.
+
+preparing our data
+------------------
+
+To illustrate the use of ``cctk spacerblast``, we will assess whether spacers in the arrays of the larger cluster (investigated above) have protospacers within any of the assemblies in our dataset.
+
+First we need to isolate the sequences of the spacers in these arrays. We can get that information from the files in the PROCESSED/ directory. We can use the below one-liner to extract just the fasta sequences of spacers from the larger cluster into a new file called larger_cluster_spacers.fna. We will use this new file as input for ``cctk spacerblast``.
+
+.. code-block:: shell
+
+	Minced_CRISPRs$ grep -A1 --no-group-separator -wf <(grep -Ew "^3|^13|^14|^15|^16|^17|^27" PROCESSED/Array_IDs.txt | cut -f2 | sed "s, ,\n,g" | sed "s,^,>,") PROCESSED/CRISPR_spacers.fna > larger_cluster_spacers.fna
+
+``cctk spacerblast`` performs its search against a BLAST database (made using ``--parse_seqids``). We made a BLAST database of the assemblies in this dataset in the :ref:`blast-tutorial` section. If you skipped that section, go back and follow the instructions to make a BLAST database before continuing.
+
+Running ``cctk spacerblast``
+----------------------------
+
+Now that we have a fasta-format file of our query sequences (spacers) and a BLAST database of sequence we wish to search, we can use ``cctk spacerblast`` to search for protospacers.
+
+Incorporating match identity preferences and PAM information into our command
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+As we are searching for protospacers within the same assemblies as we identified these CRISPR spacers, we will want to ignore the CRISPR arrays we identified to avoid seeing those BLAST hits. ``cctk spacerblast`` can take a BED format file describing locations to ignore (``-r``). We can provide the Array_locations.bed file produced by ``cctk minced`` for this.
+
+These spacers are associated with a Type I-F CRISPR system. Therefore, we the PAM we should expect to see for functioning protospacers is "CC". We can tell ``cctk spacerblast`` to look for that sequence upstream of the protospacer using ``-P CC -l up``.
+
+With those options included and looking just at 100% identity matches for now (``-p 100``), our command looks like this:
+
+.. code-block:: shell
+
+	Minced_CRISPRs$ cctk spacerblast -d ../Blastdb/assembly_db -s larger_cluster_spacers.fna -p 100 -r PROCESSED/Array_locations.bed -P CC -l up
+	Your specified PAM is at least 2 bases, but you only requested 0 upstream bases. 2 bases will now be retrieved on the upstream side.
+	Spacer_ID       Target_contig   Protospacer_start               Protospacer_end Percent_identity        mismatches      protospacer_sequence            mismatch_locations    upstream_bases  target_strand
+	1F_3    ERR431211_NODE_4_length_490759_cov_35.205407    157687  157718  100.0   0       ATGTCGTGGCGGTCCTGCAGGCCCACGATTCC        ATGTCGTGGCGGTCCTGCAGGCCCACGATTCC      CC              minus
+	1F_3    ERR430992_NODE_7_length_338791_cov_33.733306    47731   47762   100.0   0       ATGTCGTGGCGGTCCTGCAGGCCCACGATTCC        ATGTCGTGGCGGTCCTGCAGGCCCACGATTCC      CC              plus
+	1F_5    ERR431227_NODE_14_length_194388_cov_30.757149   61261   61292   100.0   0       GAACGCAACCAGTTCCGGACCTCGCTCGCCGA        GAACGCAACCAGTTCCGGACCTCGCTCGCCGA      CC              minus
+	1F_9    ERR431311_NODE_2_length_780976_cov_41.372383    664880  664911  100.0   0       TGGTAGACGGGATATGGATCGGCGAAGTCCTC        TGGTAGACGGGATATGGATCGGCGAAGTCCTC      CC              minus
+	1F_9    ERR431211_NODE_4_length_490759_cov_35.205407    161464  161495  100.0   0       TGGTAGACGGGATATGGATCGGCGAAGTCCTC        TGGTAGACGGGATATGGATCGGCGAAGTCCTC      CC              plus
+	1F_9    ERR430992_NODE_7_length_338791_cov_33.733306    44251   44282   100.0   0       TGGTAGACGGGATATGGATCGGCGAAGTCCTC        TGGTAGACGGGATATGGATCGGCGAAGTCCTC      CC              minus
+	1F_12   ERR431211_NODE_4_length_490759_cov_35.205407    199341  199372  100.0   0       TTGACCAGATCGCGGCGTGGGGTGGTCGGCTT        TTGACCAGATCGCGGCGTGGGGTGGTCGGCTT      CC              minus
+	1F_23   ERR431227_NODE_14_length_194388_cov_30.757149   52845   52877   100.0   0       TACAAGGTCATGGCGCTCGGCAACGTGGTGGAA       TACAAGGTCATGGCGCTCGGCAACGTGGTGGAA     CC              plus
+	1F_24   ERR431314_NODE_8_length_228085_cov_41.002864    79550   79581   100.0   0       GCTGTGCGTCGCCGTGGTCTGACGGTCGAATC        GCTGTGCGTCGCCGTGGTCTGACGGTCGAATC      CC              minus
+	1F_294  ERR431272_NODE_1_length_917582_cov_45.005384    95161   95192   100.0   0       TTCTGGAACAGCGGGATACGCCGCGTCTCGAT        TTCTGGAACAGCGGGATACGCCGCGTCTCGAT      CC              minus
+	1F_296  ERR431314_NODE_8_length_228085_cov_41.002864    76714   76745   100.0   0       TGGCCAAGCTGCGCGAAACCCTCGGCCTGGCC        TGGCCAAGCTGCGCGAAACCCTCGGCCTGGCC      CC              minus
+
+A note on ``cctk spacerblast`` output
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This output looks a lot like the raw output of BLASTn because ``cctk spacerblast`` is running BLASTn behind the scenes. However, there is additional information here.
+
+1. ``cctk spacerblast`` warned us that we didn't specify how much upstream sequence we want to retrieve (using ``-u``). ``cctk spacerblast`` tried to figure out how much is needed to satisfy the required PAM and informs us that it will retrieve 2 based.
+
+2. Protospacer start and protospacer end are given. As we are using 100% identity, these numbers are identical to those produced by BLASTn for sstart and send. If we were tolerating mismatches, these numbers would differ from thos produced by BLASTn as they represent the start and stop of the fully aligned spacer and protospacer.
+
+4. Percent identity. Again, as we asked for 100% identity, this column is that same as the raw BLASTn output. If we had asked for a lower identity, the number reported by ``cctk spacerblast`` may differ from that of BLASTn as ``cctk spacerblast`` calculates this value after extending any incomplete BLAST matches to include the full alignment.
+
+5. Protospacer sequence and mismatch locations these columns show the sequence of the identified protospacer and then indicate any positions in that sequence that do not match the spacer sequence (indicated with "." symbols)
+
+6. Finally, the flanking sequence is given. As we required a CC PAM, all of the flanking sequences match that motif.
+
+CCTK Spacerblast tells us that 8 of the spacers in these arrays have 100% identical matches with PAMs in the assemblies in this dataset. Those matches would likely result in functioning CRISPR immunity (in the absence of anti-CRISPR and if the CRISPR system is functioning) and are would be good candidates for regions to study more closely.
+
+Using different settings to explore matches
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Above, we saw that 8 spacers have 100% identity matches with PAMs in our dataset. We may also want to assess the number of matches without PAMs or whether there are also matches with less than 100% identity. That can be done as follows:
+
+.. code-block:: shell
+	
+	# Check for matches without PAMs and retrieve 2 upstream bases
+	Minced_CRISPRs$ cctk spacerblast -d ../Blastdb/assembly_db -s larger_cluster_spacers.fna -p 100 -r PROCESSED/Array_locations.bed -u 2
+	Spacer_ID       Target_contig   Protospacer_start               Protospacer_end Percent_identity        mismatches      protospacer_sequence            mismatch_locations      upstream_bases  target_strand
+	1F_3    ERR431211_NODE_4_length_490759_cov_35.205407    157687  157718  100.0   0       ATGTCGTGGCGGTCCTGCAGGCCCACGATTCC        ATGTCGTGGCGGTCCTGCAGGCCCACGATTCC        CC              minus
+	1F_3    ERR430992_NODE_7_length_338791_cov_33.733306    47731   47762   100.0   0       ATGTCGTGGCGGTCCTGCAGGCCCACGATTCC        ATGTCGTGGCGGTCCTGCAGGCCCACGATTCC        CC              plus
+	1F_5    ERR431227_NODE_14_length_194388_cov_30.757149   61261   61292   100.0   0       GAACGCAACCAGTTCCGGACCTCGCTCGCCGA        GAACGCAACCAGTTCCGGACCTCGCTCGCCGA        CC              minus
+	1F_9    ERR431311_NODE_2_length_780976_cov_41.372383    664880  664911  100.0   0       TGGTAGACGGGATATGGATCGGCGAAGTCCTC        TGGTAGACGGGATATGGATCGGCGAAGTCCTC        CC              minus
+	1F_9    ERR431211_NODE_4_length_490759_cov_35.205407    161464  161495  100.0   0       TGGTAGACGGGATATGGATCGGCGAAGTCCTC        TGGTAGACGGGATATGGATCGGCGAAGTCCTC        CC              plus
+	1F_9    ERR430992_NODE_7_length_338791_cov_33.733306    44251   44282   100.0   0       TGGTAGACGGGATATGGATCGGCGAAGTCCTC        TGGTAGACGGGATATGGATCGGCGAAGTCCTC        CC              minus
+	1F_12   ERR431211_NODE_4_length_490759_cov_35.205407    199341  199372  100.0   0       TTGACCAGATCGCGGCGTGGGGTGGTCGGCTT        TTGACCAGATCGCGGCGTGGGGTGGTCGGCTT        CC              minus
+	1F_23   ERR431227_NODE_14_length_194388_cov_30.757149   52845   52877   100.0   0       TACAAGGTCATGGCGCTCGGCAACGTGGTGGAA       TACAAGGTCATGGCGCTCGGCAACGTGGTGGAA       CC              plus
+	1F_24   ERR431314_NODE_8_length_228085_cov_41.002864    79550   79581   100.0   0       GCTGTGCGTCGCCGTGGTCTGACGGTCGAATC        GCTGTGCGTCGCCGTGGTCTGACGGTCGAATC        CC              minus
+	1F_294  ERR431272_NODE_1_length_917582_cov_45.005384    95161   95192   100.0   0       TTCTGGAACAGCGGGATACGCCGCGTCTCGAT        TTCTGGAACAGCGGGATACGCCGCGTCTCGAT        CC              minus
+	1F_296  ERR431314_NODE_8_length_228085_cov_41.002864    76714   76745   100.0   0       TGGCCAAGCTGCGCGAAACCCTCGGCCTGGCC        TGGCCAAGCTGCGCGAAACCCTCGGCCTGGCC        CC              minus
+
+Interestingly you will notice that this output is exactly the same as our last command. i.e., all of the 100% identical matches have PAMs. As all of these assemblies in this dataset are of *Pseudomonas aeruginosa* isolated from the same patient population (so each isolate may have encountered the others recently), perhaps these spacers were recently acquired against the targeted phage or other MGE.
+
+What about matches with less than 100% identity and with a PAM? CRISPR systems can still provide immunity with less than 100% sequence identity and those spacers can also be involved in the primed acquisition of new spacers. (That output is a bit longer so I'm just showing its ``head`` below)
+
+.. code-block:: shell
+
+	Minced_CRISPRs$ cctk spacerblast -d ../Blastdb/assembly_db -s larger_cluster_spacers.fna -p 90 -r PROCESSED/Array_locations.bed -P CC -l up | head
+	Your specified PAM is at least 2 bases, but you only requested 0 upstream bases. 2 bases will now be retrieved on the upstream side.
+	Spacer_ID       Target_contig   Protospacer_start               Protospacer_end Percent_identity        mismatches      protospacer_sequence            mismatch_locations      upstream_bases  target_strand
+	1F_2    ERR431227_NODE_89_length_160_cov_119.476190     110     141     96.875  1       AATAATAATATTCAGCCCTAGCGCCCTGAGCA        AATAATAATA.TCAGCCCTAGCGCCCTGAGCA        CC              plus
+	1F_2    ERR431227_NODE_42_length_4676_cov_89.790954     3532    3563    96.875  1       AATAATAATATTCAGCCCTAGCGCCCTGAGCA        AATAATAATA.TCAGCCCTAGCGCCCTGAGCA        CC              minus
+	1F_3    ERR431211_NODE_4_length_490759_cov_35.205407    157687  157718  100.0   0       ATGTCGTGGCGGTCCTGCAGGCCCACGATTCC        ATGTCGTGGCGGTCCTGCAGGCCCACGATTCC        CC              minus
+	1F_3    ERR430992_NODE_7_length_338791_cov_33.733306    47731   47762   100.0   0       ATGTCGTGGCGGTCCTGCAGGCCCACGATTCC        ATGTCGTGGCGGTCCTGCAGGCCCACGATTCC        CC              plus
+	1F_5    ERR431227_NODE_14_length_194388_cov_30.757149   61261   61292   100.0   0       GAACGCAACCAGTTCCGGACCTCGCTCGCCGA        GAACGCAACCAGTTCCGGACCTCGCTCGCCGA        CC              minus
+	1F_6    ERR431324_NODE_170_length_206_cov_1.357616      166     197     93.75   2       ATTCCCGCATCCGGGACGGCGATCGCGATTCG        ATTCC.GCATC.GGGACGGCGATCGCGATTCG        CC              plus
+	1F_7    ERR431128_NODE_4_length_367508_cov_66.536602    33888   33919   96.875  1       GCTATCGACCGCGAAGCCGCAGACGGCATTAC        GC.ATCGACCGCGAAGCCGCAGACGGCATTAC        CC              plus
+	1F_7    ERR431314_NODE_8_length_228085_cov_41.002864    66103   66134   93.75   2       GCTATCGACCGCGAAGCCGCAGACGGCATCAC        GC.ATCGACCGCGAAGCCGCAGACGGCAT.AC        CC              minus
+	1F_9    ERR431311_NODE_2_length_780976_cov_41.372383    664880  664911  100.0   0       TGGTAGACGGGATATGGATCGGCGAAGTCCTC        TGGTAGACGGGATATGGATCGGCGAAGTCCTC        CC              minus
+
+At 90% identity, up to 3 mismatches will be allowed in returned sequences. You can now see examples in the "mismatch_locations" column where mismatched bases are indicated with "." symbols.
+
+These matches could also represent interesting regions to further investigate. However, those analyses are outside of the scope of CCTK tools.
+
+Conclusion
+==========
+
+The above represents a complete guide of how to use CCTK to build a complete a picture of how CRISPR arrays are related to one another and what their spacers may target. I hope that this tutorial has been clear and helpful in showing how CCTK may be used in analyzing your own data. 
+
+If you have any thoughts or comments on these documentation pages and tutorial please get in touch at the email address on our `Contact <contact.html>`_ page. I would be delighted to clarify any confusing sections and add more information about parts that could use more discussion!
