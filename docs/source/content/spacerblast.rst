@@ -50,10 +50,10 @@ Not specifying an output file results in the output being directed to the stdout
 
 .. code-block:: shell
 
-	Spacer_ID	Target_contig	Protospacer_start	Protospacer_end	Percent_identity	mismatches	protospacer_sequence	target_strand
-	1F_1	Assembly1_contig1	66234	66265	100.0	0	GGTACGTGGTTTCGACCAACAGCACTGCCCAA	minus
-	1F_1	Assembly5_contig2	91689	91720	78.125	7	GGTACGTGGTTTCGACAAGCAACGTGGCCCAG	plus
-	1F_1	Assembly6_contig1	15636	15667	59.375	13	TGGTGCACGTTTCGACCAACAGCCTAGCGCCC	plus
+	Spacer_ID	Target_contig	Protospacer_start	Protospacer_end	Percent_identity	mismatches	protospacer_sequence	mismatch_locations	target_strand
+	1F_1	Assembly1_contig1	66234	66265	100.0	0	GGTACGTGGTTTCGACCAACAGCACTGCCCAA	GGTACGTGGTTTCGACCAACAGCACTGCCCAA	minus
+	1F_1	Assembly5_contig2	91689	91720	78.125	7	GGTACGTGGTTTCGACAAGCAACGTGGCCCAG	GGTACGTGGTTTCGAC.A.CA.C...GCCCA.	plus
+	1F_1	Assembly6_contig1	15636	15667	59.375	13	TGGTGCACGTTTCGACCAACAGCCTAGCGCCC	.G......GTTTCGACCAACAGC...GC.C..	plus
 
 Checking flanking sequence for PAM
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -71,9 +71,9 @@ The above command returns something like the following output:
 .. code-block:: shell
 	
 	Your specified PAM is at least 2 bases, but you only requested 0 upstream bases. 2 bases will now be retrieved on the upstream side.
-	Spacer_ID	Target_contig	Protospacer_start	Protospacer_end	Percent_identity	mismatches	protospacer_sequence	upstream_bases	target_strand
-	1F_1	Assembly1_contig1	66234	66265	100.0	0	GGTACGTGGTTTCGACCAACAGCACTGCCCAA	CC	minus
-	1F_1	Assembly6_contig1	15636	15667	59.375	13	TGGTGCACGTTTCGACCAACAGCCTAGCGCCC	CC	plus
+	Spacer_ID	Target_contig	Protospacer_start	Protospacer_end	Percent_identity	mismatches	protospacer_sequence	mismatch_locations	upstream_bases	target_strand
+	1F_1	Assembly1_contig1	66234	66265	100.0	0	GGTACGTGGTTTCGACCAACAGCACTGCCCAA	GGTACGTGGTTTCGACCAACAGCACTGCCCAA	CC	minus
+	1F_1	Assembly6_contig1	15636	15667	59.375	13	TGGTGCACGTTTCGACCAACAGCCTAGCGCCC	.G......GTTTCGACCAACAGC...GC.C..	CC	plus
 
 There are two differences to note here between the first output and the output when specifying a PAM sequence:
 
