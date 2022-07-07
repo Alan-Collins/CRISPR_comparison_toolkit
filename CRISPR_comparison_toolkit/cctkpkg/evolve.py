@@ -523,12 +523,22 @@ def main(args):
 	tree_name = f"evolved_tree_{run_name}.png"
 
 	plotting.plot_tree(
-		new_tree, final_array_dict, outdir+tree_name,
-		spacer_colours, fig_h=fig_h, fig_w=fig_w,
-		dpi=dpi, line_scale=line_scale, branch_lengths=args.brlen_labels,
-		branch_spacing=branch_spacing, brlen_scale=brlen_scale,
-		label_text_size=label_text_size, annot_text_size=annot_text_size,
-		no_align_labels=args.no_align, emphasize_diffs=args.emphasize_diffs,
+		tree=new_tree,
+		array_dict=final_array_dict,
+		filename=outdir+tree_name,
+		non_singleton_spacers=non_singleton_spacers,
+		spacer_cols_dict=spacer_colours,
+		fig_h=fig_h,
+		fig_w=fig_w,
+		dpi=dpi,
+		line_scale=line_scale,
+		branch_lengths=args.brlen_labels,
+		branch_spacing=branch_spacing,
+		brlen_scale=brlen_scale,
+		label_text_size=label_text_size,
+		annot_text_size=annot_text_size,
+		no_align_labels=args.no_align,
+		emphasize_diffs=args.emphasize_diffs,
 		no_fade_ancestral=args.no_fade_anc)
 
 if __name__ == '__main__':
