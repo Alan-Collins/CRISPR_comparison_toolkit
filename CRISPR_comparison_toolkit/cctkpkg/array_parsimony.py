@@ -922,22 +922,22 @@ def identify_repeat_indels(child, ancestor, array_dict, module,
 
 
 def check_for_no_ident(arrays):
-	"""Make sure all arrays share at least one spacer with another"""
-	all_arrays = [array.spacers for array in arrays]
-	all_spacers = [spacer for array in all_arrays for spacer in set(array)]
-	all_non_singleton_spacers = set([spacer for spacer, count in Counter(
-		all_spacers).items() if count >1])
-	no_id = False
-	no_id_arrays = []
-	for array in arrays:
-		if len(set(array.spacers).intersection(all_non_singleton_spacers)) == 0:
-			no_id = True
-			no_id_arrays.append(array.id)
-	if no_id:
-		sys.exit("No shared spacers were found between array(s) {} and the "
-			"other arrays in this dataset. Please ensure that all arrays "
-			"share at least 1 spacer with another array.".format(
-				", ".join(no_id_arrays)))
+	# Build network of array spacer sharing
+	network = [(edge.a,edge.b) for edge in sequence_operations.build_network(arrays)]
+	clusters = sequence_operations.identify_network_clusters(network)
+	print(clusters)
+	if len(clusters) > 1:
+		sys.stderr.write("No shared spacers were found between some of the input "
+			"arrays. CRISPRtree requires that no group of spacers is "
+			"completely unrelated from any other. Only arrays that form "
+			"a single cluster in a network representation of array "
+			"relationships can be analyzed using CRISPRtree.\n\n"
+			"The following clusters of arrays were identified:\n")
+		for i in range(1, len(clusters)+1):
+			sys.stderr.write("Cluster {}:\n{}\n".format(
+				i,
+				"\n".join([k for k in clusters[i-1]])))
+		sys.exit("Aborting...")
 
 
 def resolve_pairwise_parsimony(array1, array2, all_arrays, array_dict,

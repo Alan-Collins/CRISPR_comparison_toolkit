@@ -803,8 +803,10 @@ def main(args):
 	node_ids = tree_operations.create_internal_node_ids(
 		len(labels), "Anc ")
 
-	# Check if any arrays share no spacers with any others. If so, exit with error message.
+	# Check if any arrays (or groups of arrays) share no spacers with any others.
+	# If so, exit with error message.
 	array_parsimony.check_for_no_ident(arrays)
+	sys.exit()
 		
 	random.seed(args.seed)
 	if len(labels) < 9:

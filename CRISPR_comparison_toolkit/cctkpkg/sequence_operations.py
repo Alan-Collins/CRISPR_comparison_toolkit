@@ -37,8 +37,8 @@ class NetworkEdge():
 		self.nshared = len(set(a.spacers).intersection(set(b.spacers)))
 		self.jaccard = len(set(a.spacers).intersection(
 			set(b.spacers)))/len(set(a.spacers).union(set(b.spacers)))
-		self.a_type = a.repeat_id
-		self.b_type = b.repeat_id
+		self.a_type = a.repeat_id if "repeat_id" in vars(a) else ''
+		self.b_type = b.repeat_id if "repeat_id" in vars(b) else ''
 
 
 def rev_comp(string):
