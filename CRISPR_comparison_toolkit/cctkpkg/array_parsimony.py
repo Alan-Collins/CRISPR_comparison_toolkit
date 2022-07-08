@@ -926,17 +926,17 @@ def check_for_no_ident(arrays):
 	network = [(edge.a,edge.b) for edge in sequence_operations.build_network(arrays)]
 	clusters = sequence_operations.identify_network_clusters(network)
 	if len(clusters) > 1:
-		sys.stderr.write("No shared spacers were found between some of the input "
-			"arrays. CRISPRtree requires that no group of spacers is "
-			"completely unrelated from any other. Only arrays that form "
-			"a single cluster in a network representation of array "
+		sys.stderr.write("\nWARNING:\nNo shared spacers were found between "
+			"some of the input arrays. CRISPRtree requires that no group "
+			"of spacers is completely unrelated from any other. Only arrays "
+			"that form a single cluster in a network representation of array "
 			"relationships can be analyzed using CRISPRtree.\n\n"
 			"The following clusters of arrays were identified:\n")
 		for i in range(1, len(clusters)+1):
 			sys.stderr.write("Cluster {}:\n{}\n".format(
 				i,
 				"\n".join([k for k in clusters[i-1]])))
-		sys.exit("Aborting...")
+		sys.exit("\nAborting...\n")
 
 
 def resolve_pairwise_parsimony(array1, array2, all_arrays, array_dict,
