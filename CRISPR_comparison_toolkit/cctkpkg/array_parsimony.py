@@ -925,7 +925,6 @@ def check_for_no_ident(arrays):
 	# Build network of array spacer sharing
 	network = [(edge.a,edge.b) for edge in sequence_operations.build_network(arrays)]
 	clusters = sequence_operations.identify_network_clusters(network)
-	print(clusters)
 	if len(clusters) > 1:
 		sys.stderr.write("No shared spacers were found between some of the input "
 			"arrays. CRISPRtree requires that no group of spacers is "
