@@ -580,8 +580,8 @@ def main(args):
 	blast_output = run_blastn(args)
 
 	outcontents = ["Spacer_ID\tTarget_contig\tProtospacer_start\t\
-	Protospacer_end\tPercent_identity\tmismatches\tprotospacer_sequence\t\
-	mismatch_locations"]
+Protospacer_end\tPercent_identity\tmismatches\tprotospacer_sequence\t\
+mismatch_locations"]
 	if flanking_n[0] != 0:
 		outcontents[0] += "\tupstream_bases"
 	if flanking_n[1] != 0:
@@ -674,7 +674,8 @@ def main(args):
 								p.aligned,
 								p.up,
 								p.down,
-								p.strand]]))
+								p.strand]]).replace( #remove double tab if missing col
+									"\t\t", "\t"))
 						p_count += 1
 						continue
 			outcontents.append(
@@ -689,7 +690,8 @@ def main(args):
 					p.aligned,
 					p.up,
 					p.down,
-					p.strand]]))
+					p.strand]]).replace( #remove double tab if missing col
+						"\t\t", "\t"))
 
 		p_count += 1
 
