@@ -11,7 +11,7 @@ from . import (
 	file_handling
 	)
 
-SEQUENCE_DICT = { # IUPAC DNA alphabet
+SEQUENCE_DICT = { # IUPAC DNA alphabet as regex
 	"A": "A",
 	"T": "T",
 	"C": "C",
@@ -31,6 +31,25 @@ SEQUENCE_DICT = { # IUPAC DNA alphabet
 
 
 class NetworkEdge():
+	"""Class to store edge attributes in Network
+	
+		Initialized with either array_parsimony.Array or 
+		file_handling.FoundArray instance
+	
+		Attributes:
+		  a (str):
+		    First array (node)
+		  b (str):
+		    Second array (node)
+		  nshared (int):
+		    number of shared spacers
+		  jaccard (float):
+		    Jaccard similarity index between arrays a and b
+		  a_type (str):
+		    Array a CRISPR type
+		  b_type (str):
+		     Array b CRISPR type
+		"""
 	def __init__(self, a, b):
 		self.a = a.id
 		self.b = b.id
@@ -353,7 +372,52 @@ def non_redundant_CR(
 	prev_array_dict={},
 	outdir="./"
 	):
-	""" Identify non-redundant spacers and arrays in AssemblyCRISPRs instances
+	""" Identify non-redundant spacers and arrays
+
+		Given a list of file_handling.AssemblyCRISPRs instances and some
+		other parameters, return dereplicated CRISPR objects
+
+		Args:
+		  all_assemblies (list of file_handling.AssemblyCRISPRs):
+		    The CRISPR information to be dereplicated
+		  snp_thresh (int):
+		    The threshold of SNPs between CRISPR spacers below which
+		    spacers should be considered the same
+		  prev_spacer_id_dict (dict):
+		    If appending to existing dataset, dict of spacers associated
+		    with each CRISPR type. E.g.,:
+		    {"CRISPR_type": ["list", "of", "spacer_ids"]}
+		  prev_array_dict (dict):
+		    If appending to existing dataset, dict of array IDs and the
+		    spacers in those arrays. E.g.,:
+		    {"sp1 sp2 sp3 sp4": "Array_ID"}
+
+		Returns:
+		  tuple:
+		    non_red_spacer_dict (dict):
+		      All spacers found for each CRISPR type.
+		        {"CRISPR_type": ["list", "of", "spacer", "sequences"]}
+		    non_red_spacer_id_dict (dict):
+		      All spacers and their associated ID.
+		        {"spacer_sequence": "spacer_ID"}
+		    non_red_array_dict (dict):
+		      Arrays found for each CRISPR type.
+		        {"CRISPR_type": ["list", "of", "array", "spacers"]}
+		    non_red_array_id_dict (dict):
+		      Array IDs of identified arrays.
+		        {"sp1 sp2 sp3 ...": "Array_ID"}
+		    cluster_reps_dict (dict of dicts):
+		      If any spacers were identified that differ by fewer than
+		      the SNP threshold, this dict describes the representative
+		      chosen for each group of similar spacers. E.g.,
+		        {"CRISPR_type": {"representative": [list of spacers]}
+		    rev_cluster_reps_dict:
+		      The reverse of the above dict. For each spacer that was 
+		      removed, what is its representative. E.g.,
+		        {"CRISPR_type": {"spacer": "Representative"}}
+
+
+
 	"""
 	non_red_spacer_dict = defaultdict(list)
 	all_arrays_dict = defaultdict(list)
@@ -470,6 +534,8 @@ def add_ids(
 
 
 def build_network(array_list):
+	""" Assess spacer sharing between arrays. Add as edge if any shared
+	"""
 	network = []
 	for a,b in combinations(array_list, 2):
 		nshared = len(set(a.spacers).intersection(set(b.spacers)))
@@ -580,6 +646,8 @@ def run_blastcmd(ns, db, fstring, batch_locations):
 
 
 def determine_regex_length(pattern):
+	""" Calculate minimum length of sequence that a regex can describe
+	"""
 	minlen = 0
 
 	i = 0
@@ -596,7 +664,8 @@ def determine_regex_length(pattern):
 			while c != "]":
 				i+=1
 				if i > len(pattern)-1:
-					print("Error: Unmatched [ if your regex")
+					sys.stderr.write("Error: Unmatched [ in your regex")
+					sys.exit()
 				c = pattern[i]
 
 		if c == "\\":
@@ -605,8 +674,8 @@ def determine_regex_length(pattern):
 			i+=1
 			c = pattern[i]
 			if not c.isalpha():
-				print("Escape character used to include the following "
-					"illegal character in your regex: {}".format(c))
+				sys.stderr.write("Escape character used to include the "
+					"following illegal character in your regex: {}".format(c))
 				sys.exit()
 
 		if i == len(pattern)-1:
@@ -655,6 +724,30 @@ def determine_regex_length(pattern):
 
 
 def make_spacer_snp_network(spacer_fasta_dict, snp_thresh, outdir):
+	"""Compares spacers using BLASTn and makes a network of similar spacers
+	
+	Args:
+	  spacer_fasta_dict (dict of dicts):
+		For each CRISPR type (main dict keys), a dict of spacer ID and seqs.
+		  {"CRISPR_type": {"spacer_ID": "spacer_sequence"}}
+	  snp_thresh (int):
+		Number of SNPs between spacer, below which an edge should be
+		made in the network
+	  outdir (str):
+		path to a directoy into which temporary files can be written
+
+	Returns:
+	  spacer_network_dict (dict):
+	    A dict of each CRISPR type and the edges in the network of arrays
+	    of that type.
+	      {CR_type: [(node1, node2), (node1, node3) ... ]}
+	"""
+	
+	# Check the outdir exists to write temp files to.
+	if not os.path.isdir(outdir):
+		sys.stderr.write(
+			"Directory {} not found. Making it now.\n\n".format(outdir))
+		os.makedirs(outdir)
 
 	spacer_network_dict = defaultdict(list)
 
@@ -735,7 +828,35 @@ def identify_network_clusters(network):
 	Each cluster is a dict containing the nodes (keys) and the number
 	of edges connected to that node (values). Number of edges info is
 	used to determine if the cluster is completely connected.
+	
+	Arg:
+	  network (list of tuples):
+	    list of edges in network where each element in the list is a
+	    tuple of nodes joined by the edge
+
+	Returns:
+	  A list of the clusters identified in the network. Each element in
+	  the list is a dict of connected nodes (keys) and the number of
+	  edges connected to them (values). All nodes in a given dict have
+	  a path to all other nodes in the same dict, but have no path to
+	  any nodes in another dict in the list. However, the path could
+	  have any length (i.e., clusters do not need to be completely
+	  connected)
+
+	  e.g.,
+	  A network with the edges
+
+	  A B
+	  A C
+	  D E
+
+	  would be represented as
+	  [
+	  {"A":2, "B":1, "C":1},
+	  {"D":1, "E":1}
+	  ]
 	"""
+
 	cluster_list = []
 	for edge in network:
 		a, b = edge
