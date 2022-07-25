@@ -378,6 +378,15 @@ This can be easily produced with the following command:
 
 	ls | sed 's/.fasta//' > ID_file.txt
 
+Appending to an existing dataset
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you have previously run ``cctk blast`` on some assemblies and wish to add CRISPR arrays from additional assemblies to the existing dataset, you can do this using ``--append``.
+	
+``cctk blast`` and ``cctk minced`` both have an ``--append`` option which can be set to activate the appending mode. In this mode, existing CRISPR information files are read and then their data are added to. **N.B** The files are overwritten in the process so make sure to duplicate your files to another location if you wish to preserve them.
+
+Append mode expects to find existing files within the directory structure created by CCTK (i.e., in the "PROCESSED" directory at the path specified using ``-o``). You do not need to provide all (or any) files at this location. Any existing files will be read to initialize the dataset (for example, spacer ID and array ID assignments). Any files that are absent will simply not be used to initialize a dataset to be added to and will instead be created as if you were not using append mode.
+
 .. _blast-limitations:
 
 Limitations and considerations
