@@ -179,10 +179,10 @@ N.B. when viewing this file in a text editor, the headings and column contents w
 
 .. code-block:: shell
 
-	#contig	contigStart	contigEnd	name	score	strand
-	Assembly1_contig2	208444	209013	6	0	-
-	Assembly1_contig6	19991	20559	7	0	+
-	Assembly2_contig1	29424	30050	11	0	-
+	#contig             contigStart  contigEnd   name   score   strand
+	Assembly1_contig2   208444       209013      6      0       -
+	Assembly1_contig6   19991        20559       7      0       +
+	Assembly2_contig1   29424        30050       11     0       -
 
 Array_representatives.txt
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -385,6 +385,6 @@ Limitations and considerations
 
 As described in the :ref:`blast-intro` section, ``cctk blast`` is built around the ``blastn`` program of the NCBI BLAST+ suite. You can therefore expect many of the same behaviours.
 
-``BLASTn`` and ``minced`` have different tolerance of mutations in sequences when identifying repeats. See :ref:`minced-blast-comp` for an example of how these defferences result in the identification of differing arrays.
+``BLASTn`` and ``minced`` have different tolerance of mutations in sequences when identifying repeats. ``cctk minced`` may therefore identify larger arrays than ``cctk blast``.
 
 ``cctk blast`` searches for repeats based on sequence identity. It is therefore only useful if you already know the CRISPR repeat sequence you are looking for. ``cctk minced`` is a better choice if you are exploring sequences that you expect to contain CRISPRs of unknown types.

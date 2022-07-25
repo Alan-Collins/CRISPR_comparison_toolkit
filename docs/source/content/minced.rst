@@ -125,10 +125,10 @@ N.B. when viewing this file in a text editor, the headings and column contents w
 
 .. code-block:: shell
 
-	#contig	contigStart	contigEnd	name	score	strand
-	Assembly1_contig2	208444	209013	6	0	-
-	Assembly1_contig6	19991	20559	7	0	+
-	Assembly2_contig1	29424	30050	11	0	-
+	#contig             contigStart  contigEnd   name   score   strand
+	Assembly1_contig2   208444       209013      6      0       -
+	Assembly1_contig6   19991        20559       7      0       +
+	Assembly2_contig1   29424        30050       11     0       -
 
 .. _array-reps:
 
