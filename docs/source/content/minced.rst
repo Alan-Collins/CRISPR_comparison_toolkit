@@ -274,104 +274,119 @@ Tab-delimited table with two columns. Each line represents a distinc cluster of 
 Advanced Usage
 --------------
 
-The usage of ``cctk minced`` described in the :ref:`minced-basic` is sufficient to identify CRISPR arrays in assemblies. The two most likely situations in which you will need more complex usage of ``cctk minced`` are:
+The usage of ``cctk minced`` described in the :ref:`minced-basic` is sufficient to identify CRISPR arrays in assemblies. The most likely situations in which you will need more complex usage of ``cctk minced`` are:
 
-1. You installed minced manually and it is not in your path (not a problem if you install using conda).
+Specifying the path of your MinCED installation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you installed minced manually and it is not in your path you can specify the path to MinCED in your ``cctk minced`` command using the ``-l`` option. 
+
+**N.B.** This is not a problem if you install using conda.
+
+e.g.
+.. code-block:: shell
+
+	cctk minced -i <directory of assemblies> -o <output directory> -l <path to minced> -m -p
+
+Specifying the CRISPR types of repeats in your assemblies
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``cctk minced`` has a default database of 4 CRISPR subtype repeats: I-A, I-C, I-E, and I-F. If you are analyzing assemblies that have CRISPR systems of other subtypes, you will want to specify the repeat (in the correct orientation relative to the leader end) here to ensure that your CRISPR arrays are correctly oriented and categorized.
 	
-	In that case you will need to provide the path to your minced executable using the ``-l`` option. 
+**N.B.** The repeats in the default database were selected based on my usage while developing CCTK and more may be added to in the future. (Please send characterized CRISPR repeats with known orientation to Alan via email (crisprtoolkit@gmail.com) or as an issue on the `CCTK github <https://github.com/Alan-Collins/CRISPR_comparison_toolkit>`_ and I will be happy to add them. If you have a citable reference for the repeat and its correct orientation all the better!)
 
-	e.g.
+``cctk minced`` uses repeats to add CRISPR type information to spacer fasta headers, but also (and more importantly) to figure out the correct orientation of CRISPR arrays with regards to their leader and trailer ends as minced does not check array orientation itself. This information is essential if you wish to analyze your CRISPR arrays using ``cctk crisprtree``.
 
-	.. code-block:: shell
+Relying on the built-in repeat sequences will result in consistent orientation of CRISPR arrays with the same repeat sequence. However, there is a roughly 50% chance your arrays will be output in the reverse orientation.
 
-		cctk minced -i <directory of assemblies> -o <output directory> -l <path to minced> -m -p
+If you wish to provide your own repeat sequences in order to properly characterize repeat type and orient your arrays correctly, you can provide any number of repeats in fasta format using the ``-r`` option. It is important that your repeat sequences be oriented so that the leader end of the array is 5' of the repeat.
 
-2. You are not analyzing the genomes of *E. coli* or *Pseudomonas aeruginosa* isolates.
+Repeats are only used during processing steps so you do not need to run minced again if you have already done so (i.e. you do not need ``-i`` or ``-m`` inputs). An example command to include user-defined repeats is 
+
+.. code-block:: shell
+
+	cctk minced -o <output directory> -r <repeats file> -p
+
+Appending to an existing dataset
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you have previously run ``cctk blast`` on some assemblies and wish to add CRISPR arrays from additional assemblies to the existing dataset, you can do this using ``--append``.
+
+``cctk minced`` and ``cctk blast`` both have an ``--append`` option which can be set to activate the appending mode. In this mode, existing CRISPR information files are read and then their data are added to. **N.B** The files are overwritten in the process so make sure to duplicate your files to another location if you wish to preserve them.
+
+Append mode expects to find existing files within the directory structure created by CCTK (i.e., in the "PROCESSED" directory at the path specified using ``-o``). You do not need to provide all (or any) files at this location. Any existing files will be read to initialize the dataset (for example, spacer ID and array ID assignments). Any files that are absent will simply not be used to initialize a dataset to be added to and will instead be created as if you were not using append mode.
+
+Manually curating MinCED output upstream of CCTK processing steps
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You may wish to manually curate the output of ``cctk minced``. For example, you may find that arrays in your output files seem like they are not actually CRISPR arrays. You may also find that an array has the same one or two bases on the end of every spacer (see :ref:`minced-limitations` for an explanation of how this may occur).
+
+``cctk minced`` does not include functionality for fine control over outputs or how arrays are identified. Instead you must laboriously modify the minced output files. However, while ``cctk minced`` won't help you with this process, it does retain all the minced output files in the MINCED_OUT/ directory in your specified output directory. Furthermore it will allow you to process the modified minced output files without rerunning minced by omitting the ``-m`` flag in your command as in the example below.
+
+.. code-block:: shell
+
+	cctk minced -o <output directory containing MINCED_OUT/> -p
+
+When running only processing steps ``cctk minced`` will read and process all files in the MINCED_OUT/ directory in your specified output directory (Crucially not the input directory specified with ``-i``, but instead the output directory specified with ``-o``). The only requirement is that the format of the minced output files is not changed. You can delete whole arrays from these files and can modify the sequence of spacers and repeats and ``cctk minced`` should process them without issue.
+
+Consider the following example minced output file. 
+
+.. code-block:: shell
 	
-	``cctk minced`` comes with 3 hard-coded CRISPR repeats: I-C, I-E, and I-F. These repeats repeats were selected based on my usage while developing CCTK and may be added to in the future. (Please send characterized CRISPR repeats with known orientation to Alan via email or as an issue on the `CCTK github <https://github.com/Alan-Collins/CRISPR_comparison_toolkit>`_ and I will be happy to add them. If you have a citable reference for the repeat and it's correct orientation all the better!)
+	Sequence 'Assembly1_contig1' (209122 bp)
 
-	``cctk minced`` uses repeats to add CRISPR type information to spacer fasta headers, but also (and more importantly) to figure out the correct orientation of CRISPR arrays with regards to their leader and trailer ends as minced does not check array orientation itself. This information is essential if you wish to analyze your CRISPR arrays using ``cctk crisprtree``.
+	CRISPR 1   Range: 208445 - 208593
+	POSITION	REPEAT				SPACER
+	--------	----------------------------	--------------------------------
+	208445		AAAAAAAAAAAAAAAAAAAAAAAAAAAA	TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT	[ 28, 32 ]
+	208505		AAAAAAAAAAAAAAAAAAAAAAAAAAAA	TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT	[ 28, 32 ]
+	208565		AAAAAAAAAAAAAAAAAAAAAAAAAAAA	
 
-	Relying on the built-in repeat sequences will result in consistent orientation of CRISPR arrays with the same repeat sequence. However, there is a roughly 50% chance your arrays will be output in the reverse orientation.
+	--------	----------------------------	--------------------------------
+	Repeats: 3	Average Length: 28		Average Length: 32
 
-	If you wish to provide your own repeat sequences in order to properly characterize repeat type and orient your arrays correctly, you can provide any number of repeats in fasta format using the ``-r`` option. It is important that your repeat sequences be oriented so that the leader end of the array is 5' of the repeat.
-
-	Repeats are only used during processing steps so you do not need to run minced again if you have already done so (i.e. you do not need ``-i`` or ``-m`` inputs). An example command to include user-defined repeats is 
-
-	.. code-block:: shell
-
-		cctk minced -o <output directory> -r <repeats file> -p
-
-3. Finally, you may wish to manually curate the output of ``cctk minced``. 
-
-	For example, you may find that arrays in your output files seem like they are not actually CRISPR arrays. You may also find that an array has the same one or two bases on the end of every spacer (see :ref:`minced-limitations` for an explanation of how this may occur).
-
-	``cctk minced`` does not include functionality for fine control over outputs or how arrays are identified. Instead you must laboriously modify the minced output files. However, while ``cctk minced`` won't help you with this process, it does retain all the minced output files in the MINCED_OUT/ directory in your specified output directory. Furthermore it will allow you to process the modified minced output files without rerunning minced by omitting the ``-m`` flag in your command as in the example below.
-
-	.. code-block:: shell
-
-		cctk minced -o <output directory containing MINCED_OUT/> -p
-
-	When running only processing steps ``cctk minced`` will read and process all files in the MINCED_OUT/ directory in your specified output directory (Crucially not the input directory specified with ``-i``, but instead the output directory specified with ``-o``). The only requirement is that the format of the minced output files is not changed. You can delete whole arrays from these files and can modify the sequence of spacers and repeats and ``cctk minced`` should process them without issue.
-
-	Consider the following example minced output file. 
-
-	.. code-block:: shell
-	
-		Sequence 'Assembly1_contig1' (209122 bp)
-
-		CRISPR 1   Range: 208445 - 208593
-		POSITION	REPEAT				SPACER
-		--------	----------------------------	--------------------------------
-		208445		AAAAAAAAAAAAAAAAAAAAAAAAAAAA	TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT	[ 28, 32 ]
-		208505		AAAAAAAAAAAAAAAAAAAAAAAAAAAA	TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT	[ 28, 32 ]
-		208565		AAAAAAAAAAAAAAAAAAAAAAAAAAAA	
-
-		--------	----------------------------	--------------------------------
-		Repeats: 3	Average Length: 28		Average Length: 32
-
-		Time to find repeats: 8 ms
+	Time to find repeats: 8 ms
 
 
-		Sequence 'Assembly1_contig2' (84619 bp)
+	Sequence 'Assembly1_contig2' (84619 bp)
 
-		CRISPR 2   Range: 19992 - 20319
-		POSITION	REPEAT				SPACER
-		--------	---------------------------	--------------------------------
-		19992		TTCACTGCCGTGTAGGCAGCTAAGAAA	AGGTCGAGGTGGGCTCGGCGGCGATGATCGAT	[ 27, 32 ]
-		20052		TTCACTGCCGTGTAGGCAGCTAAGAAA	GGTACGTGGTTTCGACCAACAGCACTGCCCAAG	[ 27, 33 ]
-		20112		TTCACTGCCGTGTAGGCAGCTAAGAAA	TAAAGGAGATTGCCATGCTGATCAAACTTCCCG	[ 27, 33 ]
-		20172		TTCACTGCCGTGTAGGCAGCTAAGAAA	GTCAGGGTCGTGCATGACTCCGATGTGGTGGCG	[ 27, 33 ]
-		20232		TTCACTGCCGTGTAGGCAGCTAAGAAA	CGTCCAGAACGTCACACGCTCGCCGTCGATGTG	[ 27, 33 ]
-		20292		TTCACTGCCGTGTAGGCAGCTAAGAAA	
-		--------	---------------------------	--------------------------------
-		Repeats: 6	Average Length: 27		Average Length: 33
+	CRISPR 2   Range: 19992 - 20319
+	POSITION	REPEAT				SPACER
+	--------	---------------------------	--------------------------------
+	19992		TTCACTGCCGTGTAGGCAGCTAAGAAA	AGGTCGAGGTGGGCTCGGCGGCGATGATCGAT	[ 27, 32 ]
+	20052		TTCACTGCCGTGTAGGCAGCTAAGAAA	GGTACGTGGTTTCGACCAACAGCACTGCCCAAG	[ 27, 33 ]
+	20112		TTCACTGCCGTGTAGGCAGCTAAGAAA	TAAAGGAGATTGCCATGCTGATCAAACTTCCCG	[ 27, 33 ]
+	20172		TTCACTGCCGTGTAGGCAGCTAAGAAA	GTCAGGGTCGTGCATGACTCCGATGTGGTGGCG	[ 27, 33 ]
+	20232		TTCACTGCCGTGTAGGCAGCTAAGAAA	CGTCCAGAACGTCACACGCTCGCCGTCGATGTG	[ 27, 33 ]
+	20292		TTCACTGCCGTGTAGGCAGCTAAGAAA	
+	--------	---------------------------	--------------------------------
+	Repeats: 6	Average Length: 27		Average Length: 33
 
-	In this example file the first array is clearly nonsense, while the second array has what looks like a type I-F repeat missing the first G and most of the spacers have a G on one end. It seems like the first array should be removed, while the second array should be modified to correct the mischaracterization of the repeat boundaries.
+In this example file the first array is clearly nonsense, while the second array has what looks like a type I-F repeat missing the first G and most of the spacers have a G on one end. It seems like the first array should be removed, while the second array should be modified to correct the mischaracterization of the repeat boundaries.
 
-	In minced output files, the information about a CRISPR array begins on the line starting with the word "CRISPR" and ends on the line starting with the word "Repeats". In addition, If multiple arrays are identified in the same contig, they will have a single line starting with the word "Sequence" that identifies all of the subsequent arrays as being found in the names contig.
+In minced output files, the information about a CRISPR array begins on the line starting with the word "CRISPR" and ends on the line starting with the word "Repeats". In addition, If multiple arrays are identified in the same contig, they will have a single line starting with the word "Sequence" that identifies all of the subsequent arrays as being found in the names contig.
 
-	If you wish to delete an array, remove all lines describing that CRISPR array. If it is the only array found in that contig, remove the line above it starting with "Sequence" as well.
+If you wish to delete an array, remove all lines describing that CRISPR array. If it is the only array found in that contig, remove the line above it starting with "Sequence" as well.
 
-	Modifying repeat and spacer sequences is easier. Just make the desired changes. You do not need to change the length information on the right of each line as ``cctk minced`` does not use that information. Additionally, you do not need to worry about the number of blank lines.
+Modifying repeat and spacer sequences is easier. Just make the desired changes. You do not need to change the length information on the right of each line as ``cctk minced`` does not use that information. Additionally, you do not need to worry about the number of blank lines.
 
-	Making the above changes would result in the following modified file:
+Making the above changes would result in the following modified file:
 
-	.. code-block:: shell
+.. code-block:: shell
 
-		Sequence 'Assembly1_contig2' (84619 bp)
+	Sequence 'Assembly1_contig2' (84619 bp)
 
-		CRISPR 2   Range: 19992 - 20319
-		POSITION	REPEAT				SPACER
-		--------	---------------------------	--------------------------------
-		19992		GTTCACTGCCGTGTAGGCAGCTAAGAAA	AGGTCGAGGTGGGCTCGGCGGCGATGATCGAT	[ 27, 32 ]
-		20052		GTTCACTGCCGTGTAGGCAGCTAAGAAA	GGTACGTGGTTTCGACCAACAGCACTGCCCAA	[ 27, 33 ]
-		20112		GTTCACTGCCGTGTAGGCAGCTAAGAAA	TAAAGGAGATTGCCATGCTGATCAAACTTCCC	[ 27, 33 ]
-		20172		GTTCACTGCCGTGTAGGCAGCTAAGAAA	GTCAGGGTCGTGCATGACTCCGATGTGGTGGC	[ 27, 33 ]
-		20232		GTTCACTGCCGTGTAGGCAGCTAAGAAA	CGTCCAGAACGTCACACGCTCGCCGTCGATGT	[ 27, 33 ]
-		20292		GTTCACTGCCGTGTAGGCAGCTAAGAAA	
-		--------	---------------------------	--------------------------------
-		Repeats: 6	Average Length: 27		Average Length: 33
+	CRISPR 2   Range: 19992 - 20319
+	POSITION	REPEAT				SPACER
+	--------	---------------------------	--------------------------------
+	19992		GTTCACTGCCGTGTAGGCAGCTAAGAAA	AGGTCGAGGTGGGCTCGGCGGCGATGATCGAT	[ 27, 32 ]
+	20052		GTTCACTGCCGTGTAGGCAGCTAAGAAA	GGTACGTGGTTTCGACCAACAGCACTGCCCAA	[ 27, 33 ]
+	20112		GTTCACTGCCGTGTAGGCAGCTAAGAAA	TAAAGGAGATTGCCATGCTGATCAAACTTCCC	[ 27, 33 ]
+	20172		GTTCACTGCCGTGTAGGCAGCTAAGAAA	GTCAGGGTCGTGCATGACTCCGATGTGGTGGC	[ 27, 33 ]
+	20232		GTTCACTGCCGTGTAGGCAGCTAAGAAA	CGTCCAGAACGTCACACGCTCGCCGTCGATGT	[ 27, 33 ]
+	20292		GTTCACTGCCGTGTAGGCAGCTAAGAAA	
+	--------	---------------------------	--------------------------------
+	Repeats: 6	Average Length: 27		Average Length: 33
 
 
 .. _minced-limitations:
