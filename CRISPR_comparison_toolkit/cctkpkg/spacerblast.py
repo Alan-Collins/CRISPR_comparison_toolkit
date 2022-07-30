@@ -11,8 +11,10 @@ from collections import defaultdict
 from . import sequence_operations, file_handling
 
 description = """
-usage: cctk spacerblast [-h] -d -s [-o] [-q] [-n] [-u] [-w] [-R] [-P] [-l] \
-[-p] [-b] [-r] [-e] [-m] [-t] [-x]
+usage: cctk spacerblast [-h] -d <path (no extension)> -s <path> [-o <path>] \
+[-q <path>] [-n <int>] [-u <int>] [-w <int>] [-R <string>] [-P <string>] \
+[-l {'up', 'down'}] [-p <float>] [-b <int>] [-r <path>] [-e <float>] \
+[-m <int>] [-t <int>] [-x <string>]
 
 optional arguments:
   -h, --help        show this help message and exit
@@ -23,7 +25,7 @@ required arguments:
 
 output control arguments:
   -o, --out         path to output file. Default: stdout
-  -q, --no-pam-out  path to output file for protospacers with no PAM if desired
+  -q, --no-pam-out  path to output file for protospacers with no PAM, if desired
   -n, --flanking    number of bases to return from both sides of protospacers
   -u, --upstream    number of bases to return from the 5'side of protospacers
   -w, --downstream  number of bases to return from the 3'side of protospacers

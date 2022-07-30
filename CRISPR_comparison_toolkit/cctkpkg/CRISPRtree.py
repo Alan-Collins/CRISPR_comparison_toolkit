@@ -30,14 +30,16 @@ from . import (
 	plotting)
 
 description = """
-usage: cctk crisprtree [-h] -a [-o] [--output-arrays] [--print-tree] [-x] \
-[-r] [--acquisition] [--deletion] [--insertion] [--rep-indel] \
-[--duplication] [--trailer-loss] [--no-ident] [-t] [--seed] \
-[--colour-file] [--colour-scheme-outfile] [--colour-scheme-infile] \
-[--force-colour-unique] [-e] [-b] [--brlen-scale] [--no-align-cartoons] \
-[--no-align-labels] [--dpi] [--no-fade-anc] [--plot-width] \
-[--plot-height] [--font-override-labels] [--font-override-annotations] \
-[arrays_to_join]
+usage: cctk crisprtree [-h] -a <path> -o <path> [--output-arrays <path>] \
+[--print-tree] [-x] \
+[-r <int>] [--acquisition <int>] [--deletion <int>] [--insertion <int>] \
+[--rep-indel <int>] [--duplication <int>] [--trailer-loss <int>] \
+[--no-ident <int>] [-t <int>] [--seed <int>] [--colour-file <path>] \
+[--colour-scheme-outfile <path>] [--colour-scheme-infile <path>] \
+[--force-colour-unique] [-b] [--brlen-scale <float>] [--no-align-cartoons] \
+[--no-align-labels] [--dpi <int>] [--no-fade-anc] [--plot-width <float>] \
+[--plot-height <float>] [--font-override-labels <float>] \
+[--font-override-annotations <float>] [arrays_to_join <list of names>]
 
 optional arguments:
   -h, --help        show this help message and exit
@@ -46,12 +48,12 @@ positional arguments:
   arrays_to_join    IDs of the arrays you want to analyse. Default: all
 
 required arguments:
-  -a                Array_IDs.txt or Array_seqs.txt
+  -a, --array-file  Array_IDs.txt or Array_seqs.txt
+  -o, --out-file    output plot file name and path
 
 output control:
   set which of the optional outputs you want
 
-  -o, --out-file    output plot file name
   --output-arrays   file to store analyzed arrays and hypothetical ancestors
   --print-tree      print an ascii symbol representation of the tree
 
@@ -535,7 +537,7 @@ def reset_anc_mods(tree, array_dict):
 
 def build_parser(parser):
 	parser.add_argument(
-		"-a",
+		"-a", "--array-file",
 		dest="array_file",
 		required=True,
 		help="Specify array representatives file."

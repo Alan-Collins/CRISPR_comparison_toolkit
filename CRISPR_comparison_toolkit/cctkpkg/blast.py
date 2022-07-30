@@ -12,8 +12,10 @@ from collections import defaultdict
 from . import sequence_operations, file_handling
 
 description = """
-usage: cctk blast [-h] -r -d -o [-a] [-p] [-q] [-t] [-i] [-c] [-s] \
-[--min-shared] [--append] [-e] [-m] [-b] [-x]
+usage: cctk blast [-h] -r <path> -d <path (no extension)> -o <path> \
+[-a <path>] [-p <string>] [-q <string>] [-t <int>] [-i <int>] [-c <float>] \
+[-s <int>] [--min-shared <int>] [--append] [-e <float>] [-m <int>] [-b <int>] \
+[-x <string>]
 
 optional arguments:
   -h, --help            show this help message and exit

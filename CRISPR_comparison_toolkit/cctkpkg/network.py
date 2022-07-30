@@ -6,13 +6,13 @@ import argparse
 from . import sequence_operations, file_handling
 
 description = """
-usage: cctk network [-h] -i [-t] [-o]
+usage: cctk network [-h] -i <path> [-t <path>] [-o <path>] [--min-shared <int>]
 
 optional arguments:
   -h, --help  	show this help message and exit
   -i, --input 	Array_IDs.txt or Array_seqs.txt
   -t, --types 	array CRISPR subtypes file. 2 columns: Array Type
-  -o, --outdir	output directory path
+  -o, --outdir	output directory path. Default ./
   --min-shared  minimum spacers shared to draw an edge in network
 """
 

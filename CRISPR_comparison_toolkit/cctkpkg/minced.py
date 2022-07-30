@@ -11,7 +11,8 @@ from collections import Counter, defaultdict
 from . import file_handling, sequence_operations
 
 description = """
-usage: cctk minced [-h] -o [-i ] [-l ] [-r ] [-s ] [-m] [-p] [--append]
+usage: cctk minced [-h] -o <path> [-i <path>] [-l <path>] [-r <path>] \
+[-s <int>] [--min-shared <int>] [-m] [-p] [--append]
 
 optional arguments:
   -h, --help          	show this help message and exit
@@ -21,14 +22,14 @@ Required arguments:
 
 Other inputs:
   -i, --indir         	input directory containing genome fastas.
-  -l, --minced-path   	ath to minced executable if not in PATH
+  -l, --minced-path   	path to minced executable if not in PATH
   -r, --repeats       	CRISPR repeats in FASTA format
   -s, --snp-thresh    	number of SNPs to consider spacers the same. Default: 0
+  --min-shared          minimum spacers shared to draw an edge in network
 
 Specify run type:
   -m, --run-minced      run minced to find CRISPR arrays
   -p, --process-minced  run processing steps on minced output
-  --min-shared          minimum spacers shared to draw an edge in network
   --append              add new CRISPR data to a previous run
 """
 

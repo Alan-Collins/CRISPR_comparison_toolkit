@@ -17,7 +17,7 @@ from cctkpkg import spacerblast
 from cctkpkg import constrain
 
 description = """
-usage: cctk [-h] [--version]
+usage: cctk [-h] [--version] <command>
 
 optional arguments:
   -h, --help  show this help message and exit
@@ -27,12 +27,12 @@ Call any command followed by -h or --help to show help for that command
 
 Find CRISPR arrays in assemblies:
   blast        find CRISPR arrays with user-provided repeat(s) using BLASTn
-  minced       find CRISPR arrays using minced
+  minced       find CRISPR arrays using MINced
 
 Analyze the differences between CRISPR arrays:
   crisprdiff   produce a CRISPRdiff plot comparing CRISPR arrays
   crisprtree   perform a maximum parsimony analysis on CRISPR arrays
-  constrain    predict array relationships constrained by a tree
+  constrain    infer evolution of CRISPR arrays given a tree topology
   network      produce a network representation of spacer sharing among arrays
 
 Other:

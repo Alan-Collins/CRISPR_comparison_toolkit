@@ -17,10 +17,12 @@ from . import (array_parsimony,
 	plotting)
 
 description = """
-usage: cctk evolve [-h] -n [-s] [-o] [-i] [-a] [-t] [-d] [-l] [-f] \
-[--font-override-labels] [--font-override-annotations] [-b] [--dpi] \
-[--plot-width] [--plot-height] [--branch-weight] [--branch-spacing] \
-[--brlen-scale] [--no-align] [--no-fade-anc] [--no-emphasize-diffs]
+usage: cctk evolve [-h] -n <int> [-s <int>] [-o <path>] [-i <int>] \
+[-a <int>] [-t <int>] [-d <int>] [-l <int>] [--font-override-labels <float>] \
+[--font-override-annotations <float>] [-b] [--dpi <int>] \
+[--plot-width <float>] [--plot-height <float>] [--branch-weight <float>] \
+[--branch-spacing <float>] [--brlen-scale <float>] [--no-align] \
+[--no-fade-anc] [--no-emphasize-diffs]
 
 required arguments
   -n, --num-events      events to run the simulation

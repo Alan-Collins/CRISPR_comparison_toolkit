@@ -10,27 +10,30 @@ import textwrap
 import dendropy
 
 description = """
-usage: cctk constrain [-h] -a -t -g -o [--output-arrays] [--print-tree] [-u] \
-[--acquisition] [--deletion] [--insertion] [--rep-indel] [--duplication] \
-[--trailer-loss] [--no-ident] [--seed] [--colour-file] [--colour-scheme-outfile] \
-[--force-colour-unique] [--colour-scheme-infile] [-e] [-b] [--brlen-scale] \
-[--no-align-cartoons] [--no-align-labels] [--dpi] [--no-fade-anc] \
-[--plot-width] [--plot-height] [--font-override-labels] \
-[--font-override-annotations]
+usage: cctk constrain [-h] -a <path> -t <path> -g <path> -o <path> \
+[--output-arrays <path>] [--print-tree] [-u] [--acquisition <int>] \
+[--deletion <int>] [--insertion <int>] [--rep-indel <int>] \
+[--duplication <int>] [--trailer-loss <int>] [--no-ident <int>] \
+[--seed <int>] [--colour-file <path>] [--colour-scheme-outfile <path>] \
+[--force-colour-unique] [--colour-scheme-infile <path>] [-b] \
+[--brlen-scale <float>] [--no-align-cartoons] [--no-align-labels] \
+[--dpi <int>] [--no-fade-anc] [--plot-width <float>] \
+[--plot-height <float>] [--font-override-labels <float>] \
+[--font-override-annotations <float>]
 
 optional arguments:
   -h, --help        show this help message and exit
 
-inputs:
+required inputs:
   -a, --array-file  Array_IDs.txt or Array_seqs.txt file
   -t, --input-tree  file containing tree in newick format
   -g, --genome-array-file	
                     file corresponding array ID and genome ID
+  -o, --out-plot    output plot file name
 
 output control:
   set which of the optional outputs you want.
 
-  -o, --out-plot    output plot file name
   --output-arrays   file to store analyzed arrays and hypothetical ancestors
   --print-tree      print an ascii symbol representation of the tree
 

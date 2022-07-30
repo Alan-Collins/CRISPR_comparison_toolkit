@@ -13,21 +13,23 @@ from . import (colour_schemes,
 	plotting)
 
 description = """
-usage: cctk crisprdiff [-h] -a -o [--iterations] [--preordered] \
-[--approx-ordered] [--seed] [--colour-file] [--colour-scheme-outfile] \
-[--colour-scheme-infile] [--force-colour-unique] [--line-width] [--dpi] \
-[--connection-outline] [--plot-width] [--plot-height] [--font-size] \
-[arrays_to_align]
-
-positional arguments:
-  arrays_to_align    IDs of the arrays you want to analyse. Default: all
-
-required arguments:
-  -a, --array-file   Array_IDs.txt or Array_seqs.txt
-  -o, --out-file     output plot file name
+usage: cctk crisprdiff [-h] -a <path> -o <path> [--iterations <int>] \
+[--preordered] [--approx-ordered] [--seed <int>] [--colour-file <path>] \
+[--colour-scheme-outfile <path>] [--colour-scheme-infile <path>] \
+[--force-colour-unique] [--line-width <float>] [--dpi <int>] \
+[--connection-outline] [--plot-width <float>] [--plot-height <float>] \
+[--font-size <float>] [arrays_to_align <list of names>]
 
 optional arguments:
   -h, --help         show this help message and exit
+
+required arguments:
+  -a, --array-file   Array_IDs.txt or Array_seqs.txt
+  -o, --out-file     output plot file name and path
+
+positional arguments:
+  must be at the end of your command
+  arrays_to_align    IDs of the arrays you want to analyse. Default: all
 
 running parameters:
   control run behaviour
