@@ -25,7 +25,7 @@ CCTK tools:
 
 ## Documentation and tutorials
 
-Documentation is currently being written and can be found at [Read the docs](https://crispr-comparison-toolkit.readthedocs.io/en/latest/)
+Documentation can be found at [Read the docs](https://crispr-comparison-toolkit.readthedocs.io/en/latest/)
 
 ## Installation
 
