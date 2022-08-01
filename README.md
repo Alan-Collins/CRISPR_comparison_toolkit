@@ -7,9 +7,7 @@
 
 Tools to identify and compare CRISPR arrays.
 
-**Currently under construction.** 
-
-N.B. All included tools work as intended, but are being actively improved. Command line options, defaults, and project organization will change over the coming weeks.
+Manuscript now available on bioRxiv (https://doi.org/10.1101/2022.07.31.502198)
 
 ## What is it?
 
