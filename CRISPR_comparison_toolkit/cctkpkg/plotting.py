@@ -639,7 +639,7 @@ def plot_tree(tree, array_dict, filename, non_singleton_spacers, spacer_cols_dic
 			ax=ax,
 			location = "bottom",
 			pad=0.02,
-			label="Branch support (%)",
+			label="Node support (%)",
 			shrink=0.5)
 	plt.tight_layout()
 	plt.margins(0,0)
