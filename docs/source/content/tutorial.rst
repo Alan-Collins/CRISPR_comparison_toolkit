@@ -317,8 +317,8 @@ First, make a folder to contain the outputs produced by ``cctk blast``. Then we 
 
 	# Run cctk blast
 	$ cctk blast -d Blastdb/assembly_db -r example_repeats.fna -o Blast_CRISPRs/ -p "ERR\d+" -s 2
-	Total unique spacers: 242
-	Total unique arrays: 22
+	Total unique spacers: 326
+	Total unique arrays: 28
 
 Note that ``cctk blast`` identifies a different number of spacers and a different number of arrays than ``cctk minced`` did. (326 vs 327 and 28 vs 27 when run without using ``-s``). This difference reflects the different behaviours of MinCED and BLAST and their tolerance of differences in the repeat sequences in these arrays.
 
