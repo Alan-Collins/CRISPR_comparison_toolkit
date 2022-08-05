@@ -1030,6 +1030,7 @@ def main(args):
 				"{} equivalantly parsimonious trees were identified.".format(
 					len(best_tree)))
 			for n, good_tree in enumerate(best_tree):
+				good_tree = tree_operations.resolve_polytomies(good_tree)
 				order = [i.id for i in best_addition_order[n]]
 				sys.stderr.write(
 					"\nThe addition order to make the following tree was: "
@@ -1073,6 +1074,7 @@ def main(args):
 					with open(filename, 'w') as fout:
 						fout.write('\n'.join(["{}\t{}".format(k," ".join(v.spacers)) for k,v in best_arrays[n].items()]))
 		else:
+			best_tree = tree_operations.resolve_polytomies(best_tree)
 			order = [i.id for i in best_addition_order]
 			sys.stderr.write(
 				"\nThe addition order to make the best tree was: "
