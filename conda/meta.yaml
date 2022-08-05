@@ -1,21 +1,21 @@
 package:
-  name: cctk
-  version: "0.8.0"
+  name: cctk_dev
+  version: "0.8.1"
 
 source:
   # path: ../
-  git_rev: "main"
+  git_rev: "dev"
   git_url: "https://github.com/Alan-Collins/CRISPR_comparison_toolkit.git"
   git_depth: 1
 
 requirements:
   host:
-    - python=3.8
+    - python >=3.8
     - pip
     - setuptools
 
   run:
-    - python=3.8
+    - python >=3.8
     - numpy
     - matplotlib
     - bioconda::dendropy
