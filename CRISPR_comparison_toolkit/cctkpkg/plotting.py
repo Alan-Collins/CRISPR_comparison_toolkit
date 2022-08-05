@@ -501,7 +501,7 @@ def calc_vh_ratio_and_label_pad_diffplot(array_dict, spacer_size,
 			new_max_h = spacer_h-pad
 		if new_max_h > max_h:
 			max_h = copy(new_max_h)
-	v_scaling_factor = (ylim[1]-ylim[0])/max_h/2
+	v_scaling_factor = (ylim[1]-ylim[0])/max_h
 
 	return v_scaling_factor
 
@@ -662,7 +662,7 @@ def plot_diffplot(array_dict, array_order, imp_spacers, spacer_colours,
 
 	w_h_ratio = plot_width/plot_height
 	vh_ratio*=w_h_ratio
-	spacer_width = spacer_size*vh_ratio
+	spacer_width = min(spacer_size*vh_ratio, 0.5)
 
 	fig, ax = plt.subplots(figsize=(plot_width,plot_height))
 
