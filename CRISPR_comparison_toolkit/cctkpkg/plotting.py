@@ -608,6 +608,9 @@ def plot_tree(tree, array_dict, filename, non_singleton_spacers, spacer_cols_dic
 
 	if not annot_text_size:
 		annot_text_size = 6 * font_scale
+		# Then adjust for vertical spacing
+		annot_text_size*=calc_font_scale(
+			{"event":""}, fig_w, fig_h, annot_text_size, tree_height, 0.8)
 
 	node_locs = tree_operations.find_node_locs(tree, branch_spacing=branch_spacing,
 		brlen_scale=brlen_scale)
