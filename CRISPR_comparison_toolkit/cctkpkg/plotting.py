@@ -441,7 +441,8 @@ def calc_vh_ratio_and_label_pad_tree(tree, array_dict, spacing, spacer_size,
 	return v_scaling_factor, label_pad
 
 
-def calc_font_scale(array_dict, fig_w, fig_h, text_size):
+def calc_font_scale(array_dict, fig_w, fig_h, text_size, axis_height,
+	max_text_height):
 	# find longest label
 
 	longest_label = ""
@@ -481,6 +482,24 @@ def calc_font_scale(array_dict, fig_w, fig_h, text_size):
 		bb = t.get_window_extent(renderer=r)
 		width = abs(Bbox(ax.transData.inverted().transform(bb)).width)
 		plt.close()
+
+	# Now check height. Shrink font if too tall
+
+	f,ax = plt.subplots(figsize=(fig_w,fig_h))
+	plt.ylim(axis_height)
+	plt.xlim(10)
+	r = f.canvas.get_renderer()
+	t = plt.text(1, 1, label, fontsize=text_size, ha='right',
+		va='bottom')
+
+	bb = t.get_window_extent(renderer=r)
+	height = abs(Bbox(ax.transData.inverted().transform(bb)).height)
+	plt.close()
+
+	height_scale = max_text_height/height
+
+	if height_scale < scale:
+		scale = height_scale
 
 	return scale	
 
@@ -580,9 +599,11 @@ def plot_tree(tree, array_dict, filename, non_singleton_spacers, spacer_cols_dic
 
 	# scale branches to take up 25% of x axis
 	brlen_scale *= 25/tree.length()
+	
+	tree_height = branch_spacing*len(tree.nodes())
 
 	if not label_text_size:
-		font_scale = calc_font_scale(array_dict, fig_w, fig_h, 10)
+		font_scale = calc_font_scale(array_dict, fig_w, fig_h, 10, tree_height, 1.8)
 		label_text_size = 10 * font_scale
 
 	if not annot_text_size:
