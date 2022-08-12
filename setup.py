@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name="cctk",
     python_requires='>=3.6',
-    version="0.8.1",
+    version="0.8.2",
     author="Alan Collins",
     autor_email="alan.collins@bath.edu",
     url="https://github.com/Alan-Collins/CRISPR_comparison_toolkit",
