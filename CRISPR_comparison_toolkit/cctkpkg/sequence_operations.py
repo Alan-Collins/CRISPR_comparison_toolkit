@@ -574,7 +574,7 @@ def pool_MP_blastdbcmd(inputs, db, batch_size, threads):
 	"""
 	pool = multiprocessing.Pool(processes=threads)
 
-	batch_size = min(batch_size, len(inputs)/threads)
+	batch_size = min(batch_size, len(inputs)//threads)
 
 	chunksize = int((len(inputs)/batch_size)//threads)
 
