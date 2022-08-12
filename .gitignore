@@ -4,3 +4,4 @@ cctk.sublime-project
 cctk.sublime-workspace
 docs/build/**
 docs/test_index.rst
+conda/*
