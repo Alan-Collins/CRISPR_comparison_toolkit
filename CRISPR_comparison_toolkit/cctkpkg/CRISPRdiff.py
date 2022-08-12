@@ -60,7 +60,7 @@ plotting parameters:
                     add outline colour to lines connecting identical spacers
   --plot-width      width of plot in inches. Default = 3
   --plot-height     height of plot in inches. Default = 3
-  --font-size       font size. Defualt 10pt.
+  --font-size       font size. Defualt automatically scaled.
 """
 
 def get_list_score(arrays_dict, arrays_order):
@@ -428,8 +428,8 @@ def build_parser(parser):
 		"--font-size",
 		type=float,
 		metavar="",
-		default=10,
-		help="Set font size. Defualt 10pt."
+		default=0,
+		help="Set font size. Defualt automatically scaled."
 		)
 
 	parser.add_argument(

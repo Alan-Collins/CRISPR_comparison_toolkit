@@ -673,12 +673,21 @@ def plot_tree(tree, array_dict, filename, non_singleton_spacers, spacer_cols_dic
 
 
 def plot_diffplot(array_dict, array_order, imp_spacers, spacer_colours,
-	text_size=10, plot_width=3, plot_height=3, dpi=300,
+	text_size=0, plot_width=3, plot_height=3, dpi=300,
 	outfile="diffplot.png", line_width=1, connection_outline=False):
 
 	outline = 0.3 # Thickness of lines
 	spacer_spacing= 0.5
 	spacer_size = 2
+
+	if text_size == 0:
+		text_size = 10*calc_font_scale(
+			array_dict,
+			plot_width,
+			plot_height,
+			10,
+			2*len(array_order),
+			2)
 
 	vh_ratio = calc_vh_ratio_and_label_pad_diffplot(array_dict, spacer_size+spacer_spacing,
 	spacer_spacing, (0.5, len(array_dict)+0.5), text_size=text_size,
