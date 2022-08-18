@@ -638,7 +638,7 @@ def main(args):
             "or a regex to identify your assemblies. Each sequence in your "
             "blastdb will be treated as a separate assembly.\n")
         assembly_names = [a for a in subprocess.run(
-            "blastdbcmd -db {} -entry all -outfmt '\%a'".format(
+            "blastdbcmd -db {} -entry all -outfmt '%a'".format(
                 args.blast_db_path
                 ),
             shell=True,
@@ -646,7 +646,6 @@ def main(args):
             capture_output=True
             ).stdout.split('\n') if len(a) > 0]
         args.regex_pattern = ".+"
-
     # Find the names of all the genomes being searched by looking for 
     # the user-provided regex in the blast-db sequence IDs.
     # for all genomes, start their entry in the AssemblyCRISPRs with
