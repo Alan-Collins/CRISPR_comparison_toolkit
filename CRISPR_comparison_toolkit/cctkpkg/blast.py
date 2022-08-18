@@ -30,7 +30,7 @@ other inputs:
   -p, --regex-pattern   pattern describing your assembly names
   -q, --regex-type      {E, P} regex type describing assembly names. Default: P
   -t, --threads         number of threads to use. Default: 1
-  -i, --repeat-interval maximum interval between repeats. Default: 80
+  -i, --repeat-interval maximum interval between repeats. Default: 100
   -c, --percent-id      minumum percent ID of repeat BLAST hits. Default: 80
   -s, --snp-thresh      number of SNPs to consider spacers the same. Default: 0
   --min-shared          minimum spacers shared to draw an edge in network
@@ -529,9 +529,9 @@ def build_parser(parser):
         "-i", "--repeat-interval",
         metavar=" ",
         required=False,
-        default=80,
+        default=100,
         type=int,
-        help="DEFAULT: 80. Set the expected interval between the start "
+        help="DEFAULT: 100. Set the expected interval between the start "
             "position of your repeats."
         )
     other_options.add_argument(
