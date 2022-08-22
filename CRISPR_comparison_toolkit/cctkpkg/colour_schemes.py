@@ -39,9 +39,10 @@ def choose_col_scheme(ncolours, s=None, cf_list=None):
 			...,
 			]
 	"""
-
 	if cf_list:
 		cs_name = "user-provided"
+		seed(s)
+		cf_list = sample(cf_list, len(cf_list))
 		if ncolours <= len(cf_list):
 			colours = [(i, "#000000") for i in cf_list]
 			return colours
@@ -50,7 +51,9 @@ def choose_col_scheme(ncolours, s=None, cf_list=None):
 			col_scheme = cf_list	
 	
 	elif ncolours <= 8:
+		seed(s)
 		colours = [(i, "#000000") for i in Cols_wong]
+		colours = sample(colours, len(colours))
 		return colours
 
 
@@ -63,6 +66,7 @@ def choose_col_scheme(ncolours, s=None, cf_list=None):
 	colours = []
 	# Repeat the same colour scheme for fill and outline combos.
 	seed(s)
+	orinal_seed = int(s)
 	combos = [i for i in permutations(col_scheme, 2)]
 	# Permutations doesn't return self to self so add those.
 	combos += [(i,i) for i in col_scheme]
@@ -81,7 +85,7 @@ def choose_col_scheme(ncolours, s=None, cf_list=None):
 		colours += random_colour_pairs(ncolours-len(colours), s)
 
 	# Reset seed
-	seed(None)
+	seed(orinal_seed)
 		
 	return colours
 
