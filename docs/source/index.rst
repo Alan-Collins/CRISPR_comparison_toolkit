@@ -8,6 +8,8 @@ It includes tools to go from assemblies to publication-quality images and is bui
 See the :doc:`usage` section for further information, including
 :ref:`Installation` instructions.
 
+See the :doc:`content/tutorial` page for a detailed worked example with a downloadable test dataset.
+
 .. _tools:
 
 **********
