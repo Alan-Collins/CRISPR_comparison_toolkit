@@ -1,5 +1,6 @@
 [![Project Status: WIP - Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![Conda](https://anaconda.org/bioconda/cctk/badges/installer/conda.svg)](https://anaconda.org/bioconda/cctk)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/cctk/badges/downloads.svg)](https://anaconda.org/bioconda/cctk)
 [![Documentation Status](https://readthedocs.org/projects/crispr-comparison-toolkit/badge/?version=latest)](https://crispr-comparison-toolkit.readthedocs.io/en/latest/?badge=latest)
 
 
