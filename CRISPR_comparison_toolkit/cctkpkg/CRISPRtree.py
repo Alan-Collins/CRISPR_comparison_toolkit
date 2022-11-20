@@ -1049,7 +1049,11 @@ def main(args):
 				if args.out_file:
 					# Reset events in root array
 					best_arrays[n] = reset_anc_mods(good_tree, best_arrays[n])
-					filename = "{}_{}.png".format(args.out_file[:-4], n+1)
+					filename = "{}_{}.{}".format(
+						".".join(args.out_file.split(".")[:-1]),
+						n+1,
+						args.out_file.split(".")[-1]
+						)
 					sys.stderr.write(
 						"Saving image of tree with array diagrams to "
 						"{}\n".format(filename))
