@@ -614,7 +614,7 @@ def main(args):
         
     if args.regex_pattern:
         assembly_names = [a for a in subprocess.run(
-            "blastdbcmd -db {} -entry all -outfmt '\%a' | grep -o{} '{}' | \
+            "blastdbcmd -db {} -entry all -outfmt '%a' | grep -o{} '{}' | \
             sort | uniq".format(
                 args.blast_db_path,
                 args.regex_type,
