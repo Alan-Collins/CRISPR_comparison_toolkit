@@ -2,10 +2,12 @@ import sys
 import os
 import numpy as np
 from collections import defaultdict, Counter
-from itertools import combinations
+from itertools import combinations, product
 import subprocess
 from copy import deepcopy
 import multiprocessing
+from string import ascii_lowercase
+from math import ceil, log
 
 from . import (
 	file_handling
@@ -415,6 +417,13 @@ def non_redundant_CR(
 		      The reverse of the above dict. For each spacer that was 
 		      removed, what is its representative. E.g.,
 		        {"CRISPR_type": {"spacer": "Representative"}}
+		    repeat_id_lookup:
+			  Array repeats IDs (i.e., ID for the set of repeats in an array)
+			  and their associated repeats
+		   	    {reps_id : reps}
+			reps_sp_array_id_lookup:
+			  Which array IDs each set of repeats was found in
+			    {reps: [array_id1, array_id2]}
 
 
 
@@ -506,12 +515,63 @@ def non_redundant_CR(
 		array_num += 1
 		non_red_array_id_dict[spacers] = array_num
 
+	# Now assign IDs to repeats
+
+	# Use 3 objects. First to look up repeats by id {reps_id : reps}
+	repeat_id_lookup = {}
+	# second to keep track of repeats associated with each array ID
+	# {array_ID: [reps1, reps2]}
+	all_array_reps_dict = defaultdict(list)
+	# third to track with which array ids a set of repeats are associated
+	# 2 arrays of same CRISPR type and length may have same repeats
+	# {reps: [array_id1, array_id2]}
+	reps_sp_array_id_lookup = defaultdict(list)
+	# all_array_reps_dict and reps_sp_array_id_lookup are inverse of one another
+	
+	for strain in all_assemblies:
+		for k,v in strain.arrays.items():
+			reps = " ".join(v.repeats)
+			CR_type = v.repeat_id
+			spacers = []
+
+			# replace any clustered spacers with their reps
+			for s in v.spacers:
+				if s in rev_cluster_reps_dict[CR_type]:
+					spacers.append(rev_cluster_reps_dict[CR_type][s])
+				else:
+					spacers.append(s)
+
+			array_id = non_red_array_id_dict[" ".join(spacers)]
+
+			# Construct lookup of reps and array IDs
+			if reps not in set(all_array_reps_dict[array_id]):
+				all_array_reps_dict[array_id].append(reps)
+				# Assign new reps ID
+				i = 0
+				letters = [l for l in ascii_lowercase]
+				possible_id = "{}_{}".format(array_id, letters[i])
+				while possible_id in repeat_id_lookup:
+					i+=1
+					# If more than 26, add more letters
+					if i > len(letters):
+						letters += ["".join(l) for l in product(
+							string.ascii_lowercase, repeat=(ceil(log(i, 26))))]
+					possible_id = "{}_{}".format(array_id, letters[i])
+				repeat_id_lookup[possible_id] = reps
+
+
+			if array_id not in set(reps_sp_array_id_lookup[reps]):
+				reps_sp_array_id_lookup[reps].append(array_id)
+
 	return (non_red_spacer_dict,
 		non_red_spacer_id_dict,
 		non_red_array_dict,
 		non_red_array_id_dict,
 		cluster_reps_dict,
-		rev_cluster_reps_dict)
+		rev_cluster_reps_dict,
+		repeat_id_lookup,
+		reps_sp_array_id_lookup
+		)
 
 
 def add_ids(
