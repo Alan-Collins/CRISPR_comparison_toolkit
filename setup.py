@@ -5,7 +5,7 @@ setup(
     python_requires='>=3.6',
     version="0.8.4",
     author="Alan Collins",
-    autor_email="alan.collins@bath.edu",
+    author_email="crisprtoolkit@gmail.com",
     url="https://github.com/Alan-Collins/CRISPR_comparison_toolkit",
     license="GPL-3.0",
     install_requires=[
