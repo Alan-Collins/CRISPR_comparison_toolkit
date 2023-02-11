@@ -113,7 +113,7 @@ def process_minced_out(
 			}
 		
 		# Same for Array_IDs.txt if provided
-		if os.path.isfile(outdir+"Array_seqs.txt"):
+		if os.path.isfile(processed_out+"Array_seqs.txt"):
 			prev_array_dict = {
 				" ".join(v):k for k,v in file_handling.read_array_file(
 					processed_out + "Array_seqs.txt"
@@ -121,6 +121,15 @@ def process_minced_out(
 				}
 		else:
 			prev_array_dict = {}
+		
+		# Same for Array_repeats.txt if provided
+		if os.path.isfile(processed_out+"Array_repeats.txt"):
+			prev_rep_id_dict = defaultdict(list)
+			for k,v in file_handling.read_array_file(
+				processed_out + "Array_repeats.txt").items():
+				prev_rep_id_dict[" ".join(v)].append(k)
+		else:
+			prev_rep_id_dict = defaultdict(list)
 
 		(non_red_spacer_dict,
 			non_red_spacer_id_dict,
@@ -135,6 +144,7 @@ def process_minced_out(
 			snp_thresh,
 			prev_spacer_id_dict,
 			prev_array_dict,
+			prev_rep_id_dict,
 			processed_out
 			)
 
@@ -157,6 +167,7 @@ def process_minced_out(
 		all_assemblies,
 		non_red_spacer_id_dict,
 		non_red_array_id_dict,
+		reps_sp_array_id_lookup,
 		rev_cluster_reps_dict)
 
 
@@ -168,6 +179,7 @@ def process_minced_out(
 	file_handling.write_CRISPR_files(all_assemblies,
 	non_red_spacer_id_dict,
 	non_red_array_id_dict,
+	repeat_id_lookup,
 	cluster_reps_dict,
 	processed_out,
 	append,

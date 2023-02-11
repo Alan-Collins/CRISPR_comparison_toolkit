@@ -45,10 +45,13 @@ class AssemblyCRISPRs():
 	  repeat_scores (dict):
 		For each array, the hamming distance when compared to the most 
 		similar repeat in the provided repeats file 
-		{Array_number : hammind_dist}
+		{Array_number : hamming_dist}
 	  repeat_types (dict):
 		For each array, the most similar repeat in the provided 
 		repeats file {Array_number : repeat_type}
+	  repeat_arrays (dict):
+	    For each array, the repeat array ID and sequences of repeats
+	    found. {Repeat_array_ID : repeat_sequences}
 	"""
 	def __init__(self, crispr_types_dict=None, minced_file=None):
 		self.accession = ''
@@ -133,6 +136,7 @@ class FoundArray():
 		start (int) start position of array in contig
 		stop (int) end position of array in contig
 		repeats (list of strs) sequence of repeats
+		repeat_array_id (str) ID of array repeats
 		repeat_id (str) with which repeat was this array identified?
 		repeat_score (int) number of mismatches between repeat and best match
 		reverse (bool) Was the array found in the reverse direction?
@@ -146,6 +150,7 @@ class FoundArray():
 		self.start = 0
 		self.stop = 0
 		self.repeats = []
+		self.repeat_array_id = ''
 		self.repeat_id = ''
 		self.repeat_score = 0
 		self.reverse = False 
@@ -365,6 +370,7 @@ def write_cr_sum_tabs(all_assemblies, outfile, append=False):
 				"Array_locations",
 				"Repeat_sequences",
 				"Array_CRISPR_types",
+				"Array_repeats"
 				]) + "\n"
 
 	for entry in all_assemblies:
@@ -408,6 +414,10 @@ def write_cr_sum_tabs(all_assemblies, outfile, append=False):
 					array_num, array.repeat_id
 					) for array_num, array in entry.arrays.items()
 				) + append_stuff
+			array_repeats = prepend_stuff + min_delim.join(
+				"{}: {}".format(array_num, array.repeat_array_id
+					) for array_num, array in entry.arrays.items()
+				) + append_stuff
 
 		else: # If txt, array number just complicates downstream work
 			sequence_id = entry.accession
@@ -445,6 +455,10 @@ def write_cr_sum_tabs(all_assemblies, outfile, append=False):
 					array.repeat_id
 					) for array in entry.arrays.values()
 				)
+			array_repeats = min_delim.join(
+				"{}".format(array.repeat_array_id
+					) for array in entry.arrays.values()
+				)
 
 		line = [
 		sequence_id,
@@ -456,6 +470,7 @@ def write_cr_sum_tabs(all_assemblies, outfile, append=False):
 		array_locations,
 		repeat_sequences,
 		array_crispr_types,
+		array_repeats,
 		]
 		
 		# If appending (i.e. open_mode = 'a'), check if this id already
@@ -485,10 +500,22 @@ def write_array_reps_file(all_assemblies, outdir):
 		fout.write("\n".join(outcontents))
 
 
+def write_repeat_id_seq_file(repeat_id_lookup, outdir):
+	# repeat file
+	with open(outdir + "Array_repeats.txt", 'w') as fout:
+		for rep_array_id in sorted(
+			repeat_id_lookup.keys(),
+			key= lambda x: (int(x.split("_")[0]), x.split("_")[1])
+		):
+			reps = repeat_id_lookup[rep_array_id]
+			fout.write(f"{rep_array_id}\t{reps}\n")
+
+
 def write_CRISPR_files(
 	all_assemblies,
 	spacer_id_dict,
 	array_id_dict,
+	repeat_id_lookup,
 	cluster_reps_dict,
 	outdir,
 	append=False,
@@ -500,6 +527,9 @@ def write_CRISPR_files(
 	
 	# Array IDs and spacers
 	write_array_id_seq_file(spacer_id_dict, array_id_dict, outdir)
+
+	# Repeat array IDs and repeat seqs
+	write_repeat_id_seq_file(repeat_id_lookup, outdir)
 
 	# Array representatives
 	write_array_reps_file(all_assemblies, outdir)

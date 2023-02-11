@@ -372,6 +372,7 @@ def non_redundant_CR(
 	snp_thresh=0,
 	prev_spacer_id_dict={},
 	prev_array_dict={},
+	prev_rep_id_dict=defaultdict(list),
 	outdir="./"
 	):
 	""" Identify non-redundant spacers and arrays
@@ -393,6 +394,13 @@ def non_redundant_CR(
 		    If appending to existing dataset, dict of array IDs and the
 		    spacers in those arrays. E.g.,:
 		    {"sp1 sp2 sp3 sp4": "Array_ID"}
+		  prev_rep_id_dict (defaultdict(list)):
+		    If appending to an existing dataset, dict of repeat sequences
+		    and the associated IDs. E.g.,:
+		    {"r1 r1 r1 r2": ["1_a", "2_b"]}
+		  outdir (str):
+		    path to write files
+		
 
 		Returns:
 		  tuple:
@@ -525,11 +533,20 @@ def non_redundant_CR(
 	# third to track with which array ids a set of repeats are associated
 	# 2 arrays of same CRISPR type and length may have same repeats
 	# {reps: [array_id1, array_id2]}
-	reps_sp_array_id_lookup = defaultdict(list)
-	# all_array_reps_dict and reps_sp_array_id_lookup are inverse of one another
+	# prev_rep_id_dict was already provided as input to function
+	# all_array_reps_dict and prev_rep_id_dict are inverse of one another
+
+	# Handle populating objects if appending
+
+	if len(prev_rep_id_dict) != 0:
+		for reps, ids in prev_rep_id_dict.items():
+			for id in ids:
+				repeat_id_lookup[id] = reps
+				array_id = int(id.split("_")[0])
+				all_array_reps_dict[array_id].append(reps)
 	
 	for strain in all_assemblies:
-		for k,v in strain.arrays.items():
+		for v in strain.arrays.values():
 			reps = " ".join(v.repeats)
 			CR_type = v.repeat_id
 			spacers = []
@@ -555,13 +572,13 @@ def non_redundant_CR(
 					# If more than 26, add more letters
 					if i > len(letters):
 						letters += ["".join(l) for l in product(
-							string.ascii_lowercase, repeat=(ceil(log(i, 26))))]
+							ascii_lowercase, repeat=(ceil(log(i, 26))))]
 					possible_id = "{}_{}".format(array_id, letters[i])
 				repeat_id_lookup[possible_id] = reps
 
 
-			if array_id not in set(reps_sp_array_id_lookup[reps]):
-				reps_sp_array_id_lookup[reps].append(array_id)
+			if possible_id not in set(prev_rep_id_dict[reps]):
+				prev_rep_id_dict[reps].append(possible_id)
 
 	return (non_red_spacer_dict,
 		non_red_spacer_id_dict,
@@ -570,7 +587,7 @@ def non_redundant_CR(
 		cluster_reps_dict,
 		rev_cluster_reps_dict,
 		repeat_id_lookup,
-		reps_sp_array_id_lookup
+		prev_rep_id_dict
 		)
 
 
@@ -578,6 +595,7 @@ def add_ids(
 	all_assemblies,
 	non_red_spacer_id_dict,
 	non_red_array_id_dict,
+	reps_sp_array_id_lookup,
 	rev_cluster_reps_dict):
 	""" Lookup array and spacer IDs and add them to AssemblyCRISPRs 
 	"""
@@ -591,6 +609,9 @@ def add_ids(
 					array.spacers[n] = spacer
 				array.spacer_ids.append(non_red_spacer_id_dict[spacer])
 			array.id = non_red_array_id_dict[" ".join(array.spacers)]
+			# identical repeats may be associated with multiple arrays
+			possible_rep_ids = reps_sp_array_id_lookup[" ".join(array.repeats)]
+			array.repeat_array_id = [rid for rid in possible_rep_ids if rid.split("_")[0] == str(array.id)][0]
 
 
 def build_network(array_list):

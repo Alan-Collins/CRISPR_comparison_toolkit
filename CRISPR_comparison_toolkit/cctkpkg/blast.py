@@ -106,7 +106,7 @@ def build_arrays_MP(array_entry, args):
                 args.assemblies,
                 array_entry[0].sseqid)
         else:
-            array.genome = sseqid
+            array.genome = array_entry[0].sseqid
         n_reps = len(array_entry)
         array.repeats = [a.sseq for a in array_entry] 
 
@@ -685,6 +685,15 @@ def main(args):
                 }
         else:
             prev_array_dict = {}
+        
+        # Same for Array_repeats.txt if provided
+        if os.path.isfile(outdir+"Array_repeats.txt"):
+            prev_rep_id_dict = defaultdict(list)
+            for k,v in file_handling.read_array_file(
+                outdir + "Array_repeats.txt").items():
+                prev_rep_id_dict[" ".join(v)].append(k)
+        else:
+            prev_rep_id_dict = defaultdict(list)
 
         (non_red_spacer_dict,
             non_red_spacer_id_dict,
@@ -699,6 +708,7 @@ def main(args):
             args.snp_thresh,
             prev_spacer_id_dict,
             prev_array_dict,
+            prev_rep_id_dict,
             outdir
             )
 
@@ -726,6 +736,7 @@ def main(args):
         all_assemblies,
         non_red_spacer_id_dict,
         non_red_array_id_dict,
+        reps_sp_array_id_lookup,
         rev_cluster_reps_dict)
 
     # Save array files
@@ -733,6 +744,7 @@ def main(args):
         all_assemblies,
         non_red_spacer_id_dict,
         non_red_array_id_dict,
+        repeat_id_lookup,
         cluster_reps_dict,
         outdir,
         args.append,
