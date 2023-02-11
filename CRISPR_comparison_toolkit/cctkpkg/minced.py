@@ -112,19 +112,24 @@ def process_minced_out(
 				).items()
 			}
 		
-		# Same for Array_IDs.txt
-		prev_array_dict = {
-			" ".join(v):k for k,v in file_handling.read_array_file(
-				processed_out + "Array_seqs.txt"
-				).items()
-			}
+		# Same for Array_IDs.txt if provided
+		if os.path.isfile(outdir+"Array_seqs.txt"):
+			prev_array_dict = {
+				" ".join(v):k for k,v in file_handling.read_array_file(
+					processed_out + "Array_seqs.txt"
+					).items()
+				}
+		else:
+			prev_array_dict = {}
 
 		(non_red_spacer_dict,
 			non_red_spacer_id_dict,
 			non_red_array_dict,
 			non_red_array_id_dict,
 			cluster_reps_dict,
-			rev_cluster_reps_dict
+			rev_cluster_reps_dict,
+			repeat_id_lookup,
+			reps_sp_array_id_lookup
 		) = sequence_operations.non_redundant_CR(
 			all_assemblies,
 			snp_thresh,
@@ -139,7 +144,9 @@ def process_minced_out(
 			non_red_array_dict,
 			non_red_array_id_dict,
 			cluster_reps_dict,
-			rev_cluster_reps_dict
+			rev_cluster_reps_dict,
+			repeat_id_lookup,
+			reps_sp_array_id_lookup
 		) = sequence_operations.non_redundant_CR(
 			all_assemblies,
 			snp_thresh,
