@@ -349,10 +349,11 @@ def write_cr_sum_tabs(all_assemblies, outfile, append=False):
 
 	if append:
 		# If appending, store existing contents to avoid redundant lines
+		existing_lines = []
 		if os.path.isfile(outfile):
 			with open(outfile) as fin:
 				existing_lines = [line for line in fin]
-			outcontents = "".join(existing_lines) # still have newlines
+		outcontents = "".join(existing_lines) # still have newlines
 	else:
 		outcontents = maj_delim.join([
 				"Sequence_ID",
@@ -700,12 +701,6 @@ def check_append(outdir):
 	if outdir[-1] != "/":
 		outdir+= "/"
 
-	if not os.path.isfile(outdir+"Array_seqs.txt"):
-		sys.stderr.write("Append ERROR: Array_seqs.txt not found in the "
-			"provided outdir: '{}'. To append to a previous run, you must "
-			"provide the Array_seqs.txt from that run in '{}'.\n".format(
-				outdir, outdir))
-		sys.exit()
 
 	if not os.path.isfile(outdir+"CRISPR_spacers.fna"):
 		sys.stderr.write("Append ERROR: CRISPR_spacers.fna not found in the "
