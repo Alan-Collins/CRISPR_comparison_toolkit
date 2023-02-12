@@ -37,6 +37,11 @@ output control arguments:
   -b, --batch-size  size of batch to submit to blastdbcmd. Default: 1000
   -r, --mask-regions
                     file in bed format listing regions to ignore
+  -E, --seed-region
+                    Specify part of protospacer in which mismatches should not be 
+                    tolerated. Format: start:stop, 0-base coordinates, 5'-3'. E.g., "0:6" 
+                    or ":6" specifies first 6 bases (0,1,2,3,4,5). "-6:-1" or "-6:" 
+                    specifies last 6 bases.
 
 BLAST arguments:
   arguments to control the blastn command used by this script
@@ -131,7 +136,7 @@ def run_blastn(args):
 		universal_newlines=True,
 		capture_output=True)
 	if blast_run.stderr:
-		print("ERROR running blast on {}:\n{}".format(
+		sys.stderr.write("ERROR running blast on {}:\n{}".format(
 			args.blast_db_path, blast_run.stderr))
 		sys.exit()
 	blast_lines = [
@@ -336,6 +341,35 @@ def adjust_pam(pam, min_pam_len, pam_location, flanking_n):
 		return pam
 
 
+def check_seed_arg(arg):
+	if arg == None:
+		return None
+	
+	if (
+		(":" not in arg) 
+		or (len(arg.split(":")) > 2)
+		or any([i not in {"0","1","2","3","4","5","6","7","8","9",":", "-", " "} for i in arg])
+	):
+		sys.stderr.write('ERROR: Seed region must be specified as a range of start:stop with no spaces. '
+		+ 'i.e., 0-base integer start coordinate, a ":" character, and a 0-base stop '
+		+ 'coordinate. See the documentation for details.\n')
+		sys.exit()
+	
+	start, stop = arg.split(":")
+	# convert to ints or default if blank
+	if start.strip() == '':
+		start = 0
+	else:
+		start = int(start)
+	
+	if stop.strip() == '':
+		stop = -1
+	else:
+		stop = int(stop)
+	
+	return (start, stop)
+
+
 def build_parser(parser):
 	req_options = parser.add_argument_group("Required arguments")
 	req_options.add_argument(
@@ -466,6 +500,17 @@ def build_parser(parser):
 		your blastdb contain CRISPR arrays and would like to exclude hits of \
 		CRISPR spacers against similar spacers in the array."
 		)
+	out_options.add_argument(
+		"-E", "--seed-region",
+		metavar=' ',
+		required = False,
+		nargs="?",
+		help='Specify part of protospacer in which mismatches should not be \
+		tolerated. Format: start:stop 0-base coordinates 5\'-3\'. E.g., "0:6" \
+		or ":6" specifies first 6 bases (0,1,2,3,4,5). "-6:-1" or "-6:" \
+		specifies last 6 bases.'
+		)
+	
 
 	### Options for blastn ####
 
@@ -527,6 +572,9 @@ def build_parser(parser):
 
 
 def main(args):
+
+	# Check seed region arg format if specified
+	seed_reg = check_seed_arg(args.seed_region)
 
 	spacer_dict = file_handling.fasta_to_dict(args.spacer_file)
 
@@ -654,6 +702,10 @@ mismatch_locations"]
 					mask_region += [i for i in range(start, stop)]
 				if p.start in mask_region or p.stop in mask_region:
 					p_count += 1
+					continue
+			# Check for seed region mismatches if user specified.
+			if seed_reg:
+				if "." in p.aligned[seed_reg[0]:seed_reg[1]]:
 					continue
 			# Check for PAM if user requested
 			if args.pam or args.regex_pam:

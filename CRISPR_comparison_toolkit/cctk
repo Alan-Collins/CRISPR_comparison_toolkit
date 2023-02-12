@@ -131,8 +131,17 @@ def parse_args(args=None):
 		)
 	spacerblastcli = spacerblast.build_parser(spacerblastcli)
 
+	args, extra = cli.parse_known_args(args)
 
-	args = cli.parse_args(args)
+	# Janky workaround to allow negative numbers for spacerblast -E
+	if args.command == 'spacerblast':
+		if len(extra) != 0:
+			if ":" not in extra[0]:
+				sys.stderr.write('ERROR: Seed region must be specified as a range of start:stop with no spaces. '
+				+ 'i.e., 0-base integer start coordinate, a ":" character, and a 0-base stop '
+				+ 'coordinate. See the documentation for details.\n')
+				sys.exit()
+			args.seed_region = extra[0]
 
 	return args
 
