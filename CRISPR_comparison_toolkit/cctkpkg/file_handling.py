@@ -370,7 +370,8 @@ def write_cr_sum_tabs(all_assemblies, outfile, append=False):
 				"Array_locations",
 				"Repeat_sequences",
 				"Array_CRISPR_types",
-				"Array_repeats"
+				"Array_repeats",
+				"Array_repeat_score",
 				]) + "\n"
 
 	for entry in all_assemblies:
@@ -418,6 +419,10 @@ def write_cr_sum_tabs(all_assemblies, outfile, append=False):
 				"{}: {}".format(array_num, array.repeat_array_id
 					) for array_num, array in entry.arrays.items()
 				) + append_stuff
+			array_repeat_scores = prepend_stuff + min_delim.join(
+				"{}: {}({})".format(array_num, array.repeat_id, array.repeat_score
+					) for array_num, array in entry.arrays.items()
+				) + append_stuff
 
 		else: # If txt, array number just complicates downstream work
 			sequence_id = entry.accession
@@ -459,6 +464,10 @@ def write_cr_sum_tabs(all_assemblies, outfile, append=False):
 				"{}".format(array.repeat_array_id
 					) for array in entry.arrays.values()
 				)
+			array_repeat_scores = min_delim.join(
+				"{}({})".format(array.repeat_id, array.repeat_score
+					) for array in entry.arrays.values()
+				)
 
 		line = [
 		sequence_id,
@@ -471,6 +480,7 @@ def write_cr_sum_tabs(all_assemblies, outfile, append=False):
 		repeat_sequences,
 		array_crispr_types,
 		array_repeats,
+		array_repeat_scores,
 		]
 		
 		# If appending (i.e. open_mode = 'a'), check if this id already
