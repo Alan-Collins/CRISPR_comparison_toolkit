@@ -39,7 +39,8 @@ usage: cctk crisprtree [-h] -a <path> -o <path> [--output-arrays <path>] \
 [--force-colour-unique] [-b] [--brlen-scale <float>] [--no-align-cartoons] \
 [--no-align-labels] [--dpi <int>] [--no-fade-anc] [--plot-width <float>] \
 [--plot-height <float>] [--font-override-labels <float>] \
-[--font-override-annotations <float>] [arrays_to_join <list of names>]
+[--font-override-annotations <float>] [arrays_to_join <list of names>] \
+[--branch-support {colour,number,newick}]
 
 optional arguments:
   -h, --help        show this help message and exit
@@ -92,7 +93,9 @@ plotting parameters:
 
   -b                include branch lengths in tree plot
   --brlen-scale     factor to scale branch length
-  --branch-support  Show support at nodes
+  --branch-support  Show support at nodes as either coloured circles or \
+                    text, or just include support in newick string. \
+                    Default: colour. Options: colour, number, newick
   --no-emphasize-diffs
                     don't emphasize events in each array since its ancestor
   --no-align-cartoons
@@ -697,8 +700,12 @@ def build_parser(parser):
 		)
 	plot_params.add_argument(
 		"--branch-support",
-		action='store_true',
-		help="Show support at nodes"
+		required=False,
+		# default='colour',
+		const='colour',
+		nargs='?',
+		choices=('colour', 'number', 'newick'),
+		help="Show support at nodes as either coloured circles or text, or just include support in newick string."
 		)
 	plot_params.add_argument(
 		"--no-align-cartoons",

@@ -44,11 +44,17 @@ def draw_branches(tree, node_locs, ax, branch_lengths=True, brlen_scale=1,
 			# add branch support if appropriate
 			if branch_support and node != tree.seed_node:
 				support = node.node_support
-				ax.scatter(
-					x, y,
-					c=support,
-					cmap='cividis_r',
-					vmin=0, vmax=100)
+				if branch_support == "colour":
+					ax.scatter(
+						x, y,
+						c=support,
+						cmap='cividis_r',
+						vmin=0, vmax=100)
+				elif branch_support == "number":
+					ax.text(x, y, support, ha='right',
+					va='center_baseline', fontsize=annot_text_size,
+					color="#0077cc")
+
 
 
 def add_labels(tree, node_locs, ax, branch_lengths=True,font_scale=1,
@@ -652,7 +658,7 @@ def plot_tree(tree, array_dict, filename, non_singleton_spacers, spacer_cols_dic
 		no_fade_ancestral=no_fade_ancestral, label_pad_dict=label_pad_dict)
 
 	plt.axis('off')
-	if branch_support:
+	if branch_support == "colour":
 		import matplotlib
 		plt.rcParams.update({'font.size': label_text_size})
 		fig.colorbar(
