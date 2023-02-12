@@ -176,20 +176,19 @@ def fill_initial_info(result, flanking_n):
 		proto.stop = result.sstart + (result.qstart-1) # Adjust 1 base
 		up_coords = (proto.stop+1, proto.stop+up_n)
 		down_coords = (proto.start-down_n, proto.start-1)	
-
-	if any(
+	if (any(
 		[i < 1 for i in [
 			up_coords[0],
 			up_coords[1],
 			down_coords[0],
 			down_coords[1]]]
-		) or any(
+		) and up_n != 0) or (any(
 			[i > result.slen-1 for i in [
 				up_coords[0],
 				up_coords[1],
 				down_coords[0],
 				down_coords[1]]]
-		):
+		) and down_n != 0):
 		# If the requested flanking region goes beyond the ends of the
 		# target sequence then it can't be returned.
 		return None, None, None
