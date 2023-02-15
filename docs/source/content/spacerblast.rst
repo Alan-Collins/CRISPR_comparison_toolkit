@@ -10,11 +10,13 @@ Introduction
 
 1. Extends sequence matches to cover the entire length of the query sequence. For short query sequences, a small number of mismatches can result in the BLAST algorithm not extending the match through the mismatches even if additional sequence identity would be found. Users can specify a percent identity requirement that takes into account the full sequence length.
 
-2. Retrieves flanking sequence either side (or both sides) of the match location in the subject sequence.
+2. (Optional) Retrieves flanking sequence either side (or both sides) of the match location in the subject sequence.
 
-3. Identifies the presence of user-defined sequence motifs in sequence flanking the match and sorts blast hits based on the presence or absence of the motif.
+3. (Optional) Identifies the presence of user-defined sequence motifs in sequence flanking the match and sorts blast hits based on the presence or absence of the motif.
 
-4. Masks user-specified regions in the subject sequence and ignores blast hits in those regions.
+4. (Optional) Masks user-specified regions in the subject sequence and ignores blast hits in those regions.
+
+5. (Optional) Specify spacer seed region to exclude hits with mismatches within that region.
 
 Before you run
 --------------
@@ -125,3 +127,18 @@ Mask regions of sequences in you blastdb
 If you would like to ignore hits in certain regions of your subject sequences you can maks regions by providing a `BED format <https://en.wikipedia.org/wiki/BED_(file_format)#Format>`_ file with the ``-r`` option. Only the first 3 columns of the .bed file will be read so all other columns are optional.
 
 This can be useful when extracting spacers and searching for CRISPR targets in the same set of sequences. It will allow you to ignore hits against CRISPR arrays as each spacer will return a perfect match against its location in the genome in which it was found. Both `cctk blast <blast.html>`_ and `cctk minced <minced.html>`_ return a .bed file of CRISPR array locations that can be used for this purpose.
+
+Specify seed region
+^^^^^^^^^^^^^^^^^^^
+
+CRISPR targeting can often occur even without 100% identity between the spacer and protospacer. However, some CRISPR types have a strict requirement for 100% sequence identity within a "seed region".
+
+You can specify a region to be treated as a seed region using ``-E``. Only hits with 100% identity in this region will be returned.
+
+The format to specify a region if of the format start_index:end_index and is a 0-base range. i.e., the range starts at the first number and ends 1 before the last number. For example, to specify a seed region covering the first 6 bases of the spacer you would use ``-E 0:6``. 0:6 specifies the bases at index 0, 1, 2, 3, 4, and 5.
+
+Note that if your range starts at the first base of the spacer or ends at the last base of the spacer, you can omit that index. E.g., ``-E :6`` is equivalent to ``-E 0:6`` shown above. ``-E 6:`` specifies a range from the seventh base (index 6 with 0-base counting) to the end of the spacer
+
+If you wish to specify a range relative to the end of the spacer. you can use negative indices (counting back from -1, which is the index of the last base). Note that if the end of your desired range includes the last base, you must omit the end index from your range. E.g., to specify a seed region of the last 6 bases of a spacer you can use ``-E -6:``. Using negative indices can be useful if your seed region is a fixed length at the end of the spacer, but spacers can differ in length.
+
+The option to specify a seed region is only relevant when also specifying a percent identity threshold (``-p``) below 100%. Percent identity between the spacer and protospacer will still be calculated as a percent of the total spacer length. E.g., if you are looking for at least 90% identity matches for a 30 base spacer and specify that the seed region is the first 10 bases, up to 3 mismatches will be tolerated as long as they do not occur in the first 10 bases.
