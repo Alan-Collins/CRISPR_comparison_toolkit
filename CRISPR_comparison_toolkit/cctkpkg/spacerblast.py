@@ -39,7 +39,7 @@ output control arguments:
                     file in bed format listing regions to ignore
   -E, --seed-region
                     Specify part of protospacer in which mismatches should not be 
-                    tolerated. Format: start:stop, 0-base coordinates, 5'-3'. E.g., "0:6" 
+                    tolerated. Format: start:stop, 0-base coordinates, 5':3'. E.g., "0:6" 
                     or ":6" specifies first 6 bases (0,1,2,3,4,5). "-6:-1" or "-6:" 
                     specifies last 6 bases.
 
@@ -506,7 +506,7 @@ def build_parser(parser):
 		required = False,
 		nargs="?",
 		help='Specify part of protospacer in which mismatches should not be \
-		tolerated. Format: start:stop 0-base coordinates 5\'-3\'. E.g., "0:6" \
+		tolerated. Format: start:stop 0-base coordinates 5\':3\'. E.g., "0:6" \
 		or ":6" specifies first 6 bases (0,1,2,3,4,5). "-6:-1" or "-6:" \
 		specifies last 6 bases.'
 		)
