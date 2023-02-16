@@ -575,6 +575,16 @@ def write_CRISPR_files(
 	# Write network file
 	write_network_file(network, outdir+"Array_network.txt", min_shared)
 
+	# Identify network clusters for cluster file
+	network_filt = [(edge.a, edge.b) for edge in network if edge.nshared >= min_shared]
+
+	clusters = sequence_operations.identify_network_clusters(network_filt)
+
+	# need to unpack clustes from dict for file
+	cluster_list = [[k for k in clus.keys()] for clus in clusters]
+
+	write_array_cluster_file(cluster_list, outdir+"Array_clusters.txt")
+
 	# Write bed file of array locations
 	write_array_loc_bed(all_assemblies, outdir)
 
@@ -639,6 +649,11 @@ def write_network_file(network, filename, min_shared=1):
 
 	with open(filename, 'w') as fout:
 		fout.write("\n".join(outcontents)+"\n")
+
+def write_array_cluster_file(cluster_list, filename):
+	with open(filename, 'w') as fout:
+		for cluster in cluster_list:
+			fout.write(" ".join([str(c) for c in cluster]) + "\n")
 
 
 def write_array_loc_bed(all_assemblies, outdir):
