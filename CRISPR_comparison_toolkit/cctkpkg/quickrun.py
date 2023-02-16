@@ -15,6 +15,7 @@ optional arguments:
 Required arguments:
   -i, --indir         	input directory containing genome fastas.
   -o, --outdir        	directory to write output files
+  -m, --max-cluster     Largest cluster size to plot. Default: 15
 """
 
 def build_parser(parser):
@@ -33,16 +34,27 @@ def build_parser(parser):
 		required=False,
 		help="Specify the input directory containing genome fastas."
 		)
+
+	other_options = parser.add_argument_group("Other inputs")
+	other_options.add_argument(
+		"-m", "--max_cluster",
+		metavar=" ",
+		type=int,
+		default=15,
+		required = False,
+		help="Largest cluster size to plot. Default: 15"
+		)
+
 	return parser
 
 
-def run_minced(args):
+def run_minced(indir, outdir):
 	parser = argparse.ArgumentParser(
 		description="temp parser")
 	minced_parser = minced.build_parser(parser)
 	minced_args = minced_parser.parse_args([
-		"-i", args.indir,
-		"-o", args.outdir,
+		"-i", indir,
+		"-o", outdir,
 		"--min-shared", "2",
 		"-mp"
 		])
@@ -155,14 +167,24 @@ def main(args):
 		os.makedirs(plotdir)
 
 	# identify CRISPRs with minced
-	run_minced(args)
+	run_minced(indir, outdir)
 
 	# Identify clusters
 	with open(outdir + "PROCESSED/Array_network.txt") as network_file:
 		network = load_network(network_file)
 
+	if len(network) == 0:
+		sys.stderr.write("Didn't find any array clusters containing at least 3 arrays. Exiting.\n")
+	sys.stderr.write(f"Found {len(network)} clusters of arrays. Clusters will now be filtered\n")
+
 	# filter clusters so they run in a sensible amount of time
-	filt_network = [(k,v) for k,v in network.items() if len(v) >3 and len(v) < 15]
+	filt_network = [
+		(k,v) for k,v in network.items() if len(v) >=3 and len(v) <= args.max_cluster]
+
+	sys.stderr.write(f"Found {len(filt_network)} clusters with between 3 and {args.max_cluster} arrays.\n")
+	if len(filt_network) == 0:
+		sys.stderr.write("Exiting.\n")
+		sys.exit()
 
 	# plot diffplots
 	run_crisprdiff(filt_network, outdir + "PROCESSED/Array_IDs.txt", plotdir)
