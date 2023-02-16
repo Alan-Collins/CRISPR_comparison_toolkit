@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = "0.8.4"
+__version__ = "1.0.0"
 __author__ = "Alan Collins"
 
 import sys
@@ -15,6 +15,7 @@ from cctkpkg import minced
 from cctkpkg import blast
 from cctkpkg import spacerblast
 from cctkpkg import constrain
+from cctkpkg import quickrun
 
 description = """
 usage: cctk [-h] [--version] <command>
@@ -38,6 +39,7 @@ Analyze the differences between CRISPR arrays:
 Other:
   evolve       perform in silico evolution of CRISPR arrays
   spacerblast  BLAST spacers against a BLASTdb, process output & check for PAMs
+  quickrun     Run a default CCTK pipeline 
 """
 
 class MyArgumentParser(argparse.ArgumentParser):
@@ -61,6 +63,8 @@ class MyArgumentParser(argparse.ArgumentParser):
 			message = evolve.description
 		elif self.prog == "cctk spacerblast":
 			message = spacerblast.description
+		elif self.prog == "cctk quickrun":
+			message = quickrun.description
 		print(message)
 
 def parse_args(args=None):
@@ -131,6 +135,13 @@ def parse_args(args=None):
 		)
 	spacerblastcli = spacerblast.build_parser(spacerblastcli)
 
+	# quickrun.py CLI options
+	quickruncli = subparsers.add_parser(
+		'quickrun',
+		help="Run a default CCTK pipeline."
+		)
+	quickruncli = quickrun.build_parser(quickruncli)
+
 	args, extra = cli.parse_known_args(args)
 
 	# Janky workaround to allow negative numbers for spacerblast -E
@@ -172,6 +183,8 @@ def main():
 		network.main(args)
 	elif args.command == "constrain":
 		constrain.main(args)
+	elif args.command == "quickrun":
+		quickrun.main(args)
 
 if __name__ == '__main__':
 	main()
