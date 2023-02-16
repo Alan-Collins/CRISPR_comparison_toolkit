@@ -76,7 +76,23 @@ def main(args):
 	file_handling.write_network_file(
 		network,
 		args.outdir+"Array_network.txt",
-		args.min_shared)
+		args.min_shared
+		)
+
+	# Identify network clusters for cluster file
+	network_filt = [
+		(edge.a, edge.b) for edge in network if edge.nshared >= args.min_shared
+		]
+
+	clusters = sequence_operations.identify_network_clusters(network_filt)
+
+	# need to unpack clustes from dict for file
+	cluster_list = [[k for k in clus.keys()] for clus in clusters]
+
+	file_handling.write_array_cluster_file(
+		cluster_list,
+		args.outdir+"Array_clusters.txt"
+		)
 
 
 if __name__ == '__main__':
