@@ -93,9 +93,7 @@ plotting parameters:
 
   -b                include branch lengths in tree plot
   --brlen-scale     factor to scale branch length
-  --branch-support  Show support at nodes as either coloured circles or \
-                    text, or just include support in newick string. \
-                    Default: colour. Options: colour, number, newick
+  --branch-support  Show support. Default: colour. Options: colour, number, newick
   --no-emphasize-diffs
                     don't emphasize events in each array since its ancestor
   --no-align-cartoons
