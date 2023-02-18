@@ -18,11 +18,11 @@
 # -- Project information -----------------------------------------------------
 
 project = 'cctk'
-copyright = '2022, Alan Collins'
+copyright = '2023, Alan Collins'
 author = 'Alan Collins'
 
 # The full version, including alpha/beta/rc tags
-release = '0.8.4'
+release = '1.0.0'
 
 
 # -- General configuration ---------------------------------------------------

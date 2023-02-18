@@ -247,6 +247,31 @@ First line is header information
 	13	8	1	0.02127659574468085	1F	1F
 	2	9	12	0.3333333333333333	1F	1F
 
+.. _blast-array-clusters:
+
+Array_clusters.txt
+^^^^^^^^^^^^^^^^^^
+
+**Summary**
+
+Clusters of arrays are identified within the network represented in :ref:`blast-array-network`. A cluster of arrays is defined as a set of arrays in which each array shared at least N spacers with one or more other members of the set, where N is the number provided by the user with the option ``--min-shared``.
+
+This file is provided so that you can easily analyse a cluster of arrays using `CCTK CRISPRdiff <CRISPRdiff.html>`_ or `CCTK CRISPRtree <CRISPRtree.html>`_. Instead of typing out the list of arrays, you can copy it from this file or iterate over the lines of this file to analyze every identified cluster.
+
+**Format**
+
+Space-delimited
+
+Each line is a different cluster. Arrays only appear in one cluster each. Arrays that are not present in any cluster of two or more arrays are not present in the file.
+
+**Example**
+
+.. code-block:: shell
+
+	49 67 71 70 13 24 73 4
+	77 15
+	14 47 57 76 50 58 56
+
 .. _blast-crispr-sum-csv:
 
 CRISPR_summary_table.csv
@@ -265,14 +290,16 @@ Columns:
 #. Sequence_ID: Name of assembly (extracted from input file name)
 #. Has_CRISPR: Boolean whether and CRISPR arrays were found
 #. Array_count: Number of CRISPR arrays found. No further columns are populated if no arrays were found.
-#. Spacers: List of spacer sequences found in each array
-#. Spacer_IDs: List of spacer IDs found in each array
-#. Array_IDs: List of array IDs
+#. Spacers: List of spacer sequences found in each array. Corresponds to sequences in :ref:`crispr-spacers`
+#. Spacer_IDs: List of spacer IDs found in each array. Corresponds to IDs in :ref:`crispr-spacers`
+#. Array_IDs: List of array IDs corresponding to :ref:`array-ids` and :ref:`array-seqs` files
 #. Array_locations: List of array locations (contig name, start, stop)
 #. Repeat_sequences: Sequence of the most common repeat in each array
 #. Array_CRISPR_types: Most similar repeat type found
+#. Array_repeats: Array repeat ID corresponding to sequences in :ref:`array-repeats`
+#. Array_repeat_score: Most similar CRISPR repeat to the repeat in this array and the number of mismatches. Format: repeat(mismatches)
 
-In columns 4-9, arrays are numbered according to the order in which they were found in the input assembly file. These numbers correspond between columns in a given row such that the spacer IDs for array 1 correspond to the spacer sequences of array 1 etc.
+In columns 4-11, arrays are numbered according to the order in which they were found in the input assembly file. These numbers correspond between columns in a given row such that the spacer IDs for array 1 correspond to the spacer sequences of array 1 etc.
 
 
 **Example**
@@ -296,9 +323,34 @@ Tab-delimited table with "|" (pipe)-delimited lists of arrays in columns 4-9 wit
 
 .. code-block:: shell
 
-	Sequence_ID	Has_CRISPR	Array_count	Spacers Spacer_IDs	Array_IDs	Array_locations Repeat_sequences	Array_CRISPR_types
-	Assembly1	True	3	TAGCTGATCAGCAGGCCGACAGTCAGGCCTGC TACCCGAATACGACTTGCGCGAGGAAGACGGT AGCATCGCATCAAATCGTGCAGAACACGATAA TGGTCGAGCAGTTCGGCAAAGGGGCCGTGGTT TTCACCTGGTCGCCGGCCAGGCTGATCACTGC TACAAGGTCATGGCGCTCGGCAACGTGGTGGAA GCTGTGCGTCGCCGTGGTCTGACGGTCGAATC AGCAGATACCCGAACCACTGGAGGTACATGCA TTCATCAGGATGCCGCCAAGGGTCCGCATAAT|AGGTCGAGGTGGGCTCGGCGGCGATGATCGAT GGTACGTGGTTTCGACCAACAGCACTGCCCAA TAAAGGAGATTGCCATGCTGATCAAACTTCCC GTCAGGGTCGTGCATGACTCCGATGTGGTGGC CGTCCAGAACGTCACACGCTCGCCGTCGATGT AACCGGAGCCTTCGGGCCGCGTTGGGATCCAC TTGACTGCTGGGGCCTGACGCTCATCGCGCGG GCGACCCTGGCCAGGGCGGCGTCGCGCTCTGC TTGAGCACAACCGGCTGAGCCAGCTGGTTGTC|CAGCAGCGGCTCCAGGAAGAGGGGCGCTGCCT AAGAGTCGCGGCGACAACTACCAGACGTCCGC GTATGGCTCTCTCCATTGGGGTGGCGATACTC GATCTGGGGCGGCATCATCACAGCAGAATCTA ACAACATCAATCGCCTGATGCTGGGGCACCTG AGCTTCGGCACCCTGATGCGCGCCGTCGAGGG AATGCGGTCCTGCGCATCCGAACTGGTAAGTG GACCCCCGGAGGACCAACCGTGGACAACGACA TCCTTCGGCTCCGCCGGCCGGATCGCTGCAT GTCGCGAAGTTCATAAGCGGGCTTAGGGCGA	1F_156 1F_19 1F_46 1F_123 1F_59 1F_64 1F_34 1F_93 1F_33|1F_99 1F_1 1F_45 1F_83 1F_124 1F_126 1F_30 1F_39 1F_49|1F_134 1F_81 1F_55 1F_84 1F_16 1F_5 1F_51 1F_100 1F_106 1F_145 6|7|11	Assembly1_contig2 209013-208445|Assembly1_contig4 19992-20559|Assembly1_contig4 30050-29425 GTTCACTGCCGTATAGGCAGCTAAGAAA|GTTCACTGCCGTGTAGGCAGCTAAGAAA|GTTCACTGCCGTATAGGCAGCTAAGAAA	1F|1F|1F
+	Sequence_ID	Has_CRISPR	Array_count	Spacers Spacer_IDs	Array_IDs	Array_locations Repeat_sequences	Array_CRISPR_types	Array_repeats	Array_repeat_score
+	Assembly1	True	3	TAGCTGATCAGCAGGCCGACAGTCAGGCCTGC TACCCGAATACGACTTGCGCGAGGAAGACGGT AGCATCGCATCAAATCGTGCAGAACACGATAA TGGTCGAGCAGTTCGGCAAAGGGGCCGTGGTT TTCACCTGGTCGCCGGCCAGGCTGATCACTGC TACAAGGTCATGGCGCTCGGCAACGTGGTGGAA GCTGTGCGTCGCCGTGGTCTGACGGTCGAATC AGCAGATACCCGAACCACTGGAGGTACATGCA TTCATCAGGATGCCGCCAAGGGTCCGCATAAT|AGGTCGAGGTGGGCTCGGCGGCGATGATCGAT GGTACGTGGTTTCGACCAACAGCACTGCCCAA TAAAGGAGATTGCCATGCTGATCAAACTTCCC GTCAGGGTCGTGCATGACTCCGATGTGGTGGC CGTCCAGAACGTCACACGCTCGCCGTCGATGT AACCGGAGCCTTCGGGCCGCGTTGGGATCCAC TTGACTGCTGGGGCCTGACGCTCATCGCGCGG GCGACCCTGGCCAGGGCGGCGTCGCGCTCTGC TTGAGCACAACCGGCTGAGCCAGCTGGTTGTC|CAGCAGCGGCTCCAGGAAGAGGGGCGCTGCCT AAGAGTCGCGGCGACAACTACCAGACGTCCGC GTATGGCTCTCTCCATTGGGGTGGCGATACTC GATCTGGGGCGGCATCATCACAGCAGAATCTA ACAACATCAATCGCCTGATGCTGGGGCACCTG AGCTTCGGCACCCTGATGCGCGCCGTCGAGGG AATGCGGTCCTGCGCATCCGAACTGGTAAGTG GACCCCCGGAGGACCAACCGTGGACAACGACA TCCTTCGGCTCCGCCGGCCGGATCGCTGCAT GTCGCGAAGTTCATAAGCGGGCTTAGGGCGA	1F_156 1F_19 1F_46 1F_123 1F_59 1F_64 1F_34 1F_93 1F_33|1F_99 1F_1 1F_45 1F_83 1F_124 1F_126 1F_30 1F_39 1F_49|1F_134 1F_81 1F_55 1F_84 1F_16 1F_5 1F_51 1F_100 1F_106 1F_145 6|7|11	Assembly1_contig2 209013-208445|Assembly1_contig4 19992-20559|Assembly1_contig4 30050-29425 GTTCACTGCCGTATAGGCAGCTAAGAAA|GTTCACTGCCGTGTAGGCAGCTAAGAAA|GTTCACTGCCGTATAGGCAGCTAAGAAA	1F|1F|1F	1_a|2_a|3_a	1F(2)|1F(1)|1F(0)
 
+.. _blast-array-repeats:
+
+Array_repeats.txt
+^^^^^^^^^^^^^^^^^
+
+**Summary**
+
+Sequences of repeats in each identified CRISPR array. If multiple repeat sequence variants were found associated with the same Array ID, then these are indicated using letters (e.g., 1a, 1b when repeat variants are identified in array 1; in the below example the second repeat in 2_a starts GTGTTCCCT... instead of GTGTTCCCC...).
+
+These repeats can be visualized using `CCTK CRISPRdiff <CRISPRdiff.html>`_ just like with spacers (although you may want to set ``--line-width`` to 0).
+
+**Format**
+
+2 columns, tab-delimited.
+
+Column 1: ID of array repeats
+Column 2: Space-delimited list repeat sequences in this array
+
+**Example**
+
+.. code-block:: shell
+	
+	1_a GTGTTCCCCACATGCGTGGGGATGAACCG GTGTTCCCCACATGCGTGGGGATGAACCG GTGTTCCCCACATGCGTGGGGATGAACCG GTGTTCCCCACATGCGTGGGGATGAACCG
+	2_a	GTGTTCCCCACATGCGTGGGGATGAACCG GTGTTCCCTACATGCGTGGGGATGAACCG GTGTTCCCCACATGCGTGGGGATGAACCG
+	2_b	GTGTTCCCCACATGCGTGGGGATGAACCG GTGTTCCCCACATGCGTGGGGATGAACCG GTGTTCCCCACATGCGTGGGGATGAACCG 
 
 .. _blast-spacer-cluster-reps:
 
@@ -378,6 +430,8 @@ This can be easily produced with the following command:
 
 	ls | sed 's/.fasta//' > ID_file.txt
 
+.. _blast-append:
+
 Appending to an existing dataset
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -385,7 +439,7 @@ If you have previously run ``cctk blast`` on some assemblies and wish to add CRI
 	
 ``cctk blast`` and ``cctk minced`` both have an ``--append`` option which can be set to activate the appending mode. In this mode, existing CRISPR information files are read and then their data are added to. **N.B** The files are overwritten in the process so make sure to duplicate your files to another location if you wish to preserve them.
 
-Append mode expects to find existing files within the directory structure created by CCTK (i.e., in the "PROCESSED" directory at the path specified using ``-o``). You do not need to provide all (or any) files at this location. Any existing files will be read to initialize the dataset (for example, spacer ID and array ID assignments). Any files that are absent will simply not be used to initialize a dataset to be added to and will instead be created as if you were not using append mode.
+Append mode expects to find existing files within the directory structure created by CCTK (i.e., in the "PROCESSED" directory at the path specified using ``-o``). You do not need to provide all files at this location, but must at least provide a CRISPR_spacers.fna file with your spacers in fasta format. Any existing files will be read to initialize the dataset (for example, spacer ID and array ID assignments). Any files that are absent will simply not be used to initialize a dataset to be added to and will instead be created as if you were not using append mode.
 
 .. _blast-limitations:
 

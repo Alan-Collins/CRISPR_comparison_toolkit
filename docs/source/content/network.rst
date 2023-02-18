@@ -25,7 +25,7 @@ CCTK is built around the :ref:`array-ids` file (or :ref:`array-seqs` if you pref
 
 .. code-block:: shell
 
-	<Array ID>\\t<spacer> <spacer>...
+	<Array ID>\t<spacer> <spacer>...
 
 with a tab betewen the two columns, this file can be successfully read with any whitespace delimiters. Array ID must come before the first whitespace character and the spacers must be separated by whitespace, but tabs and spaces will work equally well in all locations. You can use all tabs or all spaces when generating this file if it is easier.
 
@@ -50,6 +50,8 @@ This produces a version of the :ref:`array-network` file produced by ``ctk mince
 	1	4	8	0.8
 
 See :ref:`network-advanced` for information about producing a file including the remaining columns.
+
+An :ref:`array-clusters` file like that produced by ``ctk minced`` and ``cctk blast`` is also output.
 
 .. _network-advanced:
 

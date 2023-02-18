@@ -200,13 +200,15 @@ Adding branch support to your tree
 
 branch support calculation is activated by the inclusion of ``--branch-support``. The number of trees used in the branch support calculation is determined by the number of replicated set using ``-r`` (default = 100).
 
+Branch support can be shown on the tree as numerical percent values (using ``--branch-support number``) or as colour (using ``--branch-support colour``). They can also be written only to the newick string and not added to the tree visualization (using ``--branch-support newick``). When using either the number of colour options, the branch support values are also included in the newick string.
+
 .. code-block:: shell
 
-	cctk crisprtree -a <Array_IDs.txt> -o <output plot> -r <num replicates> --branch-support
+	cctk crisprtree -a <Array_IDs.txt> -o <output plot> -r <num replicates> --branch-support <option>
 
-Adding branch support to the tree shown in the :ref:`tree-plot` section with 100 replicates produces the below image. Branch support is indicated at each internal node (except the root) using a coloured circle. ``cctk crisprtree`` uses the colour map `cividis <https://doi.org/10.1371/journal.pone.0199239>`_ for which a colour key is added to the bottom of the image.
+Adding branch support to the tree shown in the :ref:`tree-plot` section with 100 replicates produces the below image. Branch support is indicated at each internal node (except the root) using either numbers (percent support) or a coloured circle. ``cctk crisprtree`` uses the colour map `cividis <https://doi.org/10.1371/journal.pone.0199239>`_ for which a colour key is added to the bottom of the image.
 
-.. image:: images/treeplot_branch_support.png
+.. image:: images/treeplot_branch_support_both.png
 
 In addition to adding the branch support to the produced tree plot, branch support values are added to the produced newick string as well. For example, the above tree has the following newick string:
 
