@@ -283,10 +283,20 @@ def main(args):
 		# oriented consistently when processing minced output.
 		crispr_types_dict = {
 		'1A': 'GATAATCTACTATAGAATTGAAAG',
+		'1B': 'CTTTATATCCCACTACGTTCAGATAAAAC', # Bacillus cytotoxicus
+		'1C': 'GTCGCGCCCCGCACGGGCGCGTGGATTGAAAC',
+		'1D': 'CTCCTAACCCCTCATGGGGTGACAGGAC', # Thioalkalivibrio paradoxus
 		'1E': 'GTGTTCCCCACGGGTGTGGGGATGAACCG',
 		'1F': 'GTTCACTGCCGTGTAGGCAGCTAAGAAA',
-		'1C': 'GTCGCGCCCCGCACGGGCGCGTGGATTGAAAC',
-		'2A': 'GTTTTAGAAGAGTGTCGAATCAATATAGTTAAGATC' # Thanks Wooje Lee, Ph.D., World Kimchi Research Institute, ROK
+		'1G': 'GCTTCAATGAGGCCGCGGCTAAATGCCGCGGATGAC', # Thioalkalivibrio sulfidiphilus
+		'2A_St': 'GTTTTAGAGCTGTGTTGTTTCGAATGGTTCCAAAAC', # Streptococcus thermophilus
+		'2A_Pi': 'GTTTTAGAAGAGTGTCGAATCAATATAGTTAAGATC', # Pediococcus inopinatus. Thanks Wooje Lee, Ph.D., World Kimchi Research Institute, ROK
+		'2B': 'CCAATAATCCCTCATCTAAAAATCCAACCACTGAAAC',
+		'2C': 'GTTTTTGTACTCTCAAGATTTAAGTAACTGTACAAC',
+		'3A_St_a': 'ACCTAATTACCTCGAGAGGGGACGGAAAC', # Streptococcus thermophilus
+		'3A_St_b': 'GATATAAACCTAATTACCTCGAGAGGGGACGGAAAC', # Streptococcus thermophilus
+		'3A_Se': 'GATCGATAACCACCCCGAAGAAAAGGGGACGAGAAC', # Staphylococcus epidermidis
+		'3B': 'GTCGCACTCTACATGAGTGCGTGGATTGAAAT', # Bacillus altitudinis
 		}
 
 	if args.run_minced:

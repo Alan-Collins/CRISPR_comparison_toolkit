@@ -344,9 +344,9 @@ e.g.
 Specifying the CRISPR types of repeats in your assemblies
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-``cctk minced`` has a default database of 4 CRISPR subtype repeats: I-A, I-C, I-E, and I-F. If you are analyzing assemblies that have CRISPR systems of other subtypes, you will want to specify the repeat (in the correct orientation relative to the leader end) here to ensure that your CRISPR arrays are correctly oriented and categorized.
-	
-**N.B.** The repeats in the default database were selected based on my usage while developing CCTK and more may be added to in the future. (Please send characterized CRISPR repeats with known orientation to Alan via email (crisprtoolkit@gmail.com) or as an issue on the `CCTK github <https://github.com/Alan-Collins/CRISPR_comparison_toolkit>`_ and I will be happy to add them. If you have a citable reference for the repeat and its correct orientation all the better!)
+``cctk minced`` has a default database of CRISPR subtype repeats representing variants of the following subtypes: I-A, I-B, I-C, I-D, I-E, I-F, I-G, II-A, II-B, II-C, III-A, and III-B. If you are analyzing assemblies that have CRISPR systems of other subtypes (or variants not in the default database), you will want to specify the repeat (in the correct orientation relative to the leader end) here to ensure that your CRISPR arrays are correctly oriented and categorized.
+
+**N.B.** The repeats in the default database may be added to in the future. (Please send characterized CRISPR repeats with known orientation via email (crisprtoolkit@gmail.com) or as an issue on the `CCTK github <https://github.com/Alan-Collins/CRISPR_comparison_toolkit>`_ and I will be happy to add them. If you have a citable reference for the repeat and its correct orientation all the better!)
 
 ``cctk minced`` uses repeats to add CRISPR type information to spacer fasta headers, but also (and more importantly) to figure out the correct orientation of CRISPR arrays with regards to their leader and trailer ends as minced does not check array orientation itself. This information is essential if you wish to analyze your CRISPR arrays using ``cctk crisprtree``.
 
