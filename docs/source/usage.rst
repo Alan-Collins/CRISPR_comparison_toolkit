@@ -102,6 +102,7 @@ All tools available in CCTK can be accessed through the ``cctk`` executable. Eac
      Other:
        evolve       perform in silico evolution of CRISPR arrays
        spacerblast  BLAST spacers against a BLASTdb, process output & check for PAMs
+       quickrun     Run a default CCTK pipeline 
 
 Usage of each command can be found by calling that command with ``-h`` or ``--help``. e.g. ``cctk blast -h``
 
