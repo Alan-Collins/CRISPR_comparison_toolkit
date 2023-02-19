@@ -676,6 +676,7 @@ def plot_tree(tree, array_dict, filename, non_singleton_spacers, spacer_cols_dic
 	fig.set_size_inches(fig_w,fig_h)
 
 	plt.savefig(filename, dpi=dpi)
+	plt.close()
 
 
 def plot_diffplot(array_dict, array_order, imp_spacers, spacer_colours,
@@ -736,6 +737,6 @@ def plot_diffplot(array_dict, array_order, imp_spacers, spacer_colours,
 	plt.ylim(0.5,len(array_dict)+0.5)
 	plt.axis('off')
 	plt.tight_layout()
-	# plt.show()
 	plt.savefig(outfile, dpi=dpi)
+	plt.close()
 
