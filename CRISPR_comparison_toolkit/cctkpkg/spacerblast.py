@@ -175,28 +175,64 @@ def fill_initial_info(result, flanking_n):
 		proto.stop = result.send + (result.qlen-result.qend)
 		up_coords = (proto.start-up_n, proto.start-1)
 		down_coords = (proto.stop+1, proto.stop+down_n)
+		
+		if (any(
+			[i < 1 for i in [
+				up_coords[0],
+				up_coords[1],
+				down_coords[0],
+				down_coords[1]]]
+			) and up_n != 0) or (any(
+				[i > result.slen-1 for i in [
+					up_coords[0],
+					up_coords[1],
+					down_coords[0],
+					down_coords[1]]]
+			) and down_n != 0):
+			# If the requested flanking region goes beyond the ends of the
+			# target sequence then it can't be returned.
+			return None, None, None
 
 	else:
 		proto.start = result.send - (result.qlen-result.qend)
 		proto.stop = result.sstart + (result.qstart-1) # Adjust 1 base
 		up_coords = (proto.stop+1, proto.stop+up_n)
 		down_coords = (proto.start-down_n, proto.start-1)	
-	if (any(
-		[i < 1 for i in [
-			up_coords[0],
-			up_coords[1],
-			down_coords[0],
-			down_coords[1]]]
-		) and up_n != 0) or (any(
-			[i > result.slen-1 for i in [
+		if (any(
+			[i < 1 for i in [
 				up_coords[0],
 				up_coords[1],
 				down_coords[0],
 				down_coords[1]]]
-		) and down_n != 0):
-		# If the requested flanking region goes beyond the ends of the
-		# target sequence then it can't be returned.
+			) and down_n != 0) or (any(
+				[i > result.slen-1 for i in [
+					up_coords[0],
+					up_coords[1],
+					down_coords[0],
+					down_coords[1]]]
+			) and up_n != 0):
+				# If the requested flanking region goes beyond the ends of the
+				# target sequence then it can't be returned.
+				return None, None, None
+	
+	if any(
+			[i < 1 for i in [
+				up_coords[0],
+				up_coords[1],
+				down_coords[0],
+				down_coords[1]]]
+			) or any(
+				[i > result.slen-1 for i in [
+					up_coords[0],
+					up_coords[1],
+					down_coords[0],
+					down_coords[1]]]
+			):
+		# requested region goes beyond ends of target sequence and
+		# Cannot be returned
 		return None, None, None
+	
+	
 
 	# Build blastdbcmd inputs
 	fstring = ""
@@ -218,7 +254,7 @@ def fill_initial_info(result, flanking_n):
 			loc[0],
 			loc[1],
 			proto.strand)
-
+	
 	return proto, fstring, batch_locations
 
 
@@ -582,15 +618,15 @@ def main(args):
 	pam = None
 	if any([args.pam_location, args.pam, args.regex_pam]):
 		if all([args.pam, args.regex_pam]):
-			print("Please provide either a PAM pattern using -P/--pam or a \
-				regex using -R/--regex_pam but not both.")
+			print("Please provide either a PAM pattern using -P/--pam or a "
+				"regex using -R/--regex_pam but not both.")
 			sys.exit()
 		if not all(
 			[args.pam_location, args.pam]) and not all(
 			[args.pam_location, args.regex_pam]):
-			print("Please provide both a PAM pattern using -P/--pam or \
-				-R/--regex_pam AND a location to search for the PAM using \
-				-l/--pam_location.")
+			print("Please provide both a PAM pattern using -P/--pam or "
+				"-R/--regex_pam AND a location to search for the PAM using "
+				"-l/--pam_location.")
 			sys.exit()
 
 		min_pam_len = check_pam_length(args)
@@ -620,8 +656,8 @@ def main(args):
 					continue
 				bits = line.split()
 				if len(bits) < 3:
-					print("Error: Number of columns in your mask_regions bed \
-						file must be at least 3:\nFasta_header\tstart\tstop")
+					print("Error: Number of columns in your mask_regions bed "
+						"file must be at least 3:\nFasta_header\tstart\tstop")
 					sys.exit()
 				mask_dict[bits[0]].append([int(i) for i in bits[1:3]])
 
@@ -649,6 +685,7 @@ mismatch_locations"]
 	args.blastdbcmd_batch_size //= increment
 	for result in blast_output:
 		p, f, b = fill_initial_info(result, flanking_n)
+		
 		# If the match couldn't be extended because it is at the end of
 		# the contig then skip this one.
 		if p == None:
@@ -664,8 +701,8 @@ mismatch_locations"]
 		args.num_threads
 		)
 
-	p_count = 0
 
+	p_count = 0
 	for i in range(0,len(all_protospacer_infos),increment):
 		p = protos[p_count]
 		# Depending on which flanking sequence was requested, fill in
