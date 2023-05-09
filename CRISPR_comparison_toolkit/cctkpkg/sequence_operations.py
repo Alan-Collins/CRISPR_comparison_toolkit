@@ -442,9 +442,7 @@ def non_redundant_CR(
 		for k,v in strain.arrays.items():
 			CR_type = v.repeat_id
 			all_arrays_dict[CR_type].append(" ".join(v.spacers))
-			for s in v.spacers:
-				if s not in set(non_red_spacer_dict[CR_type]):
-					non_red_spacer_dict[CR_type].append(s)
+			non_red_spacer_dict[CR_type] |= set(v.spacers)
 
 	cluster_reps_dict = {}
 	rev_cluster_reps_dict = defaultdict(dict)

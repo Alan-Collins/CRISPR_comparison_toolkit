@@ -569,6 +569,14 @@ def write_CRISPR_files(
 				array_dict[array.id] = array
 	array_list = [a for a in array_dict.values()]
 
+	# Write bed file of array locations
+	write_array_loc_bed(all_assemblies, outdir)
+
+	if len(array_list) > 1000:
+		print("A large number of arrays found. Building the array network will take a very long time and is being skipped."
+			+ " If you would like to build the array network later, use 'cctk network'.")
+		return
+
 	# Build network of array spacer sharing
 	network = sequence_operations.build_network(array_list)
 
@@ -585,8 +593,7 @@ def write_CRISPR_files(
 
 	write_array_cluster_file(cluster_list, outdir+"Array_clusters.txt")
 
-	# Write bed file of array locations
-	write_array_loc_bed(all_assemblies, outdir)
+
 
 
 def read_assembly_list_file(filename):
