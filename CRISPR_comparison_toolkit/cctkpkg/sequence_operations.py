@@ -436,7 +436,7 @@ def non_redundant_CR(
 
 
 	"""
-	non_red_spacer_dict = defaultdict(list)
+	non_red_spacer_dict = defaultdict(set)
 	all_arrays_dict = defaultdict(list)
 	for strain in all_assemblies:
 		for k,v in strain.arrays.items():
