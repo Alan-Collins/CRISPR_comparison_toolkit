@@ -541,7 +541,7 @@ def process_parent_leader(
 
 	else:
 		print("Unexpected parent-child alignment encountered while processing\
-			 arrays {} and {}. Exiting...".format(child.id, parent.id))
+			 arrays {} and {}. Exiting...".format(module1.id, module2.id))
 		sys.exit()
 
 
