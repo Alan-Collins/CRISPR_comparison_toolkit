@@ -572,7 +572,7 @@ def write_CRISPR_files(
 	# Write bed file of array locations
 	write_array_loc_bed(all_assemblies, outdir)
 
-	if len(array_list) > 1000:
+	if len(array_list) > 2000:
 		print("A large number of arrays found. Building the array network will take a very long time and is being skipped."
 			+ " If you would like to build the array network later, use 'cctk network'.")
 		return
