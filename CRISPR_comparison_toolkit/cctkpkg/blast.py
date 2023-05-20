@@ -31,6 +31,8 @@ other inputs:
   -q, --regex-type      {E, P} regex type describing assembly names. Default: P
   -t, --threads         number of threads to use. Default: 1
   -i, --repeat-interval maximum interval between repeats. Default: 100
+  -l, --min-sp-len      minimum spacer length when identifying arrays. Default: 25
+  -n --min-array-len    minimum array length (number of spacers). Default 2
   -c, --percent-id      minumum percent ID of repeat BLAST hits. Default: 80
   -s, --snp-thresh      number of SNPs to consider spacers the same. Default: 0
   --min-shared          minimum spacers shared to draw an edge in network
@@ -372,48 +374,88 @@ def identify_same_array_hits(blast_entries, args):
     arrays = []
     n_spacers = 0 # count spacers in the current array
     last_contig = False
-    last_loc = False # store start coord of last repeat
+    last_start = False # store start coord of last repeat
+    last_end = False # store end coord of last repeat
     last_strand = False # store orientation of last repeat
     for entry in blast_entries:
-        if last_loc:
-            if last_loc == entry.sstart:
+        if last_start:
+            if last_start == entry.sstart:
                 # If two parts of a repeat matched separately and the 
                 # matches were extended, don't process both.
                 continue
-            if ((last_loc > entry.sstart - args.repeat_interval)
+            if (((last_start > entry.sstart - args.repeat_interval)
+                and (entry.sstart < last_end)
+                and (entry.strand == "plus")
+                and (last_strand == entry.strand)
+                and (last_contig == entry.sseqid))
+                or ((last_start > entry.sstart - args.repeat_interval)
+                and (entry.send < last_start)
+                and (entry.strand == "minus")
+                and (last_strand == entry.strand)
+                and (last_contig == entry.sseqid))):
+                # If the repeat produces overlapping hits skip the second one
+                continue
+            if ((last_end > entry.sstart - args.min_sp_len)
+                and (entry.strand == "plus")):
+                # If this repeat too close to last repeat, end the array
+                if len(this_array) > args.min_array_len:
+                    arrays.append(this_array)
+                last_start = entry.sstart
+                last_end = entry.send
+                last_strand = entry.strand
+                last_contig = entry.sseqid
+                this_array = [entry]
+                continue
+            elif ((entry.send < last_start + args.min_sp_len+1)
+                and (entry.strand == "minus")):
+                if len(this_array) > args.min_array_len:
+                    arrays.append(this_array)
+                last_start = entry.sstart
+                last_end = entry.send
+                last_strand = entry.strand
+                last_contig = entry.sseqid
+                this_array = [entry]
+                continue
+            if ((last_start > entry.sstart - args.repeat_interval)
                 and (last_strand == entry.strand)
                 and (last_contig == entry.sseqid)):
                 this_array.append(entry)
-                last_loc = entry.sstart
+                last_start = entry.sstart
+                last_end = entry.send
                 if entry == blast_entries[-1]:
-                    if len(this_array) > 2:
+                    if len(this_array) > args.min_array_len:
                         arrays.append(this_array)
-                        last_loc = entry.sstart
+                        last_start = entry.sstart
+                        last_end = entry.send
                         last_strand = entry.strand
                         last_contig = entry.sseqid
                         this_array = [entry]
 
                     else:
-                        last_loc = entry.sstart
+                        last_start = entry.sstart
+                        last_end = entry.send
                         last_strand = entry.strand
                         last_contig = entry.sseqid
                         this_array = [entry]
                 
             else:
-                if len(this_array) > 2:
+                if len(this_array) > args.min_array_len:
                     arrays.append(this_array)
-                    last_loc = entry.sstart
+                    last_start = entry.sstart
+                    last_end = entry.send
                     last_strand = entry.strand
                     last_contig = entry.sseqid
                     this_array = [entry]
 
                 else:
-                    last_loc = entry.sstart
+                    last_start = entry.sstart
+                    last_end = entry.send
                     last_strand = entry.strand
                     last_contig = entry.sseqid
                     this_array = [entry]
         else:
-            last_loc = entry.sstart
+            last_start = entry.sstart
+            last_end = entry.send
             last_strand = entry.strand
             last_contig = entry.sseqid
             this_array = [entry]
@@ -526,6 +568,14 @@ def build_parser(parser):
         help="DEFAULT: 1. Number of threads to use"
         )
     other_options.add_argument(
+        "-l", "--min-sp-len",
+        metavar=" ",
+        required=False,
+        default=25,
+        type=int,
+        help="DEFAULT: 25. Set the minimum spacer length when identifying arrays."
+        )
+    other_options.add_argument(
         "-i", "--repeat-interval",
         metavar=" ",
         required=False,
@@ -533,6 +583,14 @@ def build_parser(parser):
         type=int,
         help="DEFAULT: 100. Set the expected interval between the start "
             "position of your repeats."
+        )
+    other_options.add_argument(
+        "-n", "--min-array-len",
+        metavar=" ",
+        required=False,
+        default=2,
+        type=int,
+        help="DEFAULT: 2. minimum number of spacers."
         )
     other_options.add_argument(
         "-c", "--percent-id",
