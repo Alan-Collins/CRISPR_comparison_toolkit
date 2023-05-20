@@ -32,7 +32,7 @@ other inputs:
   -t, --threads         number of threads to use. Default: 1
   -i, --repeat-interval maximum interval between repeats. Default: 100
   -l, --min-sp-len      minimum spacer length when identifying arrays. Default: 25
-  -n --min-array-len    minimum array length (number of spacers). Default 2
+  -n, --min-array-len   minimum array length (number of spacers). Default 2
   -c, --percent-id      minumum percent ID of repeat BLAST hits. Default: 80
   -s, --snp-thresh      number of SNPs to consider spacers the same. Default: 0
   --min-shared          minimum spacers shared to draw an edge in network
