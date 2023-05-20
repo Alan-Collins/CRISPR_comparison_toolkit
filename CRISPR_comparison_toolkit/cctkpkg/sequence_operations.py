@@ -568,7 +568,7 @@ def non_redundant_CR(
 				while possible_id in repeat_id_lookup:
 					i+=1
 					# If more than 26, add more letters
-					if i > len(letters):
+					if i == len(letters):
 						letters += ["".join(l) for l in product(
 							ascii_lowercase, repeat=(ceil(log(i, 26))))]
 					possible_id = "{}_{}".format(array_id, letters[i])
