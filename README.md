@@ -8,7 +8,7 @@
 
 Tools to identify and compare CRISPR arrays.
 
-Manuscript now available on bioRxiv (https://doi.org/10.1101/2022.07.31.502198)
+Now published at the CRISPR Journal (https://doi.org/10.1089/crispr.2022.0080)
 
 ## What is it?
 
