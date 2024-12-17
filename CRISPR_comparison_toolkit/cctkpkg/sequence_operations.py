@@ -719,9 +719,21 @@ def run_blastcmd(ns, db, fstring, batch_locations):
 		print("ERROR running blastdbcmd on {} :\n{}".format(
 			db, batch_locations, x.stderr))
 		sys.exit()
-	else:
-		return (ns, 
-			[i for i in x.stdout.split('\n') if '>' not in i and len(i) > 0])
+
+	result = []
+	seq = []
+	# Process FASTA output to join multiline fasta sequences
+	for line in x.stdout.strip().split('\n'):
+		if line.startswith(">"):
+			if seq:
+				result.append("".join(seq))
+				seq = []
+			continue
+		seq.append(line.strip())
+	if seq:
+		result.append("".join(seq))
+	
+	return (ns, result)
 
 
 def determine_regex_length(pattern):
@@ -1018,4 +1030,3 @@ def pick_cluster_rep(clusters, all_spacers, prev_spacer_id_dict):
 		rep_dict[rep] = [sp for sp in clus if sp != rep]
 
 	return rep_dict
-
