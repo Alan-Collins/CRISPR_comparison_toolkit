@@ -316,9 +316,12 @@ def blastn_to_arrays(args):
         hit = blast_lines[n]
         hit.length = hit.qlen
         hit.pident = sequence_operations.percent_id(
-            new_seq,
-            queries_dict[hit.qseqid]
+            *sequence_operations.needle(
+                new_seq,
+                queries_dict[hit.qseqid],
+                1, -1, -1
             )
+        )
 
 
     good_hits = []
